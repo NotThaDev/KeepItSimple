@@ -1,0 +1,30 @@
+processes:
+  docker:
+    description: All Dockerized Services
+    command: |
+      if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env; fi
+      docker compose --env-file .env up -d \
+      && echo "##DOCKER STARTED SUCCESSFULLY##"
+    ready_log_line: "##DOCKER STARTED SUCCESSFULLY##"
+    shutdown:
+      signal: 9
+      command: docker compose --env-file .env stop
+
+  apiService:
+    description: Keep It Simple API Service
+    working_dir: ./backend/KeepItSimple.Api
+    command: "dotnet watch"
+    depends_on:
+      docker:
+        condition: process_log_ready
+    shutdown:
+      signal: 9
+
+  #TODO MIGRATIONS
+
+  frontend:
+    description: Keep It Simple Frontend
+    working_dir: ./frontend
+    command: "bun ci && bun run dev"
+    shutdown:
+      signal: 9
