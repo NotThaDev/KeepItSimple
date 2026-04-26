@@ -59,13 +59,11 @@ public class ExpenseController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var existingExpense = await Expense.GetByIdAsync(id);
-        if (existingExpense == null)
+        var deleted = await Expense.Delete(id);
+        if (!deleted)
         {
             return NotFound();
         }
-
-        await Expense.Delete(id);
         return NoContent();
     }
 }
