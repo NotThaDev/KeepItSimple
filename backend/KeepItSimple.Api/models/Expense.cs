@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using KeepItSimple.Api.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,7 @@ public class Expense
     public string? Description { get; set; }
     public decimal Amount { get; set; }
     public DateTime Date { get; set; }
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public ExpenseCategory Category { get; set; }
 
     public static Task<List<Expense>> GetAllAsync()
@@ -79,7 +81,7 @@ public class Expense
 
     public enum ExpenseCategory
     {
-        Coffee,
+        Coffe,
         Food,
         Transportation,
         Entertainment,
