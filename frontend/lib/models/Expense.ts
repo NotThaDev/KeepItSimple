@@ -1,4 +1,5 @@
-import { FetchWrapperResponse, get } from "../fetchWrapper";
+import { create } from "domain";
+import { FetchWrapperResponse, get, post, put } from "../fetchWrapper";
 
 export interface Expense {
   id: number;
@@ -29,4 +30,35 @@ export async function getExpenses(): Promise<FetchWrapperResponse<Expense[]>> {
     date: new Date(expense.date),
   }));
   return expenses;
+}
+
+export async function createExpense(expense: Omit<Expense, "id">) {
+  const createExpenseResponse = await post<Expense>("/api/expenses", expense);
+
+  if ("error" in createExpenseResponse) {
+    return createExpenseResponse;
+  }
+
+  if (createExpenseResponse.data) {
+    createExpenseResponse.data.date = new Date(createExpenseResponse.data.date);
+  }
+
+  return createExpenseResponse;
+}
+
+export async function updateExpense(id: number, expense: Expense) {
+  const updateExpenseResponse = await put<Expense>(
+    `/api/expenses/${id}`,
+    expense,
+  );
+
+  if ("error" in updateExpenseResponse) {
+    return updateExpenseResponse;
+  }
+
+  if (updateExpenseResponse.data) {
+    updateExpenseResponse.data.date = new Date(updateExpenseResponse.data.date);
+  }
+
+  return updateExpenseResponse;
 }

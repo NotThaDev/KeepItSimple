@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "next-themes";
 import { CSSProperties } from "react";
+import { Toaster } from "@/components/ui/sonner";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -27,6 +28,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             }
           >
             <NavigationMenu />
+            <Toaster position="top-center" />
             <main className="w-full">{children}</main>
           </SidebarProvider>
         </ThemeProvider>

@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Pagination } from "@/components/ui/pagination";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -75,6 +76,8 @@ export function DataTable<TData, TValue>({
           )}
         </TableBody>
       </Table>
+
+      <Pagination />
     </div>
   );
 }

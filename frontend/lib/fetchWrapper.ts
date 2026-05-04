@@ -9,8 +9,9 @@ async function fetch<T>(
   endpoint: string,
   body?: unknown,
 ): Promise<FetchWrapperResponse<T>> {
-  const baseUrl = process.env.API_BASE_URL || "";
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
   const fullUrl = `${baseUrl}${endpoint}`;
+  console.log(fullUrl, method);
 
   const options: RequestInit = {
     method,
