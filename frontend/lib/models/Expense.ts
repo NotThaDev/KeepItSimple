@@ -1,5 +1,4 @@
-import { create } from "domain";
-import { FetchWrapperResponse, get, post, put } from "../fetchWrapper";
+import { del, FetchWrapperResponse, get, post, put } from "../fetchWrapper";
 
 export interface Expense {
   id: number;
@@ -61,4 +60,19 @@ export async function updateExpense(id: number, expense: Expense) {
   }
 
   return updateExpenseResponse;
+}
+
+export async function deleteExpense(
+  id: number,
+): Promise<FetchWrapperResponse<void>> {
+  const deleteExpenseResponse = await del(`/api/expenses/${id}`);
+
+  if ("error" in deleteExpenseResponse) {
+    return {
+      error: deleteExpenseResponse.error,
+      status: deleteExpenseResponse.status,
+    };
+  }
+
+  return { status: deleteExpenseResponse.status };
 }

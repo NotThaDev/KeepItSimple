@@ -11,7 +11,6 @@ async function fetch<T>(
 ): Promise<FetchWrapperResponse<T>> {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
   const fullUrl = `${baseUrl}${endpoint}`;
-  console.log(fullUrl, method);
 
   const options: RequestInit = {
     method,
@@ -31,7 +30,22 @@ async function fetch<T>(
       status: response.status,
     };
   }
-  const content = await response.json();
+
+  // Some successful responses (for example DELETE 204) have no body.
+  if (response.status === 204) {
+    return {
+      status: response.status,
+    };
+  }
+
+  const responseText = await response.text();
+  if (!responseText.trim()) {
+    return {
+      status: response.status,
+    };
+  }
+
+  const content = JSON.parse(responseText) as T;
   return {
     data: content,
     status: response.status,
