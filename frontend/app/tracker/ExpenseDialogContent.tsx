@@ -4,15 +4,16 @@ import { DatePicker } from "@/components/common/DatePicker";
 import { Selection } from "@/components/common/selector/Selection";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   createExpense,
   Expense,
@@ -112,16 +113,16 @@ export function ExpenseDialogContent({
 
   const title = expense ? "Edit Expense" : "New Expense";
   return (
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>
+    <DrawerContent>
+      <DrawerHeader>
+        <DrawerTitle>{title}</DrawerTitle>
+        <DrawerDescription>
           {expense
             ? "Modify the details of your expense below."
             : "Fill in the details of your new expense below."}
-        </DialogDescription>
-      </DialogHeader>
-      <FieldGroup className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        </DrawerDescription>
+      </DrawerHeader>
+      <FieldGroup className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
         <Field>
           <FieldLabel className="">Expense Date</FieldLabel>
           <DatePicker
@@ -169,39 +170,30 @@ export function ExpenseDialogContent({
             }}
           />
         </Field>
-      </FieldGroup>
-      <div className="flex flex-row items-center gap-3 mt-3">
-        {/* <DatePicker
-          defaultDate={expenseData?.date ?? new Date()}
-          onDateChange={(date) =>
-            setExpenseData((prev) => (prev ? { ...prev, date } : prev))
-          }
-          helperText="Expense Date"
-        /> */}
-        {/* <div className="flex flex-col gap-1">
-          <Label className="text-xs font-normal ms-1 text-muted-foreground">
-            Amount
-          </Label>
-          <Input
-            type="number"
-            defaultValue={expenseData?.amount}
-            onChange={(e) => {
-              const amount = parseFloat(e.target.value);
-              if (isNaN(amount)) {
-                return;
-              }
-              setExpenseData((prev) => (prev ? { ...prev, amount } : prev));
-            }}
-          />
-        </div> */}
-      </div>
 
-      <DialogFooter>
-        <DialogClose asChild>
+        <Field className="sm:col-span-2">
+          <FieldLabel>Description</FieldLabel>
+          <Textarea
+            rows={3}
+            placeholder="Add an optional description..."
+            defaultValue={expenseData.description}
+            onChange={(e) =>
+              setExpenseData((prev) => ({
+                ...prev,
+                description: e.target.value,
+              }))
+            }
+          />
+        </Field>
+      </FieldGroup>
+      <DrawerFooter className="flex-row justify-end">
+        <DrawerClose asChild className="w-[108px]">
           <Button variant="outline">Cancel</Button>
-        </DialogClose>
-        <Button onClick={handleSave}>Save</Button>
-      </DialogFooter>
-    </DialogContent>
+        </DrawerClose>
+        <Button onClick={handleSave} className="w-[108px]">
+          Save
+        </Button>
+      </DrawerFooter>
+    </DrawerContent>
   );
 }

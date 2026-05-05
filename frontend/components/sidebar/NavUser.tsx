@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { CircleUserRound, EllipsisVertical, LogOut } from "lucide-react";
-import { ThemeButton } from "../common/ThemeSelector/ThemeButton";
+import { ThemeButton } from "../common/themeSelector/ThemeButton";
 
 /**
  * 

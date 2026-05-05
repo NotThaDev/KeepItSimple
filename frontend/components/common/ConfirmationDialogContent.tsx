@@ -7,17 +7,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
+import { ButtonVariant } from "./CommonTypes";
 
 interface ConfirmationDialogContentProps {
   title: string;
   description: string;
-  confirmButtonVariant?:
-    | "link"
-    | "default"
-    | "outline"
-    | "secondary"
-    | "ghost"
-    | "destructive";
+  confirmButtonVariant?: ButtonVariant;
   onConfirm: () => Promise<void> | void;
   onCancel: () => void;
 }

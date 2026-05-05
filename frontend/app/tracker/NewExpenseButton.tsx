@@ -1,11 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { Plus } from "lucide-react";
-import { ExpenseDialogContent } from "./ExpenseDialogContent";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { ExpenseDialogContent } from "./ExpenseDialogContent";
 
 export function NewExpenseButton() {
   const [open, setOpen] = useState(false);
@@ -17,15 +17,15 @@ export function NewExpenseButton() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="lg">
+    <Drawer open={open} onOpenChange={setOpen} direction="right">
+      <DrawerTrigger asChild>
+        <Button size="lg">
           <Plus />
           New Expense
         </Button>
-      </DialogTrigger>
+      </DrawerTrigger>
 
       <ExpenseDialogContent onSave={handleSave} />
-    </Dialog>
+    </Drawer>
   );
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { Expense } from "@/lib/models/Expense";
 import { Pencil } from "lucide-react";
-import { ExpenseDialogContent } from "../ExpenseDialogContent";
-import { useCallback, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
+import { ExpenseDialogContent } from "../ExpenseDialogContent";
 
 interface EditTransactionButtonProps {
   transaction: Expense;
@@ -24,14 +24,14 @@ export function EditTransactionButton({
   }, [router]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Drawer open={open} onOpenChange={setOpen} direction="right">
+      <DrawerTrigger asChild>
         <Button variant="ghost" size="icon">
           <Pencil />
         </Button>
-      </DialogTrigger>
+      </DrawerTrigger>
 
       <ExpenseDialogContent onSave={onSave} expense={transaction} />
-    </Dialog>
+    </Drawer>
   );
 }
