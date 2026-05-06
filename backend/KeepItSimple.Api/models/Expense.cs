@@ -4,49 +4,49 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KeepItSimple.Api.Models;
 
-public class Expense
+public class Transaction
 {
     public int? Id { get; set; }
     public string? Description { get; set; }
     public decimal Amount { get; set; }
     public DateTime Date { get; set; }
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public ExpenseCategory Category { get; set; }
+    public TransactionCategory Category { get; set; }
 
-    public static Task<List<Expense>> GetAllAsync()
+    public static Task<List<Transaction>> GetAllAsync()
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            return await dbContext.Expenses.ToListAsync();
+            return await dbContext.Transactions.ToListAsync();
         });
     }
 
-    public static Task<Expense?> GetByIdAsync(int id)
+    public static Task<Transaction?> GetByIdAsync(int id)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var expense = await dbContext.Expenses.FindAsync(id);
+            var expense = await dbContext.Transactions.FindAsync(id);
             return expense;
         });
     }
 
-    public static Task<Expense?> Update(Expense expense)
+    public static Task<Transaction?> Update(Transaction expense)
     {
         if (!expense.Id.HasValue)
         {
             // Create
             return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
             {
-                dbContext.Expenses.Add(expense);
+                dbContext.Transactions.Add(expense);
                 await dbContext.SaveChangesAsync();
-                return (Expense?)expense;
+                return (Transaction?)expense;
             });
         }
 
         // Update
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var existingExpense = await dbContext.Expenses.FindAsync(expense.Id);
+            var existingExpense = await dbContext.Transactions.FindAsync(expense.Id);
             if (existingExpense == null)
             {
                 return null;
@@ -67,19 +67,19 @@ public class Expense
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var expense = await dbContext.Expenses.FindAsync(id);
+            var expense = await dbContext.Transactions.FindAsync(id);
             if (expense is null)
             {
                 return false;
             }
-            dbContext.Expenses.Remove(expense);
+            dbContext.Transactions.Remove(expense);
             await dbContext.SaveChangesAsync();
             return true;
         });
     }
 
 
-    public enum ExpenseCategory
+    public enum TransactionCategory
     {
         Coffe,
         Food,

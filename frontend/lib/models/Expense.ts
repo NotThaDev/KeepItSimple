@@ -1,14 +1,14 @@
 import { del, FetchWrapperResponse, get, post, put } from "../fetchWrapper";
 
-export interface Expense {
+export interface Transaction {
   id: number;
   description?: string;
   amount: number;
   date: Date;
-  category: ExpenseCategory;
+  category: TransactionCategory;
 }
 
-export enum ExpenseCategory {
+export enum TransactionCategory {
   Food = "Food",
   Transport = "Transport",
   Entertainment = "Entertainment",
@@ -17,62 +17,71 @@ export enum ExpenseCategory {
   Coffe = "Coffe",
 }
 
-export async function getExpenses(): Promise<FetchWrapperResponse<Expense[]>> {
-  const expenses = await get<Expense[]>("/api/expenses");
+export async function getTransactions(): Promise<
+  FetchWrapperResponse<Transaction[]>
+> {
+  const transactions = await get<Transaction[]>("/api/transactions");
 
-  if ("error" in expenses) {
-    return expenses;
+  if ("error" in transactions) {
+    return transactions;
   }
 
-  expenses.data = expenses.data?.map((expense) => ({
+  transactions.data = transactions.data?.map((expense) => ({
     ...expense,
     date: new Date(expense.date),
   }));
-  return expenses;
+  return transactions;
 }
 
-export async function createExpense(expense: Omit<Expense, "id">) {
-  const createExpenseResponse = await post<Expense>("/api/expenses", expense);
-
-  if ("error" in createExpenseResponse) {
-    return createExpenseResponse;
-  }
-
-  if (createExpenseResponse.data) {
-    createExpenseResponse.data.date = new Date(createExpenseResponse.data.date);
-  }
-
-  return createExpenseResponse;
-}
-
-export async function updateExpense(id: number, expense: Expense) {
-  const updateExpenseResponse = await put<Expense>(
-    `/api/expenses/${id}`,
+export async function createTransaction(expense: Omit<Transaction, "id">) {
+  const createTransactionResponse = await post<Transaction>(
+    "/api/transactions",
     expense,
   );
 
-  if ("error" in updateExpenseResponse) {
-    return updateExpenseResponse;
+  if ("error" in createTransactionResponse) {
+    return createTransactionResponse;
   }
 
-  if (updateExpenseResponse.data) {
-    updateExpenseResponse.data.date = new Date(updateExpenseResponse.data.date);
+  if (createTransactionResponse.data) {
+    createTransactionResponse.data.date = new Date(
+      createTransactionResponse.data.date,
+    );
   }
 
-  return updateExpenseResponse;
+  return createTransactionResponse;
 }
 
-export async function deleteExpense(
+export async function updateTransaction(id: number, expense: Transaction) {
+  const updateTransactionResponse = await put<Transaction>(
+    `/api/transactions/${id}`,
+    expense,
+  );
+
+  if ("error" in updateTransactionResponse) {
+    return updateTransactionResponse;
+  }
+
+  if (updateTransactionResponse.data) {
+    updateTransactionResponse.data.date = new Date(
+      updateTransactionResponse.data.date,
+    );
+  }
+
+  return updateTransactionResponse;
+}
+
+export async function deleteTransaction(
   id: number,
 ): Promise<FetchWrapperResponse<void>> {
-  const deleteExpenseResponse = await del(`/api/expenses/${id}`);
+  const deleteTransactionResponse = await del(`/api/transactions/${id}`);
 
-  if ("error" in deleteExpenseResponse) {
+  if ("error" in deleteTransactionResponse) {
     return {
-      error: deleteExpenseResponse.error,
-      status: deleteExpenseResponse.status,
+      error: deleteTransactionResponse.error,
+      status: deleteTransactionResponse.status,
     };
   }
 
-  return { status: deleteExpenseResponse.status };
+  return { status: deleteTransactionResponse.status };
 }

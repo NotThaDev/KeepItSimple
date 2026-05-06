@@ -15,29 +15,29 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  createExpense,
-  Expense,
-  ExpenseCategory,
-  updateExpense,
+  createTransaction,
+  Transaction,
+  TransactionCategory,
+  updateTransaction,
 } from "@/lib/models/Expense";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-interface ExpenseErrors {
+interface TransactionErrors {
   amount: boolean;
   category: boolean;
 }
 
-interface ExpenseFormData {
+interface TransactionFormData {
   id?: number;
   description?: string;
   amount?: number;
   date: Date;
-  category?: ExpenseCategory;
+  category?: TransactionCategory;
 }
 
-interface ExpenseDialogProps {
-  expense?: Expense;
+interface TransactionDrawerContentProps {
+  transaction?: Transaction;
   onSave?: () => void;
 }
 
@@ -45,32 +45,32 @@ function validateAmount(amount: number | undefined): boolean {
   return amount !== undefined && amount > 0;
 }
 
-function validateCategory(category: ExpenseCategory | undefined): boolean {
+function validateCategory(category: TransactionCategory | undefined): boolean {
   return category !== undefined;
 }
 
-export function ExpenseDialogContent({
-  expense,
+export function TransactionDrawerContent({
+  transaction,
   onSave,
-}: Readonly<ExpenseDialogProps>) {
-  const [expenseData, setExpenseData] = useState<ExpenseFormData>(() =>
-    expense ? { ...expense } : { date: new Date() },
+}: Readonly<TransactionDrawerContentProps>) {
+  const [transactionData, setTransactionData] = useState<TransactionFormData>(
+    () => (transaction ? { ...transaction } : { date: new Date() }),
   );
-  const [errors, setErrors] = useState<ExpenseErrors>({
+  const [errors, setErrors] = useState<TransactionErrors>({
     amount: false,
     category: false,
   });
 
   const selectionItems = useMemo(() => {
-    return Object.values(ExpenseCategory).map((category) => ({
-      value: ExpenseCategory[category],
+    return Object.values(TransactionCategory).map((category) => ({
+      value: TransactionCategory[category],
       label: category,
     }));
   }, []);
 
   const handleSave = useCallback(async () => {
-    const amountValid = validateAmount(expenseData.amount);
-    const categoryValid = validateCategory(expenseData.category);
+    const amountValid = validateAmount(transactionData.amount);
+    const categoryValid = validateCategory(transactionData.category);
 
     setErrors({
       amount: !amountValid,
@@ -81,54 +81,54 @@ export function ExpenseDialogContent({
       return;
     }
 
-    const payload: Omit<Expense, "id"> = {
-      amount: expenseData.amount!,
-      category: expenseData.category!,
-      date: expenseData.date,
-      description: expenseData.description,
+    const payload: Omit<Transaction, "id"> = {
+      amount: transactionData.amount!,
+      category: transactionData.category!,
+      date: transactionData.date,
+      description: transactionData.description,
     };
     let error: string | undefined;
 
-    if (!expenseData.id) {
-      const createResponse = await createExpense(payload);
+    if (!transactionData.id) {
+      const createResponse = await createTransaction(payload);
       error = createResponse.error;
     } else {
-      const updateResponse = await updateExpense(expenseData.id, {
-        id: expenseData.id,
+      const updateResponse = await updateTransaction(transactionData.id, {
+        id: transactionData.id,
         ...payload,
       });
       error = updateResponse.error;
     }
 
     if (error) {
-      toast.error("Failed to save expense. Please try again.");
+      toast.error("Failed to save transaction. Please try again.");
       return;
     }
 
     toast.success(
-      `Expense ${expense?.id ? "updated" : "created"} successfully`,
+      `Transaction ${transactionData.id ? "updated" : "created"} successfully`,
     );
     onSave?.();
-  }, [expense, expenseData, onSave]);
+  }, [transactionData, onSave]);
 
-  const title = expense ? "Edit Expense" : "New Expense";
+  const title = transactionData.id ? "Edit Transaction" : "New Transaction";
   return (
     <DrawerContent>
       <DrawerHeader>
         <DrawerTitle>{title}</DrawerTitle>
         <DrawerDescription>
-          {expense
-            ? "Modify the details of your expense below."
-            : "Fill in the details of your new expense below."}
+          {transactionData.id
+            ? "Modify the details of your transaction below."
+            : "Fill in the details of your new transaction below."}
         </DrawerDescription>
       </DrawerHeader>
       <FieldGroup className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
         <Field>
-          <FieldLabel className="">Expense Date</FieldLabel>
+          <FieldLabel className="">Transaction Date</FieldLabel>
           <DatePicker
-            defaultDate={expenseData.date}
+            defaultDate={transactionData.date}
             onDateChange={(date) =>
-              setExpenseData((prev) => ({ ...prev, date }))
+              setTransactionData((prev) => ({ ...prev, date }))
             }
           />
         </Field>
@@ -137,14 +137,14 @@ export function ExpenseDialogContent({
           <Input
             type="number"
             aria-invalid={errors.amount}
-            defaultValue={expenseData.amount}
+            defaultValue={transactionData.amount}
             onChange={(e) => {
               const amount = parseFloat(e.target.value);
               if (isNaN(amount)) {
                 setErrors((prev) => ({ ...prev, amount: true }));
                 return;
               }
-              setExpenseData((prev) => ({ ...prev, amount }));
+              setTransactionData((prev) => ({ ...prev, amount }));
               setErrors((prev) => ({
                 ...prev,
                 amount: !validateAmount(amount),
@@ -157,12 +157,12 @@ export function ExpenseDialogContent({
           <FieldLabel>Category</FieldLabel>
           <Selection
             items={selectionItems}
-            defaultValue={expenseData.category}
+            defaultValue={transactionData.category}
             placeholder="Select a Category"
             isInvalid={errors.category}
             onChange={(value) => {
-              const category = value as ExpenseCategory;
-              setExpenseData((prev) => ({ ...prev, category }));
+              const category = value as TransactionCategory;
+              setTransactionData((prev) => ({ ...prev, category }));
               setErrors((prev) => ({
                 ...prev,
                 category: !validateCategory(category),
@@ -176,9 +176,9 @@ export function ExpenseDialogContent({
           <Textarea
             rows={6}
             placeholder="Add an optional description..."
-            defaultValue={expenseData.description}
+            defaultValue={transactionData.description}
             onChange={(e) =>
-              setExpenseData((prev) => ({
+              setTransactionData((prev) => ({
                 ...prev,
                 description: e.target.value,
               }))

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { deleteExpense, Expense } from "@/lib/models/Expense";
+import { deleteTransaction, Transaction } from "@/lib/models/Expense";
 import { Trash } from "lucide-react";
 import { useCallback, useState } from "react";
 import { ConfirmationDialogContent } from "@/components/common/ConfirmationDialogContent";
@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 interface DeleteTransactionButtonProps {
-  transaction: Expense;
+  transaction: Transaction;
 }
 
 export function DeleteTransactionButton({
@@ -26,7 +26,7 @@ export function DeleteTransactionButton({
     }
 
     try {
-      const deleteResponse = await deleteExpense(transaction.id!);
+      const deleteResponse = await deleteTransaction(transaction.id!);
       if ("error" in deleteResponse) {
         throw new Error(deleteResponse.error);
       }

@@ -8,8 +8,8 @@ export interface RouteDefinition {
 
 export const routes: RouteDefinition[] = [
   {
-    label: "Tracker",
-    href: "/tracker",
+    label: "Transactions",
+    href: "/transactions",
     icon: LayoutDashboard,
   },
 ];

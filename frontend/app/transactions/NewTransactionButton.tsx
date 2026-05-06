@@ -5,9 +5,9 @@ import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ExpenseDialogContent } from "./ExpenseDialogContent";
+import { TransactionDrawerContent } from "./TransactionDialogContent";
 
-export function NewExpenseButton() {
+export function NewTransactionButton() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
@@ -21,11 +21,11 @@ export function NewExpenseButton() {
       <DrawerTrigger asChild>
         <Button size="lg" className="w-[fit-content]">
           <Plus />
-          New Expense
+          New Transaction
         </Button>
       </DrawerTrigger>
 
-      <ExpenseDialogContent onSave={handleSave} />
+      <TransactionDrawerContent onSave={handleSave} />
     </Drawer>
   );
 }

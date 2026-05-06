@@ -1,12 +1,12 @@
 "use client";
 
-import { Expense } from "@/lib/models/Expense";
+import { Transaction } from "@/lib/models/Expense";
 import { ColumnDef } from "@tanstack/react-table";
 import { EditTransactionButton } from "./EditTransactionButton";
 import { DeleteTransactionButton } from "./DeleteTransactionButton";
 import { ENGLISH_DATE_FORMATTER } from "@/components/common/DateUtils";
 
-export const expenseColumns: ColumnDef<Expense>[] = [
+export const transactionDataColumns: ColumnDef<Transaction>[] = [
   // #TODO Add the transaction to the model of the transaction. (e.g Spotify, Amazon, etc)
   // {
   //   accessorKey: "transaction",

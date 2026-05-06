@@ -2,14 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
-import { Expense } from "@/lib/models/Expense";
+import { Transaction } from "@/lib/models/Expense";
 import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import { ExpenseDialogContent } from "../ExpenseDialogContent";
+import { TransactionDrawerContent } from "../TransactionDialogContent";
 
 interface EditTransactionButtonProps {
-  transaction: Expense;
+  transaction: Transaction;
 }
 
 export function EditTransactionButton({
@@ -31,7 +31,7 @@ export function EditTransactionButton({
         </Button>
       </DrawerTrigger>
 
-      <ExpenseDialogContent onSave={onSave} expense={transaction} />
+      <TransactionDrawerContent onSave={onSave} transaction={transaction} />
     </Drawer>
   );
 }

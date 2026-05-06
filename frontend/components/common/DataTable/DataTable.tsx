@@ -147,7 +147,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="flex items-center justify-between px-2">
-        {enablePagination && (
+        {enablePagination && visiblePages.length > 1 && (
           <Pagination className="justify-start">
             <PaginationContent>
               <PaginationItem>
@@ -200,7 +200,7 @@ export function DataTable<TData, TValue>({
           </Pagination>
         )}
 
-        {extraContent}
+        <div className="ml-auto">{extraContent}</div>
       </div>
     </div>
   );

@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KeepItSimple.Api.Migrations
 {
     [DbContext(typeof(KeepItSimpleDbContext))]
-    [Migration("20260426131643_expense_table")]
-    partial class expense_table
+    [Migration("20260506185658_create_transaction_table")]
+    partial class create_transaction_table
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,7 +25,7 @@ namespace KeepItSimple.Api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("KeepItSimple.Api.Models.Expense", b =>
+            modelBuilder.Entity("KeepItSimple.Api.Models.Transaction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -47,7 +47,7 @@ namespace KeepItSimple.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Expenses");
+                    b.ToTable("Transactions");
                 });
 #pragma warning restore 612, 618
         }
