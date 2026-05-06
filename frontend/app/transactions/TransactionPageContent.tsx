@@ -22,7 +22,7 @@ export function TransactionPageContent({
   return (
     <div className="flex flex-col gap-4 items-end">
       <DataTable
-        className="min-h-[580]"
+        className="min-h-[580px]"
         columns={transactionDataColumns}
         data={transactions}
         initialState={{ pagination: { pageSize: 10 } }}

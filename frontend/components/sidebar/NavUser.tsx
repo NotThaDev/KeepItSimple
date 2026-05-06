@@ -1,4 +1,5 @@
 "use client";
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   SidebarMenu,
@@ -16,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { CircleUserRound, EllipsisVertical, LogOut } from "lucide-react";
-import { ThemeButton } from "../common/themeSelector/ThemeButton";
+import { ThemeButton } from "../common/fix/ThemeButton";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
