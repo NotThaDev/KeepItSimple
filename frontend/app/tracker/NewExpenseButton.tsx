@@ -19,7 +19,7 @@ export function NewExpenseButton() {
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="right">
       <DrawerTrigger asChild>
-        <Button size="lg">
+        <Button size="lg" className="w-[fit-content]">
           <Plus />
           New Expense
         </Button>

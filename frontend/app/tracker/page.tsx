@@ -20,8 +20,16 @@ export default async function TrackerPage() {
   }
 
   return (
-    <PageWrapper title="Tracker" extraContent={<NewExpenseButton />}>
-      <DataTable columns={expenseColumns} data={expenses.data ?? []} />
+    <PageWrapper title="Tracker">
+      <div className="flex flex-col gap-4 items-end">
+        <DataTable
+          className="min-h-[580]"
+          columns={expenseColumns}
+          data={expenses.data ?? []}
+          initialState={{ pagination: { pageSize: 10 } }}
+          extraContent={<NewExpenseButton />}
+        />
+      </div>
     </PageWrapper>
   );
 }

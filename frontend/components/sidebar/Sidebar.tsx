@@ -14,7 +14,7 @@ export function NavigationMenu() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center ms-1">
+        <div className="flex items-center ms-1 mt-2">
           <Image
             src={BRANDING.logo}
             alt={`${BRANDING.name} Logo`}

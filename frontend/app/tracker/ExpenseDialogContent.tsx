@@ -174,7 +174,7 @@ export function ExpenseDialogContent({
         <Field className="sm:col-span-2">
           <FieldLabel>Description</FieldLabel>
           <Textarea
-            rows={3}
+            rows={6}
             placeholder="Add an optional description..."
             defaultValue={expenseData.description}
             onChange={(e) =>
