@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { deleteTransaction, Transaction } from "@/lib/models/Expense";
+import { deleteTransaction, Transaction } from "@/lib/models/Transaction";
 import { Trash } from "lucide-react";
 import { useCallback, useState } from "react";
 import { ConfirmationDialogContent } from "@/components/common/ConfirmationDialogContent";

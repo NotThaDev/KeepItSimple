@@ -18,26 +18,6 @@ import {
 import { CircleUserRound, EllipsisVertical, LogOut } from "lucide-react";
 import { ThemeButton } from "../common/themeSelector/ThemeButton";
 
-/**
- * 
- * @returns   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <SidebarMenuButton size="lg" className="cursor-default">
-          <Avatar className="h-8 w-8 rounded-lg">
-            <AvatarFallback className="rounded-lg">U</AvatarFallback>
-          </Avatar>
-          <span className="truncate font-medium">User</span>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      <SidebarMenuItem>
-        <ThemeToggle />
-      </SidebarMenuItem>
-    </SidebarMenu>
-  );
-
- */
-
 export function NavUser() {
   const { isMobile } = useSidebar();
   const user = {

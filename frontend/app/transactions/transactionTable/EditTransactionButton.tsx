@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
-import { Transaction } from "@/lib/models/Expense";
+import { Transaction } from "@/lib/models/Transaction";
 import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";

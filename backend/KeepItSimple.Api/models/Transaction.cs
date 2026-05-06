@@ -83,7 +83,7 @@ public class Transaction
     {
         Coffe,
         Food,
-        Transportation,
+        Transport,
         Entertainment,
         Utilities,
         Other

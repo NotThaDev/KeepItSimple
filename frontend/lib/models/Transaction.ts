@@ -9,12 +9,12 @@ export interface Transaction {
 }
 
 export enum TransactionCategory {
+  Coffe = "Coffe",
   Food = "Food",
   Transport = "Transport",
   Entertainment = "Entertainment",
   Utilities = "Utilities",
   Other = "Other",
-  Coffe = "Coffe",
 }
 
 export async function getTransactions(): Promise<

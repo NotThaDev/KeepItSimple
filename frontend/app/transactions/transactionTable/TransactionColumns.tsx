@@ -1,6 +1,6 @@
 "use client";
 
-import { Transaction } from "@/lib/models/Expense";
+import { Transaction } from "@/lib/models/Transaction";
 import { ColumnDef } from "@tanstack/react-table";
 import { EditTransactionButton } from "./EditTransactionButton";
 import { DeleteTransactionButton } from "./DeleteTransactionButton";

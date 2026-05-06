@@ -19,7 +19,7 @@ import {
   Transaction,
   TransactionCategory,
   updateTransaction,
-} from "@/lib/models/Expense";
+} from "@/lib/models/Transaction";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
