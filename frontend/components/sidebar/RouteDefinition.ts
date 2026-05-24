@@ -1,4 +1,4 @@
-import { LucideIcon, LayoutDashboard } from "lucide-react";
+import { LucideIcon, ArrowDownUp, Wallet, LayoutDashboard } from "lucide-react";
 
 export interface RouteDefinition {
   label: string;
@@ -8,8 +8,18 @@ export interface RouteDefinition {
 
 export const routes: RouteDefinition[] = [
   {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
     label: "Transactions",
     href: "/transactions",
-    icon: LayoutDashboard,
+    icon: ArrowDownUp,
+  },
+  {
+    label: "Pockets",
+    href: "/pockets",
+    icon: Wallet,
   },
 ];

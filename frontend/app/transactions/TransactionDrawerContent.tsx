@@ -14,6 +14,7 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Pocket } from "@/lib/models/Pocket";
 import {
   createTransaction,
   Transaction,
@@ -26,6 +27,7 @@ import { toast } from "sonner";
 interface TransactionErrors {
   amount: boolean;
   category: boolean;
+  pocketId: boolean;
 }
 
 interface TransactionFormData {
@@ -33,11 +35,13 @@ interface TransactionFormData {
   description?: string;
   amount?: number;
   date: Date;
+  pocketId: number;
   category?: TransactionCategory;
 }
 
 interface TransactionDrawerContentProps {
   transaction?: Transaction;
+  pockets: Pocket[];
   onSave?: () => void;
 }
 
@@ -45,20 +49,27 @@ function validateAmount(amount: number | undefined): boolean {
   return amount !== undefined && amount > 0;
 }
 
-function validateCategory(category: TransactionCategory | undefined): boolean {
-  return category !== undefined;
+function getInitialTransactionData(
+  transaction: Transaction | undefined,
+  pockets: Pocket[],
+): TransactionFormData {
+  return transaction
+    ? { ...transaction }
+    : { date: new Date(), pocketId: pockets[0]?.id ?? 0 };
 }
 
 export function TransactionDrawerContent({
   transaction,
+  pockets,
   onSave,
 }: Readonly<TransactionDrawerContentProps>) {
   const [transactionData, setTransactionData] = useState<TransactionFormData>(
-    () => (transaction ? { ...transaction } : { date: new Date() }),
+    () => getInitialTransactionData(transaction, pockets),
   );
   const [errors, setErrors] = useState<TransactionErrors>({
     amount: false,
     category: false,
+    pocketId: false,
   });
 
   const selectionItems = useMemo(() => {
@@ -68,16 +79,25 @@ export function TransactionDrawerContent({
     }));
   }, []);
 
+  const pocketsSelectionItems = useMemo(() => {
+    return pockets.map((pocket) => ({
+      value: pocket.id.toString(),
+      label: pocket.name,
+    }));
+  }, [pockets]);
+
   const handleSave = useCallback(async () => {
     const amountValid = validateAmount(transactionData.amount);
-    const categoryValid = validateCategory(transactionData.category);
+    const categoryValid = transactionData.category !== undefined;
+    const pocketIdValid = transactionData.pocketId !== undefined;
 
     setErrors({
       amount: !amountValid,
       category: !categoryValid,
+      pocketId: !pocketIdValid,
     });
 
-    if (!amountValid || !categoryValid) {
+    if (!amountValid || !categoryValid || !pocketIdValid) {
       return;
     }
 
@@ -86,6 +106,7 @@ export function TransactionDrawerContent({
       category: transactionData.category!,
       date: transactionData.date,
       description: transactionData.description,
+      pocketId: transactionData.pocketId,
     };
     let error: string | undefined;
 
@@ -132,6 +153,7 @@ export function TransactionDrawerContent({
             }
           />
         </Field>
+
         <Field data-invalid={errors.amount}>
           <FieldLabel>Amount</FieldLabel>
           <Input
@@ -153,6 +175,26 @@ export function TransactionDrawerContent({
           />
         </Field>
 
+        <Field className="sm:col-span-2" data-invalid={errors.pocketId}>
+          <FieldLabel>Pocket</FieldLabel>
+          <Selection
+            items={pocketsSelectionItems}
+            defaultValue={
+              transactionData.pocketId?.toString() ??
+              pocketsSelectionItems[0]?.value
+            }
+            placeholder="Select a Pocket"
+            onChange={(value) => {
+              const pocketId = Number(value);
+              setTransactionData((prev) => ({ ...prev, pocketId }));
+              setErrors((prev) => ({
+                ...prev,
+                pocketId: pocketId === undefined,
+              }));
+            }}
+          />
+        </Field>
+
         <Field className="sm:col-span-2" data-invalid={errors.category}>
           <FieldLabel>Category</FieldLabel>
           <Selection
@@ -165,7 +207,7 @@ export function TransactionDrawerContent({
               setTransactionData((prev) => ({ ...prev, category }));
               setErrors((prev) => ({
                 ...prev,
-                category: !validateCategory(category),
+                category: category === undefined,
               }));
             }}
           />
