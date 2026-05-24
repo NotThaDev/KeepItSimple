@@ -6,6 +6,7 @@ export interface Transaction {
   amount: number;
   date: Date;
   category: TransactionCategory;
+  pocketId: number;
 }
 
 export enum TransactionCategory {

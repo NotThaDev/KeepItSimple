@@ -13,7 +13,7 @@ export function NavigationItems() {
   const pathname = usePathname();
 
   return (
-    <SidebarMenu>
+    <SidebarMenu className="w-full gap-1">
       {routes.map((route) => (
         <SidebarMenuItem key={route.href}>
           <SidebarMenuButton asChild isActive={pathname === route.href}>

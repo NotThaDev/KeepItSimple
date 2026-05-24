@@ -66,4 +66,11 @@ public class TransactionController : ControllerBase
         }
         return NoContent();
     }
+
+    [HttpGet("pocket/{pocketId}")]
+    public async Task<ActionResult<IEnumerable<Transaction>>> GetByPocketId(int pocketId)
+    {
+        var transactions = await Transaction.GetByPocketIdAsync(pocketId);
+        return Ok(transactions);
+    }
 }

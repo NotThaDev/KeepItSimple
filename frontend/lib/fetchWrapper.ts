@@ -25,6 +25,9 @@ async function fetch<T>(
 
   const response = await globalThis.fetch(fullUrl, options);
   if (!response.ok) {
+    console.error(
+      `Request to ${fullUrl} failed with status ${response.status}`,
+    );
     return {
       error: `Request failed with status ${response.status}`,
       status: response.status,
