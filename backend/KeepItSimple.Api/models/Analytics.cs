@@ -5,6 +5,7 @@ namespace KeepItSimple.Api.Models;
 
 public class Analytics
 {
+    public decimal CurrentMonthTotalBalance { get; set; }
     public decimal TotalExpenses { get; set; }
     public decimal TotalIncome { get; set; }
     public decimal MonthlyTotalExpenses { get; set; }
@@ -27,6 +28,7 @@ public class Analytics
         var now = DateTime.UtcNow;
         var previousMonth = now.AddMonths(-1);
 
+        var currentMonthBalance = pockets.Sum(p => p.Balance);
         var totalExpenses = transactions.Sum(t => t.Amount);
         var totalIncome = 0; // For now, we only have expenses, so income is 0. This can be updated when income transactions are implemented.
         var monthlyTransactions = transactions
@@ -96,6 +98,7 @@ public class Analytics
             TotalIncome = totalIncome,
             MonthlyTotalExpenses = monthlyTotalExpenses,
             PreviousMonthTotalExpenses = previousMonthlyTotalExpenses,
+            CurrentMonthTotalBalance = currentMonthBalance,
             MonthlyExpensesDailyComparison = monthlyExpensesDailyComparison,
             ExpensesByCategory = expensesByCategory,
             MonthlyExpensesByCategory = monthlyExpensesByCategory,

@@ -56,7 +56,7 @@ export function SpendingChartCard({
 
   return (
     <DashboardCard title="Expenses trend" icon={AreaChartIcon}>
-      <ChartContainer config={chartConfig} className="h-[278px] w-full">
+      <ChartContainer config={chartConfig} className="h-[270px] w-full">
         <AreaChart
           accessibilityLayer
           data={chartData}

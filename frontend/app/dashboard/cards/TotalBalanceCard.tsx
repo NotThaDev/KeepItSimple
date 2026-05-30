@@ -10,14 +10,9 @@ interface TotalBalanceCardProps {
 export function TotalBalanceCard({
   analytics,
 }: Readonly<TotalBalanceCardProps>) {
-  const totalBalance = analytics.expensesPerPocket.reduce(
-    (sum, pocket) => sum + pocket.pocket.balance,
-    0,
-  );
   const sortedPockets = [...analytics.expensesPerPocket].sort(
     (left, right) => right.pocket.balance - left.pocket.balance,
   );
-
   return (
     <DashboardCard title="Total balance" icon={Wallet}>
       <div className="space-y-4">
@@ -25,19 +20,21 @@ export function TotalBalanceCard({
           {getCurrencySymbolFromCode(
             analytics.expensesPerPocket[0]?.pocket.currency ?? "USD",
           )}{" "}
-          {totalBalance.toFixed(2)}
+          {analytics.currentMonthTotalBalance.toFixed(2)}
         </p>
 
-        <div className="flex flex-col gap-1 mt-[32px]">
+        <div className="flex flex-col gap-1 mt-[26px]">
           <p className="text-sm text-muted-foreground mb-3">
             Balances by pocket
           </p>
           <div className="flex flex-col gap-1">
             {sortedPockets.map((pocket) => {
               const percentage =
-                totalBalance === 0
+                analytics.currentMonthTotalBalance === 0
                   ? 0
-                  : (pocket.pocket.balance / totalBalance) * 100;
+                  : (pocket.pocket.balance /
+                      analytics.currentMonthTotalBalance) *
+                    100;
 
               return (
                 <div
@@ -53,7 +50,7 @@ export function TotalBalanceCard({
                   </div>
                   <p className="rounded-md bg-secondary px-2 py-0.5 text-secondary-foreground">
                     {getCurrencySymbolFromCode(pocket.pocket.currency)}
-                    {pocket.pocket.balance}
+                    {pocket.pocket.balance.toFixed(2)}
                   </p>
                 </div>
               );

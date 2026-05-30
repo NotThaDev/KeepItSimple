@@ -34,9 +34,7 @@ export function DashboardCard({
           <Icon className="h-5 w-5 text-primary" />
         </div>
       </CardHeader>
-      <CardContent>
-        {children && <div className="mt-4">{children}</div>}
-      </CardContent>
+      <CardContent>{children && <div>{children}</div>}</CardContent>
     </Card>
   );
 }

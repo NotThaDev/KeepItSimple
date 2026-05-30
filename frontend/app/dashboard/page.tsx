@@ -37,13 +37,13 @@ export default async function DashboardPage() {
     );
   } else {
     content = (
-      <div className="flex h-full min-h-0 flex-col gap-[16px]">
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-[16px] xl:grid-cols-2">
+      <div className="flex h-full min-h-0 flex-col gap-[16px] overflow-y-auto">
+        <div className="grid grid-cols-1 gap-[16px] xl:min-h-0 xl:flex-1 xl:grid-cols-2">
           <TotalBalanceCard analytics={analytics} />
           <BudgetTrackerCard analytics={analytics} />
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-[16px] xl:grid-cols-1">
+        <div className="grid grid-cols-1 gap-[16px] xl:min-h-0 xl:flex-1 xl:grid-cols-1">
           <SpendingChartCard analytics={analytics} />
         </div>
       </div>

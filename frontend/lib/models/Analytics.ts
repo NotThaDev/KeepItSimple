@@ -28,6 +28,7 @@ export interface Analytics {
   expensesByCategory: ExpenseByCategory[];
   monthlyExpensesByCategory: ExpenseByCategory[];
   expensesPerPocket: ExpensePerPocket[];
+  currentMonthTotalBalance: number;
 }
 
 export async function getAnalytics(): Promise<FetchWrapperResponse<Analytics>> {

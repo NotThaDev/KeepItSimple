@@ -17,8 +17,14 @@ export function BudgetTrackerCard({
   return (
     <DashboardCard title="Monthly Expenses" icon={ReceiptText}>
       <div className="space-y-4">
+        <p className="text-3xl font-semibold">
+          {getCurrencySymbolFromCode(
+            analytics.expensesPerPocket[0]?.pocket.currency ?? "USD",
+          )}{" "}
+          {Math.abs(analytics.monthlyTotalExpenses).toFixed(2)}
+        </p>
         {sortedCategories.length > 0 ? (
-          <div className="flex flex-col gap-1 mt-[32px]">
+          <div className="flex flex-col gap-1 mt-[24px]">
             <p className="text-sm text-muted-foreground mb-3">
               Expenses by category
             </p>
