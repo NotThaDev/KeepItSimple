@@ -12,9 +12,16 @@ import {
 } from "@/components/ui/chart";
 import { Analytics } from "@/lib/models/Analytics";
 import { AreaChart as AreaChartIcon } from "lucide-react";
+import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
 
 interface SpendingChartCardProps {
   analytics: Analytics;
+}
+
+function toSeriesValue(value: number) {
+  // This ensure that when you don't have expenses for a day,the chart will render a gap
+  // instead of a point at 0, which could be misleading and make it look like you had some expenses on that day.
+  return value === 0 ? null : Math.abs(value);
 }
 
 export function SpendingChartCard({
@@ -41,9 +48,6 @@ export function SpendingChartCard({
     },
   };
 
-  const toSeriesValue = (value: number) =>
-    value === 0 ? null : Math.abs(value);
-
   const chartData = analytics.monthlyExpensesDailyComparison.map((entry) => ({
     day: entry.day,
     thisMonth: toSeriesValue(entry.thisMonth),
@@ -52,11 +56,11 @@ export function SpendingChartCard({
 
   return (
     <DashboardCard title="Expenses trend" icon={AreaChartIcon}>
-      <ChartContainer config={chartConfig} className="h-[220px] w-full">
+      <ChartContainer config={chartConfig} className="h-[278px] w-full">
         <AreaChart
           accessibilityLayer
           data={chartData}
-          margin={{ left: 12, right: 12 }}
+          margin={{ left: 0, right: 0 }}
         >
           <CartesianGrid vertical={false} />
           <XAxis
@@ -71,10 +75,9 @@ export function SpendingChartCard({
             content={
               <ChartTooltipContent
                 formatter={(value) => [
-                  `${Number(value).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`,
+                  `${Number(value).toFixed(2)}${getCurrencySymbolFromCode(
+                    analytics.expensesPerPocket[0]?.pocket.currency,
+                  )}`,
                   undefined,
                 ]}
               />
