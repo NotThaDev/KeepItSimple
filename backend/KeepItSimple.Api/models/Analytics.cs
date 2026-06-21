@@ -78,7 +78,7 @@ public class Analytics
             })
             .ToList();
 
-        var topExpenseCategory = expensesByCategory.OrderBy(e => e.Total).FirstOrDefault()?.Category;
+        var topExpenseCategory = expensesByCategory.OrderByDescending(e => e.Total).FirstOrDefault()?.Category;
 
         var expensesPerPocketTotals = transactions
             .GroupBy(t => t.PocketId)
