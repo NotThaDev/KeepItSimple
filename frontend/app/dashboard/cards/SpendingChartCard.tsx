@@ -19,7 +19,7 @@ interface SpendingChartCardProps {
 }
 
 function toSeriesValue(value: number) {
-  // This ensure that when you don't have expenses for a day,the chart will render a gap
+  // This ensures that when you don't have expenses for a day, the chart will render a gap
   // instead of a point at 0, which could be misleading and make it look like you had some expenses on that day.
   return value === 0 ? null : Math.abs(value);
 }
