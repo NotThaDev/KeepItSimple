@@ -29,7 +29,6 @@ export default async function DashboardPage() {
       />
     );
   } else if (analytics == undefined) {
-    // #TODO make this error code better
     content = (
       <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
         Failed to load analytics data. Please try again later.
