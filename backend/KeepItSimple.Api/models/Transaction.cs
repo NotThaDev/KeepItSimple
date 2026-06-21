@@ -20,7 +20,7 @@ public class Transaction
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            return await dbContext.Transactions.OrderBy(t => t.Id).ToListAsync();
+            return await dbContext.Transactions.OrderByDescending(t => t.Date).ToListAsync();
         });
     }
 
@@ -28,7 +28,7 @@ public class Transaction
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            return await dbContext.Transactions.Where(t => t.PocketId == pocketId).OrderBy(t => t.Id).ToListAsync();
+            return await dbContext.Transactions.Where(t => t.PocketId == pocketId).OrderByDescending(t => t.Date).ToListAsync();
         });
     }
 
