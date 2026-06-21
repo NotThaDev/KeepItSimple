@@ -24,7 +24,7 @@ export function DashboardCard({
   children,
 }: Readonly<DashboardStatCardProps>) {
   return (
-    <Card className={`h-[100%] ${className}`}>
+    <Card className={`h-[100%] ${className ?? ""}`}>
       <CardHeader className="flex flex-row items-start justify-between space-y-0">
         <div className="space-y-1">
           <CardDescription>{title}</CardDescription>
