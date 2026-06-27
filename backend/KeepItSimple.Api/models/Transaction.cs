@@ -55,8 +55,7 @@ public class Transaction
                     return null;
                 }
 
-                // A transaction reduces the available balance of its pocket.
-                pocket.Balance -= expense.Amount;
+                pocket.Balance += expense.Amount;
 
                 expense.PocketId = pocket.Id;
                 expense.Pocket = pocket;
@@ -89,8 +88,8 @@ public class Transaction
                     return null;
                 }
 
-                // Revert old amount and apply the new one.
-                pocket.Balance += previousAmount - newAmount;
+                // Apply the signed delta: negative values behave as expenses, positive as income.
+                pocket.Balance += newAmount - previousAmount;
             }
             else
             {
@@ -101,8 +100,8 @@ public class Transaction
                     return null;
                 }
 
-                previousPocket.Balance += previousAmount;
-                newPocket.Balance -= newAmount;
+                previousPocket.Balance -= previousAmount;
+                newPocket.Balance += newAmount;
 
                 existingExpense.Pocket = newPocket;
                 existingExpense.PocketId = newPocket.Id;
@@ -130,8 +129,8 @@ public class Transaction
             }
 
             var pocket = await dbContext.Pockets.FindAsync(expense.PocketId);
-            // Deleting a transaction increases the available balance of its pocket.
-            pocket?.Balance += expense.Amount;
+            // Revert the transaction: subtract the signed amount (negative for expenses, positive for income).
+            pocket?.Balance -= expense.Amount;
 
             dbContext.Transactions.Remove(expense);
             await dbContext.SaveChangesAsync();
@@ -147,6 +146,25 @@ public class Transaction
         Transport,
         Entertainment,
         Utilities,
-        Other
+        Shopping,
+        Health,
+        Education,
+        Travel,
+        Sports,
+        Subscriptions,
+        Savings,
+        Investments,
+        Gifts,
+        Love,
+        Charity,
+        Salary,
+        Bonus,
+        Freelance,
+        Business,
+        Interest,
+        Dividends,
+        RentalIncome,
+        Refund,
+        Other,
     }
 }

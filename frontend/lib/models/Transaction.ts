@@ -15,8 +15,58 @@ export enum TransactionCategory {
   Transport = "Transport",
   Entertainment = "Entertainment",
   Utilities = "Utilities",
+  Shopping = "Shopping",
+  Health = "Health",
+  Education = "Education",
+  Travel = "Travel",
+  Sports = "Sports",
+  Subscriptions = "Subscriptions",
+  Savings = "Savings",
+  Investments = "Investments",
+  Gifts = "Gifts",
+  Love = "Love",
+  Charity = "Charity",
   Other = "Other",
+  Salary = "Salary",
+  Bonus = "Bonus",
+  Freelance = "Freelance",
+  Business = "Business",
+  Interest = "Interest",
+  Dividends = "Dividends",
+  RentalIncome = "RentalIncome",
+  Refund = "Refund",
 }
+
+export const EXPENSE_TRANSACTION_CATEGORIES: TransactionCategory[] = [
+  TransactionCategory.Coffe,
+  TransactionCategory.Food,
+  TransactionCategory.Transport,
+  TransactionCategory.Entertainment,
+  TransactionCategory.Utilities,
+  TransactionCategory.Shopping,
+  TransactionCategory.Health,
+  TransactionCategory.Education,
+  TransactionCategory.Travel,
+  TransactionCategory.Sports,
+  TransactionCategory.Subscriptions,
+  TransactionCategory.Savings,
+  TransactionCategory.Investments,
+  TransactionCategory.Gifts,
+  TransactionCategory.Love,
+  TransactionCategory.Charity,
+  TransactionCategory.Other,
+];
+
+export const INCOME_TRANSACTION_CATEGORIES: TransactionCategory[] = [
+  TransactionCategory.Salary,
+  TransactionCategory.Bonus,
+  TransactionCategory.Freelance,
+  TransactionCategory.Business,
+  TransactionCategory.Interest,
+  TransactionCategory.Dividends,
+  TransactionCategory.RentalIncome,
+  TransactionCategory.Refund,
+];
 
 export async function getTransactions(): Promise<
   FetchWrapperResponse<Transaction[]>

@@ -13,6 +13,7 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
 {
     private const decimal SeedPocketInitialBalance = 2800m;
     private const decimal MonthlyExpensesTarget = 1400m;
+    private const decimal MonthlyIncomeTarget = 2250m;
     private const string SeedPocketName = "Test Portfolio";
 
     [HttpPost("seed-two-month-history")]
@@ -32,6 +33,9 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
             var currentMonthDayLimit = now.Day;
             var currentMonthTarget = RoundToCents(
                 MonthlyExpensesTarget * currentMonthDayLimit / daysInCurrentMonth
+            );
+            var currentMonthIncomeTarget = RoundToCents(
+                MonthlyIncomeTarget * currentMonthDayLimit / daysInCurrentMonth
             );
 
             await using var transaction = await dbContext.Database.BeginTransactionAsync();
@@ -75,6 +79,7 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
                 previousMonthDate.Month,
                 DateTime.DaysInMonth(previousMonthDate.Year, previousMonthDate.Month),
                 MonthlyExpensesTarget,
+                MonthlyIncomeTarget,
                 random
             );
 
@@ -84,6 +89,7 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
                 now.Month,
                 currentMonthDayLimit,
                 currentMonthTarget,
+                currentMonthIncomeTarget,
                 random
             );
 
@@ -94,8 +100,8 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
 
             dbContext.Transactions.AddRange(allTransactions);
 
-            var totalSeededExpenses = allTransactions.Sum(t => t.Amount);
-            pocket.Balance = RoundToCents(SeedPocketInitialBalance - totalSeededExpenses);
+            var totalNetFlow = allTransactions.Sum(t => t.Amount);
+            pocket.Balance = RoundToCents(SeedPocketInitialBalance + totalNetFlow);
 
             await dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -108,6 +114,9 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
                 PreviousMonthExpenses = MonthlyExpensesTarget,
                 CurrentMonthExpensesToDate = currentMonthTarget,
                 RemainingToCurrentMonthTarget = RoundToCents(MonthlyExpensesTarget - currentMonthTarget),
+                PreviousMonthIncome = MonthlyIncomeTarget,
+                CurrentMonthIncomeToDate = currentMonthIncomeTarget,
+                NetFlowToDate = RoundToCents(currentMonthIncomeTarget - currentMonthTarget),
                 TotalTransactionsCreated = allTransactions.Count,
                 CurrentBalance = pocket.Balance
             };
@@ -121,32 +130,41 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
         int year,
         int month,
         int dayLimit,
-        decimal targetTotal,
+        decimal expenseTargetTotal,
+        decimal incomeTargetTotal,
         Random random)
     {
-        if (dayLimit <= 0 || targetTotal <= 0)
+        if (dayLimit <= 0)
         {
             return [];
         }
 
-        var transactionCount = Math.Max(8, dayLimit / 2);
-        var centsByTransaction = DistributeCents(
-            (int)Math.Round(targetTotal * 100m, MidpointRounding.AwayFromZero),
-            transactionCount,
-            random
-        );
-
-        var descriptionsByCategory = new Dictionary<TransactionCategory, string[]>
+        var expenseDescriptionsByCategory = new Dictionary<TransactionCategory, string[]>
         {
             [TransactionCategory.Coffe] = ["Morning coffee", "Cafe stop", "Coffee break"],
             [TransactionCategory.Food] = ["Groceries", "Lunch", "Dinner"],
             [TransactionCategory.Transport] = ["Fuel", "Public transport", "Parking"],
             [TransactionCategory.Entertainment] = ["Cinema", "Streaming", "Weekend activity"],
             [TransactionCategory.Utilities] = ["Electric bill", "Internet bill", "Phone bill"],
+            [TransactionCategory.Shopping] = ["Online order", "Clothes", "Home supplies"],
+            [TransactionCategory.Health] = ["Pharmacy", "Medical visit", "Supplements"],
+            [TransactionCategory.Sports] = ["Gym", "Sports gear", "Fitness class"],
             [TransactionCategory.Other] = ["Pharmacy", "Household items", "Misc purchase"]
         };
 
-        var categories = new[]
+        var incomeDescriptionsByCategory = new Dictionary<TransactionCategory, string[]>
+        {
+            [TransactionCategory.Salary] = ["Monthly salary", "Payroll", "Payslip"],
+            [TransactionCategory.Bonus] = ["Performance bonus", "Reward", "Quarter bonus"],
+            [TransactionCategory.Freelance] = ["Client invoice", "Freelance gig", "Consulting"],
+            [TransactionCategory.Business] = ["Business sale", "Project income", "Service revenue"],
+            [TransactionCategory.Interest] = ["Bank interest", "Savings interest", "Yield"],
+            [TransactionCategory.Dividends] = ["Stock dividend", "ETF dividend", "Broker payout"],
+            [TransactionCategory.RentalIncome] = ["Rent received", "Property rent", "Tenant payment"],
+            [TransactionCategory.Refund] = ["Order refund", "Chargeback", "Returned item refund"]
+        };
+
+        var expenseCategories = new[]
         {
             TransactionCategory.Food,
             TransactionCategory.Food,
@@ -154,8 +172,78 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
             TransactionCategory.Coffe,
             TransactionCategory.Entertainment,
             TransactionCategory.Utilities,
+            TransactionCategory.Shopping,
+            TransactionCategory.Health,
+            TransactionCategory.Sports,
             TransactionCategory.Other,
         };
+
+        var incomeCategories = new[]
+        {
+            TransactionCategory.Salary,
+            TransactionCategory.Bonus,
+            TransactionCategory.Freelance,
+            TransactionCategory.Business,
+            TransactionCategory.Interest,
+            TransactionCategory.Dividends,
+            TransactionCategory.RentalIncome,
+            TransactionCategory.Refund,
+        };
+
+        var expenseTransactions = BuildTransactionsForFlow(
+            pocketId,
+            year,
+            month,
+            dayLimit,
+            expenseTargetTotal,
+            Math.Max(8, dayLimit / 2),
+            expenseCategories,
+            expenseDescriptionsByCategory,
+            random,
+            isExpense: true
+        );
+
+        var incomeTransactions = BuildTransactionsForFlow(
+            pocketId,
+            year,
+            month,
+            dayLimit,
+            incomeTargetTotal,
+            Math.Max(3, dayLimit / 8),
+            incomeCategories,
+            incomeDescriptionsByCategory,
+            random,
+            isExpense: false
+        );
+
+        return expenseTransactions
+            .Concat(incomeTransactions)
+            .OrderBy(t => t.Date)
+            .ToList();
+    }
+
+    private static List<Transaction> BuildTransactionsForFlow(
+        int pocketId,
+        int year,
+        int month,
+        int dayLimit,
+        decimal targetTotal,
+        int transactionCount,
+        TransactionCategory[] categories,
+        Dictionary<TransactionCategory, string[]> descriptionsByCategory,
+        Random random,
+        bool isExpense)
+    {
+        if (targetTotal <= 0 || transactionCount <= 0 || categories.Length == 0)
+        {
+            return [];
+        }
+
+        var centsByTransaction = DistributeCents(
+            (int)Math.Round(targetTotal * 100m, MidpointRounding.AwayFromZero),
+            transactionCount,
+            random
+        );
 
         var transactions = new List<Transaction>(transactionCount);
 
@@ -174,7 +262,7 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
                 PocketId = pocketId,
                 Category = category,
                 Description = description,
-                Amount = centsByTransaction[i] / 100m,
+                Amount = isExpense ? -(centsByTransaction[i] / 100m) : centsByTransaction[i] / 100m,
                 Date = DateTime.SpecifyKind(new DateTime(year, month, day, hour, minute, 0), DateTimeKind.Utc)
             });
         }
@@ -226,6 +314,9 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
         public decimal PreviousMonthExpenses { get; set; }
         public decimal CurrentMonthExpensesToDate { get; set; }
         public decimal RemainingToCurrentMonthTarget { get; set; }
+        public decimal PreviousMonthIncome { get; set; }
+        public decimal CurrentMonthIncomeToDate { get; set; }
+        public decimal NetFlowToDate { get; set; }
         public int TotalTransactionsCreated { get; set; }
         public decimal CurrentBalance { get; set; }
     }

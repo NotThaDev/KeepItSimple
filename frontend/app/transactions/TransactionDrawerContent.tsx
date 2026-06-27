@@ -14,9 +14,12 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Pocket } from "@/lib/models/Pocket";
 import {
   createTransaction,
+  EXPENSE_TRANSACTION_CATEGORIES,
+  INCOME_TRANSACTION_CATEGORIES,
   Transaction,
   TransactionCategory,
   updateTransaction,
@@ -53,9 +56,20 @@ function getInitialTransactionData(
   transaction: Transaction | undefined,
   pockets: Pocket[],
 ): TransactionFormData {
-  return transaction
-    ? { ...transaction }
-    : { date: new Date(), pocketId: pockets[0]?.id ?? 0 };
+  if (!transaction) {
+    return { date: new Date(), pocketId: pockets[0]?.id ?? 0 };
+  }
+
+  return { ...transaction, amount: Math.abs(transaction.amount) };
+}
+
+enum TransactionType {
+  Income = "income",
+  Expense = "expense",
+}
+
+function formatCategoryLabel(category: TransactionCategory): string {
+  return category.replace(/([A-Z])/g, " $1").trim();
 }
 
 export function TransactionDrawerContent({
@@ -63,6 +77,11 @@ export function TransactionDrawerContent({
   pockets,
   onSave,
 }: Readonly<TransactionDrawerContentProps>) {
+  const [transactionType, setTransactionType] = useState<TransactionType>(
+    transaction?.amount && transaction.amount > 0
+      ? TransactionType.Income
+      : TransactionType.Expense,
+  );
   const [transactionData, setTransactionData] = useState<TransactionFormData>(
     () => getInitialTransactionData(transaction, pockets),
   );
@@ -72,12 +91,33 @@ export function TransactionDrawerContent({
     pocketId: false,
   });
 
-  const selectionItems = useMemo(() => {
-    return Object.values(TransactionCategory).map((category) => ({
-      value: TransactionCategory[category],
-      label: category,
-    }));
-  }, []);
+  const availableCategories = useMemo(
+    () =>
+      transactionType === TransactionType.Income
+        ? INCOME_TRANSACTION_CATEGORIES
+        : EXPENSE_TRANSACTION_CATEGORIES,
+    [transactionType],
+  );
+
+  const selectionItems = useMemo(
+    () =>
+      availableCategories.map((category) => ({
+        value: category,
+        label: formatCategoryLabel(category),
+      })),
+    [availableCategories],
+  );
+
+  const selectedCategory = useMemo(() => {
+    if (
+      transactionData.category &&
+      availableCategories.includes(transactionData.category)
+    ) {
+      return transactionData.category;
+    }
+
+    return availableCategories[0];
+  }, [transactionData.category, availableCategories]);
 
   const pocketsSelectionItems = useMemo(() => {
     return pockets.map((pocket) => ({
@@ -88,7 +128,7 @@ export function TransactionDrawerContent({
 
   const handleSave = useCallback(async () => {
     const amountValid = validateAmount(transactionData.amount);
-    const categoryValid = transactionData.category !== undefined;
+    const categoryValid = selectedCategory !== undefined;
     const pocketIdValid = transactionData.pocketId !== undefined;
 
     setErrors({
@@ -101,9 +141,17 @@ export function TransactionDrawerContent({
       return;
     }
 
+    let amount = transactionData.amount!;
+
+    if (transactionType === TransactionType.Expense) {
+      amount = -Math.abs(amount);
+    } else {
+      amount = Math.abs(amount);
+    }
+
     const payload: Omit<Transaction, "id"> = {
-      amount: transactionData.amount!,
-      category: transactionData.category!,
+      amount: amount,
+      category: selectedCategory!,
       date: transactionData.date,
       description: transactionData.description,
       pocketId: transactionData.pocketId,
@@ -130,7 +178,7 @@ export function TransactionDrawerContent({
       `Transaction ${transactionData.id ? "updated" : "created"} successfully`,
     );
     onSave?.();
-  }, [transactionData, onSave]);
+  }, [transactionData, transactionType, selectedCategory, onSave]);
 
   const title = transactionData.id ? "Edit Transaction" : "New Transaction";
   return (
@@ -143,6 +191,7 @@ export function TransactionDrawerContent({
             : "Fill in the details of your new transaction below."}
         </DrawerDescription>
       </DrawerHeader>
+
       <FieldGroup className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
         <Field>
           <FieldLabel className="">Transaction Date</FieldLabel>
@@ -198,8 +247,9 @@ export function TransactionDrawerContent({
         <Field className="sm:col-span-2" data-invalid={errors.category}>
           <FieldLabel>Category</FieldLabel>
           <Selection
+            key={transactionType}
             items={selectionItems}
-            defaultValue={transactionData.category}
+            defaultValue={selectedCategory}
             placeholder="Select a Category"
             isInvalid={errors.category}
             onChange={(value) => {
@@ -227,6 +277,29 @@ export function TransactionDrawerContent({
             }
           />
         </Field>
+
+        <ToggleGroup
+          type="single"
+          className="w-full sm:col-span-2"
+          value={transactionType}
+          onValueChange={(value) => {
+            if (!value) return;
+            setTransactionType(value as TransactionType);
+          }}
+        >
+          <ToggleGroupItem
+            value={TransactionType.Income}
+            className="flex-1 border border-gray-700 border-r-0 text-gray-700 transition-all hover:bg-emerald-50 hover:text-emerald-700 data-[state=on]:bg-gradient-to-b data-[state=on]:from-emerald-100 data-[state=on]:to-emerald-50 data-[state=on]:text-emerald-800 data-[state=on]:shadow-[inset_0_0_0_1px_rgba(16,185,129,0.35)] dark:border-gray-700 dark:text-gray-200 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-200 dark:data-[state=on]:from-emerald-900/55 dark:data-[state=on]:to-emerald-900/25 dark:data-[state=on]:text-emerald-200"
+          >
+            Income
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value={TransactionType.Expense}
+            className="flex-1 border border-gray-700 text-gray-700 transition-all hover:bg-rose-50 hover:text-rose-700 data-[state=on]:bg-gradient-to-b data-[state=on]:from-rose-100 data-[state=on]:to-rose-50 data-[state=on]:text-rose-800 data-[state=on]:shadow-[inset_0_0_0_1px_rgba(244,63,94,0.35)] dark:border-gray-700 dark:text-gray-200 dark:hover:bg-rose-900/30 dark:hover:text-rose-200 dark:data-[state=on]:from-rose-900/55 dark:data-[state=on]:to-rose-900/25 dark:data-[state=on]:text-rose-200"
+          >
+            Expense
+          </ToggleGroupItem>
+        </ToggleGroup>
       </FieldGroup>
       <DrawerFooter className="flex-row justify-end">
         <DrawerClose asChild className="w-[108px]">
