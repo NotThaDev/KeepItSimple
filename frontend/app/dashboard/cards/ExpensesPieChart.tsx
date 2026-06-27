@@ -7,7 +7,10 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { CategoryColorMap } from "@/lib/helpers/colors";
+import {
+  CategoryColorMap,
+  DEFAULT_CATEGORY_COLORS,
+} from "@/lib/helpers/colors";
 import { Analytics } from "@/lib/models/Analytics";
 import { useMemo } from "react";
 import { SquircleDashed } from "lucide-react";
@@ -27,7 +30,9 @@ export function ExpensesPieChart({
       .map((entry) => ({
         category: entry.category,
         total: Math.abs(entry.total),
-        fill: CategoryColorMap[entry.category] ?? "#9E9E9E",
+        fill:
+          CategoryColorMap[entry.category]?.background ??
+          DEFAULT_CATEGORY_COLORS.background,
       }))
       .filter((entry) => entry.total > 0);
   }, [analytics.monthlyExpensesByCategory]);
@@ -78,7 +83,8 @@ export function ExpensesPieChart({
                   <SquircleDashed
                     size={14}
                     color={
-                      CategoryColorMap[name as TransactionCategory] ?? "#9E9E9E"
+                      CategoryColorMap[name as TransactionCategory]
+                        ?.background ?? DEFAULT_CATEGORY_COLORS.background
                     }
                   />
                   <span className="text-muted-foreground mr-1">{name}</span>

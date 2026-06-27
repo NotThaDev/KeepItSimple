@@ -3,7 +3,10 @@ import { SquircleDashed, ReceiptText } from "lucide-react";
 import { DashboardCard } from "./DashboardCard";
 import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
 import { ExpensesPieChart } from "./ExpensesPieChart";
-import { CategoryColorMap } from "@/lib/helpers/colors";
+import {
+  CategoryColorMap,
+  DEFAULT_CATEGORY_COLORS,
+} from "@/lib/helpers/colors";
 
 interface BudgetTrackerCardProps {
   analytics: Analytics;
@@ -34,7 +37,10 @@ export function BudgetTrackerCard({
                   <SquircleDashed
                     className="mr-2"
                     size={18}
-                    color={CategoryColorMap[entry.category] ?? "#9E9E9E"}
+                    color={
+                      CategoryColorMap[entry.category]?.background ??
+                      DEFAULT_CATEGORY_COLORS.background
+                    }
                   />
                   <p className="font-semibold">{entry.category}</p>
                 </div>

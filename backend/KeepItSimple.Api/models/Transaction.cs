@@ -118,21 +118,31 @@ public class Transaction
 
     }
 
-    public static Task<bool> Delete(int id)
+    public static Task<bool> Delete(List<int> ids)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var expense = await dbContext.Transactions.FindAsync(id);
-            if (expense is null)
+            // First, verify that all expenses exist
+            foreach (var id in ids)
             {
-                return false;
+                var expense = await dbContext.Transactions.FindAsync(id);
+                if (expense is null)
+                {
+                    return false;
+                }
             }
 
-            var pocket = await dbContext.Pockets.FindAsync(expense.PocketId);
-            // Revert the transaction: subtract the signed amount (negative for expenses, positive for income).
-            pocket?.Balance -= expense.Amount;
+            // If all expenses exist, proceed with deletion
+            foreach (var id in ids)
+            {
+                var expense = await dbContext.Transactions.FindAsync(id);
+                var pocket = await dbContext.Pockets.FindAsync(expense.PocketId);
+                // Revert the transaction: subtract the signed amount (negative for expenses, positive for income).
+                pocket?.Balance -= expense.Amount;
 
-            dbContext.Transactions.Remove(expense);
+                dbContext.Transactions.Remove(expense);
+            }
+
             await dbContext.SaveChangesAsync();
             return true;
         });

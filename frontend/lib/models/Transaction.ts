@@ -136,3 +136,23 @@ export async function deleteTransaction(
 
   return { status: deleteTransactionResponse.status };
 }
+
+export async function deleteTransactions(
+  ids: number[],
+): Promise<FetchWrapperResponse<void>> {
+  const queryParams = new URLSearchParams();
+  ids.forEach((id) => queryParams.append("ids", String(id)));
+
+  const deleteTransactionsResponse = await del(
+    `/api/transactions?${queryParams.toString()}`,
+  );
+
+  if ("error" in deleteTransactionsResponse) {
+    return {
+      error: deleteTransactionsResponse.error,
+      status: deleteTransactionsResponse.status,
+    };
+  }
+
+  return { status: deleteTransactionsResponse.status };
+}

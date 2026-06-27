@@ -26,6 +26,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useEffect, useState } from "react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -34,6 +35,8 @@ interface DataTableProps<TData, TValue> {
   initialState?: InitialTableState;
   className?: string;
   extraContent?: React.ReactNode;
+  onRowSelectionChange?: (selectedRows: TData[]) => void;
+  resetSelectionTrigger?: number;
 }
 
 function getVisiblePages(pageCount: number, currentPage: number) {
@@ -73,7 +76,11 @@ export function DataTable<TData, TValue>({
   enablePagination = true,
   className,
   extraContent,
+  onRowSelectionChange,
+  resetSelectionTrigger,
 }: DataTableProps<TData, TValue>) {
+  const [rowSelection, setRowSelection] = useState({});
+
   const table = useReactTable({
     data,
     columns,
@@ -81,7 +88,33 @@ export function DataTable<TData, TValue>({
     manualPagination: !enablePagination,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    onRowSelectionChange: setRowSelection,
+    state: {
+      rowSelection,
+    },
   });
+
+  useEffect(() => {
+    if (typeof resetSelectionTrigger === "number") {
+      setRowSelection({});
+    }
+  }, [resetSelectionTrigger]);
+
+  useEffect(() => {
+    if (onRowSelectionChange) {
+      const selectedRows = table
+        .getSelectedRowModel()
+        .flatRows.map((row) => row.original);
+
+      onRowSelectionChange(selectedRows);
+    }
+    /**
+     * We need to extract the values from table because we need the original object
+     * but since the table is memoized, we need to add the rowSelection as dependency
+     * to trigger the callback function
+     */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onRowSelectionChange, rowSelection]);
 
   const pageCount = table.getPageCount();
   const currentPage = table.getState().pagination.pageIndex;
