@@ -9,7 +9,10 @@ public class Analytics
     public decimal TotalExpenses { get; set; }
     public decimal TotalIncome { get; set; }
     public decimal MonthlyTotalExpenses { get; set; }
+    public decimal MonthlyTotalIncome { get; set; }
     public decimal PreviousMonthTotalExpenses { get; set; }
+    public decimal PreviousMonthTotalIncome { get; set; }
+    public decimal PreviousMonthTotalBalance { get; set; }
     public List<DailyExpenseComparison> MonthlyExpensesDailyComparison { get; set; } = [];
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public TransactionCategory? TopExpenseCategory { get; set; }
@@ -29,16 +32,20 @@ public class Analytics
         var previousMonth = now.AddMonths(-1);
 
         var currentMonthBalance = pockets.Sum(p => p.Balance);
-        var totalExpenses = transactions.Sum(t => t.Amount);
-        var totalIncome = 0; // For now, we only have expenses, so income is 0. This can be updated when income transactions are implemented.
+        var totalExpenses = transactions.Where(t => t.Amount < 0).Sum(t => t.Amount);
+        var totalIncome = transactions.Where(t => t.Amount > 0).Sum(t => t.Amount);
+
         var monthlyTransactions = transactions
             .Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month)
             .ToList();
         var previousMonthTransactions = transactions
             .Where(t => t.Date.Year == previousMonth.Year && t.Date.Month == previousMonth.Month)
             .ToList();
-        var monthlyTotalExpenses = monthlyTransactions.Sum(t => t.Amount);
-        var previousMonthlyTotalExpenses = previousMonthTransactions.Sum(t => t.Amount);
+        var monthlyTotalExpenses = monthlyTransactions.Where(t => t.Amount < 0).Sum(t => t.Amount);
+        var monthlyTotalIncome = monthlyTransactions.Where(t => t.Amount > 0).Sum(t => t.Amount);
+        var previousMonthlyTotalIncome = previousMonthTransactions.Where(t => t.Amount > 0).Sum(t => t.Amount);
+        var previousMonthlyTotalExpenses = previousMonthTransactions.Where(t => t.Amount < 0).Sum(t => t.Amount);
+        var previousMonthBalance = pockets.Sum(p => p.Balance) - monthlyTotalIncome + monthlyTotalExpenses;
 
         var thisMonthByDay = monthlyTransactions
             .GroupBy(t => t.Date.Day)
@@ -97,13 +104,16 @@ public class Analytics
             TotalExpenses = totalExpenses,
             TotalIncome = totalIncome,
             MonthlyTotalExpenses = monthlyTotalExpenses,
+            MonthlyTotalIncome = monthlyTotalIncome,
             PreviousMonthTotalExpenses = previousMonthlyTotalExpenses,
+            PreviousMonthTotalIncome = previousMonthlyTotalIncome,
             CurrentMonthTotalBalance = currentMonthBalance,
             MonthlyExpensesDailyComparison = monthlyExpensesDailyComparison,
             ExpensesByCategory = expensesByCategory,
             MonthlyExpensesByCategory = monthlyExpensesByCategory,
             TopExpenseCategory = topExpenseCategory,
-            ExpensesPerPocket = expensesPerPocket
+            ExpensesPerPocket = expensesPerPocket,
+            PreviousMonthTotalBalance = previousMonthBalance
         };
     }
 
