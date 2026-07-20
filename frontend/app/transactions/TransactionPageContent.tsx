@@ -14,7 +14,6 @@ import { HandCoins, Plus, Trash2, WalletCards } from "lucide-react";
 import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { useRouter } from "next/navigation";
 import { ConfirmationDialogContent } from "@/components/common/ConfirmationDialogContent";
-import { description } from "../dashboard/cards/ExpensesPieChart";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 
 const OPEN_NEW_POCKET_DRAWER_KEY = "kis:open-new-pocket-drawer";
