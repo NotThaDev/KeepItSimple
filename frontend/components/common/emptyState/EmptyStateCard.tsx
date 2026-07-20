@@ -52,6 +52,7 @@ export function EmptyStateCard({
         "border-border/70 relative w-full max-w-sm self-center overflow-hidden border",
         "bg-gradient-to-b from-muted/20 via-card to-card",
         "shadow-sm",
+        "m-auto",
         className,
       )}
     >

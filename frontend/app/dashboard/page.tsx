@@ -25,7 +25,6 @@ export default async function DashboardPage() {
         actionText="Create Pocket"
         actionHref="/pockets"
         icon={WalletCards}
-        className="max-w-2xl"
       />
     );
   } else if (analytics == undefined) {
