@@ -2,17 +2,11 @@
 
 import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
 import { Analytics } from "@/lib/models/Analytics";
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Badge,
-  ChevronLeft,
-  ChevronRight,
-  Wallet,
-} from "lucide-react";
+import { Badge, ChevronLeft, ChevronRight, Wallet } from "lucide-react";
 import { DashboardCard } from "./DashboardCard";
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { getBalanceProps } from "./utils";
 
 interface TotalBalanceCardProps {
   analytics: Analytics;
@@ -50,8 +44,7 @@ export function TotalBalanceCard({
     }
   }, [page]);
 
-  const isPositiveBalance =
-    analytics.currentMonthTotalBalance > analytics.previousMonthTotalBalance;
+  const totalBalanceProps = getBalanceProps(analytics);
 
   return (
     <DashboardCard title="Total balance" icon={Wallet}>
@@ -64,24 +57,23 @@ export function TotalBalanceCard({
             {analytics.currentMonthTotalBalance.toFixed(2)}
           </p>
 
-          <div className="flex items-center gap-1">
-            <p
-              className={`text-md ${isPositiveBalance ? "text-green-500" : "text-red-500"}`}
-            >
-              {getCurrencySymbolFromCode(
-                analytics.expensesPerPocket[0]?.pocket.currency ?? "USD",
-              )}
-              {Math.abs(analytics.previousMonthTotalBalance).toFixed(2)}{" "}
-            </p>
+          {totalBalanceProps && (
+            <div className="flex items-center gap-1">
+              <p className={`text-md ${totalBalanceProps.color}`}>
+                {getCurrencySymbolFromCode(
+                  analytics.expensesPerPocket[0]?.pocket.currency ?? "USD",
+                )}
+                {Math.abs(
+                  analytics.currentMonthTotalBalance -
+                    analytics.previousMonthTotalBalance,
+                ).toFixed(2)}{" "}
+              </p>
 
-            {isPositiveBalance ? (
-              <ArrowUpRight className="h-4 w-4 text-green-500" />
-            ) : (
-              <ArrowDownRight className="h-4 w-4 text-red-500" />
-            )}
+              {totalBalanceProps.icon}
 
-            <p className="text-xs text-muted-foreground">from last month</p>
-          </div>
+              <p className="text-xs text-muted-foreground">from last month</p>
+            </div>
+          )}
         </div>
 
         <div className="mt-[20px] flex min-h-0 flex-1 flex-col gap-1">

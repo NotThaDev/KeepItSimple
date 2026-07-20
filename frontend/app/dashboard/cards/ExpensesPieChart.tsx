@@ -58,14 +58,6 @@ export function ExpensesPieChart({
     return chartData.reduce((acc, curr) => acc + curr.total, 0);
   }, [chartData]);
 
-  if (chartData.length === 0) {
-    return (
-      <div className="flex w-[250px] items-center justify-center rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-        No monthly expenses data.
-      </div>
-    );
-  }
-
   return (
     <ChartContainer
       config={chartConfig}
