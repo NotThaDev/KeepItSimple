@@ -27,7 +27,6 @@ export interface Analytics {
   previousMonthTotalIncome: number;
   monthlyExpensesDailyComparison: DailyExpenseComparison[];
   topExpenseCategory?: TransactionCategory;
-  expensesByCategory: ExpenseByCategory[];
   monthlyExpensesByCategory: ExpenseByCategory[];
   expensesPerPocket: ExpensePerPocket[];
   currentMonthTotalBalance: number;
