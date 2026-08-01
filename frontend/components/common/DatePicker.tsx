@@ -28,7 +28,7 @@ export function DatePicker({ onDateChange, defaultDate }: DatePickerProps) {
   };
 
   return (
-    <Popover>
+    <Popover modal>
       <PopoverTrigger asChild>
         <Button
           variant="outline"

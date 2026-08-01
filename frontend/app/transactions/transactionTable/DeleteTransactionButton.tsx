@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { deleteTransaction, Transaction } from "@/lib/models/Transaction";
-import { Trash } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { ConfirmationDialogContent } from "@/components/common/ConfirmationDialogContent";
 import { toast } from "sonner";
@@ -48,7 +48,7 @@ export function DeleteTransactionButton({
           size="icon"
           className="text-destructive hover:bg-destructive/10 hover:text-destructive"
         >
-          <Trash />
+          <Trash2 />
         </Button>
       </DialogTrigger>
 

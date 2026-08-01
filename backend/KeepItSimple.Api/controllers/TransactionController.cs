@@ -59,7 +59,23 @@ public class TransactionController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await Transaction.Delete(id);
+        var deleted = await Transaction.Delete([id]);
+        if (!deleted)
+        {
+            return NotFound();
+        }
+        return NoContent();
+    }
+
+    [HttpDelete()]
+    public async Task<IActionResult> BulkDelete([FromQuery] int[] ids)
+    {
+        if (ids.Length == 0)
+        {
+            return BadRequest("At least one id must be provided.");
+        }
+
+        var deleted = await Transaction.Delete([.. ids]);
         if (!deleted)
         {
             return NotFound();

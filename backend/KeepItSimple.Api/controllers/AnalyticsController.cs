@@ -10,7 +10,7 @@ public class AnalyticsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult> Get()
     {
-        var analytics = await Analytics.GetAsync();
+        var analytics = await Analytics.GetMonthlyAnalyticsAsync();
 
         return Ok(analytics);
     }

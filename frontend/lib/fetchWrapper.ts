@@ -23,36 +23,43 @@ async function fetch<T>(
     options.body = JSON.stringify(body);
   }
 
-  const response = await globalThis.fetch(fullUrl, options);
-  if (!response.ok) {
-    console.error(
-      `Request to ${fullUrl} failed with status ${response.status}`,
-    );
+  try {
+    const response = await globalThis.fetch(fullUrl, options);
+    if (!response.ok) {
+      console.error(
+        `Request to ${fullUrl} failed with status ${response.status}`,
+      );
+      return {
+        error: `Request failed with status ${response.status}`,
+        status: response.status,
+      };
+    }
+
+    // Some successful responses (for example DELETE 204) have no body.
+    if (response.status === 204) {
+      return {
+        status: response.status,
+      };
+    }
+
+    const responseText = await response.text();
+    if (!responseText.trim()) {
+      return {
+        status: response.status,
+      };
+    }
+
+    const content = JSON.parse(responseText) as T;
     return {
-      error: `Request failed with status ${response.status}`,
+      data: content,
       status: response.status,
     };
-  }
-
-  // Some successful responses (for example DELETE 204) have no body.
-  if (response.status === 204) {
+  } catch {
     return {
-      status: response.status,
+      error: "Server is unreachable",
+      status: 0,
     };
   }
-
-  const responseText = await response.text();
-  if (!responseText.trim()) {
-    return {
-      status: response.status,
-    };
-  }
-
-  const content = JSON.parse(responseText) as T;
-  return {
-    data: content,
-    status: response.status,
-  };
 }
 
 export function get<T>(endpoint: string) {

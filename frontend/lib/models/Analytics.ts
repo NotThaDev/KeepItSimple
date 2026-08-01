@@ -22,13 +22,15 @@ export interface Analytics {
   totalExpenses: number;
   totalIncome: number;
   monthlyTotalExpenses: number;
+  monthlyTotalIncome: number;
   previousMonthTotalExpenses: number;
+  previousMonthTotalIncome: number;
   monthlyExpensesDailyComparison: DailyExpenseComparison[];
   topExpenseCategory?: TransactionCategory;
-  expensesByCategory: ExpenseByCategory[];
   monthlyExpensesByCategory: ExpenseByCategory[];
   expensesPerPocket: ExpensePerPocket[];
   currentMonthTotalBalance: number;
+  previousMonthTotalBalance: number;
 }
 
 export async function getAnalytics(): Promise<FetchWrapperResponse<Analytics>> {
