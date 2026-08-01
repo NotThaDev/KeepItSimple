@@ -1,10 +1,8 @@
-import { JSX } from "react/jsx-runtime";
-
 import { Analytics } from "@/lib/models/Analytics";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
 interface BalanceProps {
-  icon: JSX.Element;
+  icon: React.ReactNode;
   color: string;
 }
 

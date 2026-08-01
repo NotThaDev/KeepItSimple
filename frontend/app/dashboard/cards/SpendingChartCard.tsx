@@ -1,7 +1,7 @@
 "use client";
 
 import { DashboardCard } from "./DashboardCard";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartConfig,
   ChartContainer,
@@ -22,6 +22,12 @@ function toSeriesValue(value: number) {
   // This ensures that when you don't have expenses for a day, the chart will render a gap
   // instead of a point at 0, which could be misleading and make it look like you had some expenses on that day.
   return value === 0 ? null : Math.abs(value);
+}
+
+function getMaxValue(values: number[]): number {
+  return values.length > 0
+    ? Math.max(1, Math.ceil(Math.max(...values) * 1.1))
+    : 1;
 }
 
 export function SpendingChartCard({
@@ -54,6 +60,12 @@ export function SpendingChartCard({
     lastMonth: toSeriesValue(entry.lastMonth),
   }));
 
+  const chartValues = chartData.flatMap((entry) => [
+    entry.thisMonth ?? 0,
+    entry.lastMonth ?? 0,
+  ]);
+  const yAxisMax = getMaxValue(chartValues);
+
   return (
     <DashboardCard title="Expenses trend" icon={AreaChartIcon}>
       <ChartContainer config={chartConfig} className="h-[270px] w-full">
@@ -69,6 +81,12 @@ export function SpendingChartCard({
             axisLine={false}
             tickMargin={8}
             tickFormatter={(value) => `${value}`}
+          />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            tickMargin={8}
+            domain={[0, yAxisMax]}
           />
           <ChartTooltip
             cursor={false}

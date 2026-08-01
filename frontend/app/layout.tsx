@@ -7,7 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { CSSProperties } from "react";
 import { Toaster } from "@/components/ui/sonner";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
