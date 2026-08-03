@@ -39,7 +39,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    depends-on: [lint]
+    needs: [lint]
 
     steps:
       - uses: actions/checkout@v7
