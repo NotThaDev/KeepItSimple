@@ -3,7 +3,6 @@ import { PageWrapper } from "@/components/common/pageContainer/PageWrapper";
 import { getAnalytics } from "@/lib/models/Analytics";
 import { getPockets } from "@/lib/models/Pocket";
 import { WalletCards } from "lucide-react";
-import { BudgetTrackerCard } from "./cards/BudgetTrackerCard";
 import { SpendingChartCard } from "./cards/SpendingChartCard";
 import { TotalBalanceCard } from "./cards/TotalBalanceCard";
 
