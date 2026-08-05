@@ -1,6 +1,7 @@
 name: Backend Build
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -16,6 +17,7 @@ on:
 
 jobs:
   Format:
+    name: Backend / Format
     runs-on: ubuntu-latest
 
     steps:
@@ -34,6 +36,7 @@ jobs:
         run: dotnet format --verify-no-changes
 
   Build:
+    name: Backend / Build
     runs-on: ubuntu-latest
     needs: [Format]
 
