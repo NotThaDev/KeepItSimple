@@ -1,6 +1,7 @@
 name: Backend Build
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -51,3 +52,17 @@ jobs:
 
       - name: Build backend
         run: dotnet build KeepItSimple.sln --configuration Release --no-restore
+
+  CI:
+    name: Backend / CI
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [Format, Build]
+
+    steps:
+      - name: Validate backend jobs
+        run: |
+          if [[ "${{ needs.Format.result }}" != "success" || "${{ needs.Build.result }}" != "success" ]]; then
+            echo "Backend CI failed: format/build did not complete successfully"
+            exit 1
+          fi
