@@ -59,10 +59,7 @@ export function ExpensesPieChart({
   }, [chartData]);
 
   return (
-    <ChartContainer
-      config={chartConfig}
-      className="aspect-square max-h-[280px] w-[280px]"
-    >
+    <ChartContainer config={chartConfig} className="aspect-square flex-1">
       <PieChart>
         <ChartTooltip
           cursor={false}
@@ -97,8 +94,8 @@ export function ExpensesPieChart({
           data={chartData}
           dataKey="total"
           nameKey="category"
-          innerRadius={100}
-          outerRadius={120}
+          innerRadius={80}
+          outerRadius={100}
           paddingAngle={4}
           cornerRadius={6}
         >

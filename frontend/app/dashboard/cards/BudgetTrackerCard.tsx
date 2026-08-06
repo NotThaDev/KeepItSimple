@@ -58,9 +58,9 @@ export function BudgetTrackerCard({
     <DashboardCard title="Monthly Expenses" icon={ReceiptText}>
       <div className="flex h-full min-h-0 w-full items-start justify-start gap-4">
         {sortedCategories.length > 0 ? (
-          <div>
+          <div className="flex w-full flex-1 min-h-0 gap-4">
             <ExpensesPieChart analytics={analytics} />
-            <div className="flex min-h-0 flex-1 self-stretch flex-col gap-1 pt-[24px]">
+            <div className="flex min-h-0 flex-1 self-stretch flex-col gap-1">
               <p className="text-sm text-muted-foreground mb-3">
                 Expenses by category
               </p>
