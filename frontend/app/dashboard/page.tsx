@@ -4,7 +4,6 @@ import { getAnalytics } from "@/lib/models/Analytics";
 import { getPockets } from "@/lib/models/Pocket";
 import { WalletCards } from "lucide-react";
 import { BudgetTrackerCard } from "./cards/BudgetTrackerCard";
-import { SpendingChartCard } from "./cards/SpendingChartCard";
 import { TotalBalanceCard } from "./cards/TotalBalanceCard";
 
 export default async function DashboardPage() {
@@ -12,8 +11,6 @@ export default async function DashboardPage() {
     getPockets(),
     getAnalytics(),
   ]);
-
-  console.log("should work");
 
   const pockets = pocketsResponse.data ?? [];
   const analytics = analyticsResponse.data;
