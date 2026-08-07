@@ -1,16 +1,19 @@
 name: Frontend Build
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
     paths:
       - "frontend/**"
+      - ".github/workflows/frontend.yml"
   pull_request:
     branches:
       - main
     paths:
       - "frontend/**"
+      - ".github/workflows/frontend.yml"
 
 jobs:
   Lint:
@@ -61,3 +64,17 @@ jobs:
       - name: Build frontend
         run: bun run build
         working-directory: ./frontend
+
+  CI:
+    name: Frontend / CI
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [Lint, Build]
+
+    steps:
+      - name: Validate frontend jobs
+        run: |
+          if [[ "${{ needs.Lint.result }}" != "success" || "${{ needs.Build.result }}" != "success" ]]; then
+            echo "Frontend CI failed: lint/build did not complete successfully"
+            exit 1
+          fi
