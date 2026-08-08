@@ -11,14 +11,26 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - "backend/**"
-      - ".github/workflows/backend.yml"
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/backend.yml'
+
   Format:
     runs-on: ubuntu-latest
-
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -36,8 +48,8 @@ jobs:
 
   Build:
     runs-on: ubuntu-latest
-    needs: [Format]
-
+    needs: [changes, Format]
+    if: needs.changes.outputs.backend == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -56,9 +68,8 @@ jobs:
   CI:
     name: Backend / CI
     runs-on: ubuntu-latest
-    if: ${{ always() }}
-    needs: [Format, Build]
-
+    if: needs.changes.outputs.backend == 'true'
+    needs: [changes, Format, Build]
     steps:
       - name: Validate backend jobs
         run: |
