@@ -6,3 +6,37 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "weekly"
+    labels:
+      - "FE updates"
+    pull-request-branch-name:
+      template: "{package_manager}/{dependency}-{version}"
+      separator: "-"
+      word-separator: " "
+      branch-name-case: "lowercase"
+      max-length: 80
+
+  - package-ecosystem: "nuget"
+    directory: "/backend/KeepItSimple.Api"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "API updates"
+    pull-request-branch-name:
+      template: "{package_manager}/{dependency}-{version}"
+      separator: "-"
+      word-separator: " "
+      branch-name-case: "lowercase"
+      max-length: 80
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "CI updates"
+    pull-request-branch-name:
+      template: "{package_manager}/{dependency}-{version}"
+      separator: "-"
+      word-separator: " "
+      branch-name-case: "lowercase"
+      max-length: 80
