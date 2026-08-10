@@ -14,7 +14,7 @@ updates:
     pull-request-branch-name:
       template: "{package_manager}/{dependency}-{version}"
       separator: "-"
-      word-separator: " "
+      word-separator: "-"
       branch-name-case: "lowercase"
       max-length: 80
 
@@ -27,7 +27,7 @@ updates:
     pull-request-branch-name:
       template: "{package_manager}/{dependency}-{version}"
       separator: "-"
-      word-separator: " "
+      word-separator: "-"
       branch-name-case: "lowercase"
       max-length: 80
 
@@ -40,6 +40,6 @@ updates:
     pull-request-branch-name:
       template: "{package_manager}/{dependency}-{version}"
       separator: "-"
-      word-separator: " "
+      word-separator: "-"
       branch-name-case: "lowercase"
       max-length: 80
