@@ -4,7 +4,7 @@ public class KeepItSimpleContext
 {
     private static KeepItSimpleContext? _context;
     private IServiceProvider? _serviceProvider;
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
     public static KeepItSimpleContext Context
     {
         get
