@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{1AE8
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeepItSimple.Api", "backend\KeepItSimple.Api\KeepItSimple.Api.csproj", "{1434CDD5-80B8-CDBD-E567-F1A5E1C9C8D7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeepItSimple.Api.Tests", "backend\tests\KeepItSimple.Api.Tests\KeepItSimple.Api.Tests.csproj", "{B4C3DAAD-736B-45EC-939B-8F9340A9F516}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeepItSimple.Api.Tests", "backend\Tests\KeepItSimple.Api.Tests\KeepItSimple.Api.Tests.csproj", "{B4C3DAAD-736B-45EC-939B-8F9340A9F516}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
