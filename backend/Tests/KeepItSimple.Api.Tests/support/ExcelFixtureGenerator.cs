@@ -17,6 +17,7 @@ public static class ExcelFixtureGenerator
         "transactions.xls",
         "transactions.xlsx",
         "transactions.xlsm",
+        "transactions.csv",
     ];
 
     public const string WithPreambleFile = "with-preamble.xlsx";
@@ -30,7 +31,14 @@ public static class ExcelFixtureGenerator
 
         foreach (var fileName in StandardStatementFiles)
         {
-            Write(Path.Combine(targetDirectory, fileName), BuildStandardStatement);
+            var path = Path.Combine(targetDirectory, fileName);
+            if (Path.GetExtension(fileName).Equals(".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                WriteStandardCsv(path);
+                continue;
+            }
+
+            Write(path, BuildStandardStatement);
         }
 
         Write(Path.Combine(targetDirectory, WithPreambleFile), BuildStatementWithPreamble);
@@ -41,7 +49,7 @@ public static class ExcelFixtureGenerator
 
     /// <summary>
     /// Plain statement: header on row 1, real date cells, numeric amounts and a blank row
-    /// in the middle. Identical across .xls / .xlsx / .xlsm so a single theory can cover them.
+    /// in the middle. Identical across .xls / .xlsx / .xlsm / .csv so a single theory can cover them.
     /// </summary>
     private static void BuildStandardStatement(IWorkbook workbook)
     {
@@ -136,6 +144,21 @@ public static class ExcelFixtureGenerator
                 row.CreateCell(column).SetCellValue((rowIndex + 1) * 10d + column);
             }
         }
+    }
+
+    private static void WriteStandardCsv(string path)
+    {
+        File.WriteAllText(path,
+            """
+            Date,Details,Amount,Currency
+            01/03/2026,Salary,2500,EUR
+            02/03/2026,Groceries,-82.45,EUR
+            03/03/2026,"Coffee at the bar",-1.20,EUR
+
+            05/03/2026,Rent,-750,EUR
+            06/03/2026,Insurance refund,134.90,EUR
+            07/03/2026,Gym membership,-45,EUR
+            """);
     }
 
     private static void Write(string path, Action<IWorkbook> build)

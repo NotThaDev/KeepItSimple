@@ -1,3 +1,4 @@
+using System.Text;
 using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models;
 using KeepItSimple.Api.Tests.Support;
@@ -146,6 +147,29 @@ public class PreviewTests
         Assert.Equal("Salary", byDetails.Transactions[0].Description);
         Assert.Equal("EUR", byCurrency.Transactions[0].Description);
         Assert.Equal(analyzed.SessionId, byCurrency.SessionId);
+    }
+
+    [Fact]
+    public void Preview_parses_amounts_with_any_currency_noise()
+    {
+        var csv =
+            "Date,Description,Amount\n" +
+            "01/03/2026,Parking,\u2212356 €\n" +
+            "02/03/2026,Taxi,$12.50\n" +
+            "03/03/2026,Hotel,\"1.234,56 CHF\"\n" +
+            "04/03/2026,Fee,USD -90\n";
+        using var stream = new MemoryStream();
+        stream.Write(Encoding.UTF8.GetPreamble());
+        stream.Write(Encoding.UTF8.GetBytes(csv));
+        stream.Position = 0;
+
+        var analyzed = TransactionImportHelper.Analyze(stream);
+        var response = Preview(
+            analyzed,
+            ImportFixtures.MapInOrder(1, "Date", "Description", "Amount"));
+
+        Assert.Empty(response.Errors);
+        Assert.Equal([-356m, 12.50m, 1234.56m, -90m], response.Transactions.Select(t => t.Amount));
     }
 
     [Fact]

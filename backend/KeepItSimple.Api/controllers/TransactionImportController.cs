@@ -7,10 +7,10 @@ namespace KeepItSimple.Api.Controllers;
 [Route("api/transactions/import")]
 public class TransactionImportHelperController : ControllerBase
 {
-    private static readonly string[] SupportedExtensions = [".xls", ".xlsx", ".xlsm"];
+    private static readonly string[] SupportedExtensions = [".xls", ".xlsx", ".xlsm", ".csv"];
 
     /// <summary>
-    /// Step 1 – Upload an Excel file (.xls / .xlsx). Returns discovered columns + sample rows
+    /// Step 1 – Upload a file (.xls / .xlsx / .csv). Returns discovered columns + sample rows
     /// so the UI can let the user map each column to a Transaction field (or Ignore).
     /// </summary>
     [HttpPost("analyze")]
@@ -25,7 +25,7 @@ public class TransactionImportHelperController : ControllerBase
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!SupportedExtensions.Contains(extension))
         {
-            return BadRequest("Only .xls and .xlsx files are supported.");
+            return BadRequest("Only .xls, .xlsx and .csv files are supported.");
         }
 
         try

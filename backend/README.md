@@ -38,7 +38,7 @@ Persistence goes through `KeepItSimpleDbContext`; app code typically uses the st
 
 ## Transaction import
 
-Bank/export files (`.xls` / `.xlsx`) have **unknown layouts**. The API discovers columns, the user maps them, drafts are previewed, then saved.
+Bank/export files (`.xls` / `.xlsx` / `.csv`) have **unknown layouts**. The API discovers columns, the user maps them, drafts are previewed, then saved.
 
 Docs inside the API project:
 

@@ -12,7 +12,7 @@ Implementation reference for [`helpers/TransactionImportHelper.cs`](./helpers/Tr
 
 POC that imports bank/export files whose layout is **unknown in advance**. The UI never assumes fixed column names: the API discovers headers, the user maps them onto `Transaction` fields, drafts are previewed, then saved.
 
-Supported formats: `.xls`, `.xlsx`, `.xlsm`. `TransactionImportHelper.Analyze` opens the workbook (ExcelDataReader picks `.xls` vs `.xlsx` from the file bytes).
+Supported formats: `.xls`, `.xlsx`, `.xlsm`, `.csv`. ExcelDataReader opens workbooks from the file bytes; CSV falls back to the CSV reader.
 
 Logic lives in `TransactionImportHelper` (static methods + nested DTOs). The controller only validates HTTP input and maps exceptions to status codes. Sessions live in a process-local `ConcurrentDictionary` (POC: lost on restart / multi-instance).
 
@@ -42,7 +42,7 @@ Mappable target fields (`MappableFields`):
 
 1. Registers code-page encodings once (needed for legacy `.xls`).
 2. Copies the upload into a seekable `MemoryStream` (ExcelDataReader requirement).
-3. Opens the workbook with `OpenWorkbook` (OLE2 `.xls` or OpenXML `.xlsx`).
+3. Opens the file with `OpenSpreadsheet` (Excel workbook, or CSV if that fails).
 4. **Header detection** (not “first row”):
    - Scans rows from the top.
    - A row is a header when it contains **at least 3 consecutive cells** whose value is a **non-empty `string`** (numbers/dates do not count).
@@ -58,7 +58,7 @@ Mappable target fields (`MappableFields`):
 ```mermaid
 flowchart TD
   A[Upload stream] --> B[Seekable buffer]
-  B --> E[OpenWorkbook]
+  B --> E[OpenSpreadsheet]
   E --> F[Scan rows]
   F --> G{≥3 consecutive<br/>non-empty strings?}
   G -- No --> F

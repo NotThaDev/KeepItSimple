@@ -11,7 +11,7 @@ End-to-end conversation between UI and API: **file → columns → map → save*
 
 ```mermaid
 flowchart LR
-  A[File<br/>xls / xlsx] --> B[Columns<br/>discovered headers]
+  A[File<br/>xls / xlsx / csv] --> B[Columns<br/>discovered headers]
   B --> C[Map<br/>column → field]
   C --> D[Preview<br/>draft transactions]
   D --> E[Save<br/>confirm & persist]
@@ -63,7 +63,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-  U[Upload .xls / .xlsx] --> R[Open with ExcelDataReader]
+  U[Upload .xls / .xlsx / .csv] --> R[Open with ExcelDataReader]
   R --> S[Scan rows from top]
   S --> H{Row has ≥3 consecutive<br/>non-empty strings?}
   H -->|No| S

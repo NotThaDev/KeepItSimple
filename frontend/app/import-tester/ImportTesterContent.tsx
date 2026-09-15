@@ -220,7 +220,7 @@ export function ImportTesterContent({
         <CardHeader>
           <CardTitle>1. Analyze</CardTitle>
           <CardDescription>
-            Upload an .xls / .xlsx file. Hidden tester page, not in the sidebar.
+            Upload an .xls / .xlsx / .csv file. Hidden tester page, not in the sidebar.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -230,7 +230,7 @@ export function ImportTesterContent({
               <Input
                 id="import-file"
                 type="file"
-                accept=".xls,.xlsx,.xlsm"
+                accept=".xls,.xlsx,.xlsm,.csv"
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               />
             </div>

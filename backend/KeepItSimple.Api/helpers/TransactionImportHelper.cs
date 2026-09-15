@@ -8,7 +8,7 @@ using KeepItSimple.Api.Models;
 namespace KeepItSimple.Api.Helpers;
 
 /// <summary>
-/// POC: 3-step file → Transaction import flow (.xls / .xlsx).
+/// POC: 3-step file → Transaction import flow (.xls / .xlsx / .csv).
 /// 1. Analyze  – discover columns from an unknown file layout
 /// 2. Preview  – apply user column mapping and build draft transactions
 /// 3. Confirm  – persist the reviewed transactions
@@ -32,6 +32,86 @@ public static class TransactionImportHelper
         "Category",
     ];
 
+    private static readonly Dictionary<string, Transaction.TransactionCategory> ItalianCategoryAliases =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["caffe"] = Transaction.TransactionCategory.Coffe,
+            ["bar"] = Transaction.TransactionCategory.Coffe,
+            ["cibo"] = Transaction.TransactionCategory.Food,
+            ["ristorante"] = Transaction.TransactionCategory.Food,
+            ["alimentari"] = Transaction.TransactionCategory.Groceries,
+            ["trasporti"] = Transaction.TransactionCategory.Transport,
+            ["trasporto"] = Transaction.TransactionCategory.Transport,
+            ["intrattenimento"] = Transaction.TransactionCategory.Entertainment,
+            ["utenze"] = Transaction.TransactionCategory.Utilities,
+            ["bollette"] = Transaction.TransactionCategory.Utilities,
+            ["acquisti"] = Transaction.TransactionCategory.Shopping,
+            ["salute"] = Transaction.TransactionCategory.Health,
+            ["sanita"] = Transaction.TransactionCategory.Health,
+            ["istruzione"] = Transaction.TransactionCategory.School,
+            ["educazione"] = Transaction.TransactionCategory.Education,
+            ["viaggi"] = Transaction.TransactionCategory.Travel,
+            ["viaggio"] = Transaction.TransactionCategory.Travel,
+            ["vacanze"] = Transaction.TransactionCategory.Travel,
+            ["vacanza"] = Transaction.TransactionCategory.Travel,
+            ["sport"] = Transaction.TransactionCategory.Sport,
+            ["abbonamenti"] = Transaction.TransactionCategory.Subscriptions,
+            ["abbonamento"] = Transaction.TransactionCategory.Subscriptions,
+            ["risparmi"] = Transaction.TransactionCategory.Savings,
+            ["risparmio"] = Transaction.TransactionCategory.Savings,
+            ["banca"] = Transaction.TransactionCategory.Savings,
+            ["banche"] = Transaction.TransactionCategory.Savings,
+            ["investimenti"] = Transaction.TransactionCategory.Investments,
+            ["investimento"] = Transaction.TransactionCategory.Investments,
+            ["regali"] = Transaction.TransactionCategory.Gifts,
+            ["regalo"] = Transaction.TransactionCategory.Gifts,
+            ["amore"] = Transaction.TransactionCategory.Love,
+            ["beneficenza"] = Transaction.TransactionCategory.Charity,
+            ["carita"] = Transaction.TransactionCategory.Charity,
+            ["stipendio"] = Transaction.TransactionCategory.Salary,
+            ["salario"] = Transaction.TransactionCategory.Salary,
+            ["premio"] = Transaction.TransactionCategory.Bonus,
+            ["vincita"] = Transaction.TransactionCategory.Bonus,
+            ["vincite"] = Transaction.TransactionCategory.Bonus,
+            ["partita iva"] = Transaction.TransactionCategory.Freelance,
+            ["azienda"] = Transaction.TransactionCategory.Business,
+            ["interessi"] = Transaction.TransactionCategory.Interest,
+            ["interesse"] = Transaction.TransactionCategory.Interest,
+            ["dividendi"] = Transaction.TransactionCategory.Dividends,
+            ["dividendo"] = Transaction.TransactionCategory.Dividends,
+            ["affitto"] = Transaction.TransactionCategory.RentalIncome,
+            ["rimborso"] = Transaction.TransactionCategory.Refund,
+            ["rimborsi"] = Transaction.TransactionCategory.Refund,
+            ["altro"] = Transaction.TransactionCategory.Other,
+            ["varie"] = Transaction.TransactionCategory.Other,
+            ["auto"] = Transaction.TransactionCategory.Car,
+            ["macchina"] = Transaction.TransactionCategory.Car,
+            ["motori"] = Transaction.TransactionCategory.Car,
+            ["abbigliamento"] = Transaction.TransactionCategory.Clothing,
+            ["accessori"] = Transaction.TransactionCategory.Accessories,
+            ["arredamento"] = Transaction.TransactionCategory.Furniture,
+            ["casa"] = Transaction.TransactionCategory.Home,
+            ["edicola"] = Transaction.TransactionCategory.Newsstand,
+            ["eventi"] = Transaction.TransactionCategory.Events,
+            ["informatica"] = Transaction.TransactionCategory.Computers,
+            ["hotel"] = Transaction.TransactionCategory.Hotel,
+            ["libri"] = Transaction.TransactionCategory.Books,
+            ["moto"] = Transaction.TransactionCategory.Motorcycle,
+            ["musica"] = Transaction.TransactionCategory.Music,
+            ["palestra"] = Transaction.TransactionCategory.Gym,
+            ["parrucchiere"] = Transaction.TransactionCategory.Hairdresser,
+            ["persona"] = Transaction.TransactionCategory.Personal,
+            ["riparazioni"] = Transaction.TransactionCategory.Repairs,
+            ["relazioni"] = Transaction.TransactionCategory.Relationships,
+            ["servizi"] = Transaction.TransactionCategory.Services,
+            ["speciali"] = Transaction.TransactionCategory.Special,
+            ["spesa"] = Transaction.TransactionCategory.Groceries,
+            ["svago"] = Transaction.TransactionCategory.Leisure,
+            ["tasse"] = Transaction.TransactionCategory.Taxes,
+            ["telefono"] = Transaction.TransactionCategory.Phone,
+            ["film"] = Transaction.TransactionCategory.Film,
+        };
+
     public static AnalyzeResponse Analyze(Stream fileStream)
     {
         EnsureEncodingsRegistered();
@@ -41,7 +121,7 @@ public static class TransactionImportHelper
         fileStream.CopyTo(buffer);
         buffer.Position = 0;
 
-        using var reader = ExcelReaderFactory.CreateReader(buffer);
+        using var reader = OpenSpreadsheet(buffer);
 
         // Skip preamble rows until we find a header: ≥ MIN_CONSECUTIVE_STRINGS (3) consecutive valid strings
         // (minimum expected: date, description/causale, amount).
@@ -103,6 +183,22 @@ public static class TransactionImportHelper
             SampleRows = samples,
             MappableFields = MappableFields,
         };
+    }
+
+    /// <summary>
+    /// .xls / .xlsx have a binary signature. CSV does not, so ExcelDataReader needs its CSV reader.
+    /// </summary>
+    private static IExcelDataReader OpenSpreadsheet(MemoryStream buffer)
+    {
+        try
+        {
+            return ExcelReaderFactory.CreateReader(buffer);
+        }
+        catch (Exception)
+        {
+            buffer.Position = 0;
+            return ExcelReaderFactory.CreateCsvReader(buffer);
+        }
     }
 
     /// <summary>
@@ -338,7 +434,7 @@ public static class TransactionImportHelper
                     break;
 
                 case "Category":
-                    if (Enum.TryParse<Transaction.TransactionCategory>(raw.Trim(), ignoreCase: true, out var parsed))
+                    if (TryParseCategory(raw, out var parsed))
                     {
                         category = parsed;
                     }
@@ -366,13 +462,36 @@ public static class TransactionImportHelper
         };
     }
 
+    private static bool TryParseCategory(string raw, out Transaction.TransactionCategory category)
+    {
+        var key = NormalizeCategoryLabel(raw);
+        if (Enum.TryParse(key, ignoreCase: true, out category))
+        {
+            return true;
+        }
+
+        return ItalianCategoryAliases.TryGetValue(key, out category);
+    }
+
+    private static string NormalizeCategoryLabel(string raw)
+    {
+        var decomposed = raw.Trim().Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(decomposed.Length);
+        foreach (var character in decomposed)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(character);
+            }
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC);
+    }
+
     private static decimal ParseAmount(string raw)
     {
-        // Accept both "1.234,56" and "1,234.56" / plain "1234.56"
-        var normalized = raw.Trim()
-            .Replace("€", "")
-            .Replace(" ", "")
-            .Trim();
+        // Keep digits/sign/separators only: "−356 €", "$12.50", "USD -90" all reduce to a number.
+        var normalized = StripAmountNoise(raw);
 
         if (normalized.Contains(',') && normalized.Contains('.'))
         {
@@ -397,6 +516,31 @@ public static class TransactionImportHelper
         }
 
         throw new InvalidOperationException($"Cannot parse amount '{raw}'.");
+    }
+
+    private static string StripAmountNoise(string raw)
+    {
+        var builder = new StringBuilder(raw.Length);
+        foreach (var character in raw)
+        {
+            if (char.IsWhiteSpace(character))
+            {
+                continue;
+            }
+
+            var mapped = character switch
+            {
+                '\u2212' or '\u2012' or '\u2013' => '-',
+                _ => character,
+            };
+
+            if (mapped is '+' or '-' or '.' or ',' || char.IsAsciiDigit(mapped))
+            {
+                builder.Append(mapped);
+            }
+        }
+
+        return builder.ToString();
     }
 
     private static DateTime ParseDate(string raw)
