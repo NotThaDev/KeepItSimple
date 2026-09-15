@@ -1,12 +1,10 @@
 "use client";
 
 import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  InitialTableState,
-  useReactTable,
+  useTable,
+  type ColumnDef,
+  type RowData,
+  type TableState,
 } from "@tanstack/react-table";
 
 import {
@@ -27,16 +25,18 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useEffect, useState } from "react";
+import { features, type DataTableFeatures } from "./DataTableFeatures";
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+interface DataTableProps<TData extends RowData> {
+  columns: ColumnDef<DataTableFeatures, TData>[];
   data: TData[];
   enablePagination?: boolean;
-  initialState?: InitialTableState;
+  initialState?: Omit<Partial<TableState<DataTableFeatures>>, "pagination"> & {
+    pagination?: Partial<TableState<DataTableFeatures>["pagination"]>;
+  };
   className?: string;
   extraContent?: React.ReactNode;
   onRowSelectionChange?: (selectedRows: TData[]) => void;
-  resetSelectionTrigger?: number;
 }
 
 function getVisiblePages(pageCount: number, currentPage: number) {
@@ -69,7 +69,7 @@ function getVisiblePages(pageCount: number, currentPage: number) {
   ] as const;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   initialState,
@@ -77,19 +77,26 @@ export function DataTable<TData, TValue>({
   className,
   extraContent,
   onRowSelectionChange,
-  resetSelectionTrigger,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
   const [rowSelection, setRowSelection] = useState({});
 
-  // Followed the documentation
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data,
     columns,
-    initialState: initialState,
+    initialState: initialState
+      ? {
+          ...initialState,
+          pagination: initialState.pagination
+            ? {
+                pageIndex: 0,
+                pageSize: 10,
+                ...initialState.pagination,
+              }
+            : undefined,
+        }
+      : undefined,
     manualPagination: !enablePagination,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     onRowSelectionChange: setRowSelection,
     state: {
       rowSelection,
@@ -97,16 +104,10 @@ export function DataTable<TData, TValue>({
   });
 
   useEffect(() => {
-    if (typeof resetSelectionTrigger === "number") {
-      setRowSelection({});
-    }
-  }, [resetSelectionTrigger]);
-
-  useEffect(() => {
     if (onRowSelectionChange) {
       const selectedRows = table
         .getSelectedRowModel()
-        .flatRows.map((row) => row.original);
+        .rows.map((row) => row.original);
 
       onRowSelectionChange(selectedRows);
     }
@@ -119,7 +120,7 @@ export function DataTable<TData, TValue>({
   }, [onRowSelectionChange, rowSelection]);
 
   const pageCount = table.getPageCount();
-  const currentPage = table.getState().pagination.pageIndex;
+  const currentPage = table.state.pagination.pageIndex;
   const visiblePages = getVisiblePages(pageCount, currentPage);
 
   return (
@@ -135,12 +136,9 @@ export function DataTable<TData, TValue>({
                       key={header.id}
                       style={{ width: header.getSize() }}
                     >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                      {header.isPlaceholder ? null : (
+                        <table.FlexRender header={header} />
+                      )}
                     </TableHead>
                   );
                 })}
@@ -159,10 +157,7 @@ export function DataTable<TData, TValue>({
                       key={cell.id}
                       style={{ width: cell.column.getSize() }}
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      <table.FlexRender cell={cell} />
                     </TableCell>
                   ))}
                 </TableRow>
