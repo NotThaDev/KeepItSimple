@@ -1,3 +1,4 @@
+using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +8,8 @@ namespace KeepItSimple.Api.Controllers;
 [Route("api/transactions")]
 public class TransactionController : ControllerBase
 {
+    private static readonly string[] ImportSupportedExtensions = [".xls", ".xlsx", ".xlsm", ".csv"];
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Transaction>>> GetAll()
     {
@@ -88,5 +91,71 @@ public class TransactionController : ControllerBase
     {
         var transactions = await Transaction.GetByPocketIdAsync(pocketId);
         return Ok(transactions);
+    }
+
+    [HttpPost("import/analyze")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public ActionResult<TransactionImportHelper.AnalyzeResponse> AnalyzeImport(IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest("A file is required.");
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!ImportSupportedExtensions.Contains(extension))
+        {
+            return BadRequest("Only .xls, .xlsx and .csv files are supported.");
+        }
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var result = TransactionImportHelper.Analyze(stream);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("import/preview")]
+    public ActionResult<TransactionImportHelper.PreviewResponse> PreviewImport(
+        [FromBody] TransactionImportHelper.PreviewRequest request)
+    {
+        try
+        {
+            var result = TransactionImportHelper.Preview(request);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("import/confirm")]
+    public async Task<ActionResult<TransactionImportHelper.ConfirmResponse>> ConfirmImport(
+        [FromBody] TransactionImportHelper.ConfirmRequest request)
+    {
+        if (request.Transactions.Count == 0)
+        {
+            return BadRequest("No transactions to save.");
+        }
+
+        try
+        {
+            var result = await TransactionImportHelper.Confirm(request);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 }

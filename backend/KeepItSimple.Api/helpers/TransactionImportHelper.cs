@@ -1,0 +1,642 @@
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Text;
+using System.Text.Json.Serialization;
+using ExcelDataReader;
+using KeepItSimple.Api.Models;
+
+namespace KeepItSimple.Api.Helpers;
+
+/// <summary>
+/// POC: 3-step file → Transaction import flow (.xls / .xlsx / .csv).
+/// 1. Analyze  – discover columns from an unknown file layout
+/// 2. Preview  – apply user column mapping and build draft transactions
+/// 3. Confirm  – persist the reviewed transactions
+/// </summary>
+public static class TransactionImportHelper
+{
+    // #TODO IMHO this can cause memory issues with large files, or with a massive number of sessions.
+    private static readonly ConcurrentDictionary<Guid, ImportSession> Sessions = new();
+    private static int _encodingsRegistered;
+    private const int MIN_CONSECUTIVE_STRINGS = 3;
+    private const int MAX_SAMPLE_ROWS = 10;
+
+    // ── Target fields the UI can map columns onto ────────────────────────────
+
+    public static readonly string[] MappableFields =
+    [
+        "Ignore",
+        "Description",
+        "Amount",
+        "Date",
+        "Category",
+    ];
+
+    private static readonly Dictionary<string, Transaction.TransactionCategory> ItalianCategoryAliases =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["caffe"] = Transaction.TransactionCategory.Coffe,
+            ["bar"] = Transaction.TransactionCategory.Coffe,
+            ["cibo"] = Transaction.TransactionCategory.Food,
+            ["ristorante"] = Transaction.TransactionCategory.Food,
+            ["alimentari"] = Transaction.TransactionCategory.Groceries,
+            ["trasporti"] = Transaction.TransactionCategory.Transport,
+            ["trasporto"] = Transaction.TransactionCategory.Transport,
+            ["intrattenimento"] = Transaction.TransactionCategory.Entertainment,
+            ["utenze"] = Transaction.TransactionCategory.Utilities,
+            ["bollette"] = Transaction.TransactionCategory.Utilities,
+            ["acquisti"] = Transaction.TransactionCategory.Shopping,
+            ["salute"] = Transaction.TransactionCategory.Health,
+            ["sanita"] = Transaction.TransactionCategory.Health,
+            ["istruzione"] = Transaction.TransactionCategory.School,
+            ["educazione"] = Transaction.TransactionCategory.Education,
+            ["viaggi"] = Transaction.TransactionCategory.Travel,
+            ["viaggio"] = Transaction.TransactionCategory.Travel,
+            ["vacanze"] = Transaction.TransactionCategory.Travel,
+            ["vacanza"] = Transaction.TransactionCategory.Travel,
+            ["sport"] = Transaction.TransactionCategory.Sport,
+            ["abbonamenti"] = Transaction.TransactionCategory.Subscriptions,
+            ["abbonamento"] = Transaction.TransactionCategory.Subscriptions,
+            ["risparmi"] = Transaction.TransactionCategory.Savings,
+            ["risparmio"] = Transaction.TransactionCategory.Savings,
+            ["banca"] = Transaction.TransactionCategory.Savings,
+            ["banche"] = Transaction.TransactionCategory.Savings,
+            ["investimenti"] = Transaction.TransactionCategory.Investments,
+            ["investimento"] = Transaction.TransactionCategory.Investments,
+            ["regali"] = Transaction.TransactionCategory.Gifts,
+            ["regalo"] = Transaction.TransactionCategory.Gifts,
+            ["amore"] = Transaction.TransactionCategory.Love,
+            ["beneficenza"] = Transaction.TransactionCategory.Charity,
+            ["carita"] = Transaction.TransactionCategory.Charity,
+            ["stipendio"] = Transaction.TransactionCategory.Salary,
+            ["salario"] = Transaction.TransactionCategory.Salary,
+            ["premio"] = Transaction.TransactionCategory.Bonus,
+            ["vincita"] = Transaction.TransactionCategory.Bonus,
+            ["vincite"] = Transaction.TransactionCategory.Bonus,
+            ["partita iva"] = Transaction.TransactionCategory.Freelance,
+            ["azienda"] = Transaction.TransactionCategory.Business,
+            ["interessi"] = Transaction.TransactionCategory.Interest,
+            ["interesse"] = Transaction.TransactionCategory.Interest,
+            ["dividendi"] = Transaction.TransactionCategory.Dividends,
+            ["dividendo"] = Transaction.TransactionCategory.Dividends,
+            ["affitto"] = Transaction.TransactionCategory.RentalIncome,
+            ["rimborso"] = Transaction.TransactionCategory.Refund,
+            ["rimborsi"] = Transaction.TransactionCategory.Refund,
+            ["altro"] = Transaction.TransactionCategory.Other,
+            ["varie"] = Transaction.TransactionCategory.Other,
+            ["auto"] = Transaction.TransactionCategory.Car,
+            ["macchina"] = Transaction.TransactionCategory.Car,
+            ["motori"] = Transaction.TransactionCategory.Car,
+            ["abbigliamento"] = Transaction.TransactionCategory.Clothing,
+            ["accessori"] = Transaction.TransactionCategory.Accessories,
+            ["arredamento"] = Transaction.TransactionCategory.Furniture,
+            ["casa"] = Transaction.TransactionCategory.Home,
+            ["edicola"] = Transaction.TransactionCategory.Newsstand,
+            ["eventi"] = Transaction.TransactionCategory.Events,
+            ["informatica"] = Transaction.TransactionCategory.Computers,
+            ["hotel"] = Transaction.TransactionCategory.Hotel,
+            ["libri"] = Transaction.TransactionCategory.Books,
+            ["moto"] = Transaction.TransactionCategory.Motorcycle,
+            ["musica"] = Transaction.TransactionCategory.Music,
+            ["palestra"] = Transaction.TransactionCategory.Gym,
+            ["parrucchiere"] = Transaction.TransactionCategory.Hairdresser,
+            ["persona"] = Transaction.TransactionCategory.Personal,
+            ["riparazioni"] = Transaction.TransactionCategory.Repairs,
+            ["relazioni"] = Transaction.TransactionCategory.Relationships,
+            ["servizi"] = Transaction.TransactionCategory.Services,
+            ["speciali"] = Transaction.TransactionCategory.Special,
+            ["spesa"] = Transaction.TransactionCategory.Groceries,
+            ["svago"] = Transaction.TransactionCategory.Leisure,
+            ["tasse"] = Transaction.TransactionCategory.Taxes,
+            ["telefono"] = Transaction.TransactionCategory.Phone,
+            ["film"] = Transaction.TransactionCategory.Film,
+        };
+
+    public static AnalyzeResponse Analyze(Stream fileStream)
+    {
+        EnsureEncodingsRegistered();
+
+        // Seekable copy: ExcelDataReader needs it for .xls / format detection
+        using var buffer = new MemoryStream();
+        fileStream.CopyTo(buffer);
+        buffer.Position = 0;
+
+        using var reader = OpenSpreadsheet(buffer);
+
+        // Skip preamble rows until we find a header: ≥ MIN_CONSECUTIVE_STRINGS (3) consecutive valid strings
+        // (minimum expected: date, description/causale, amount).
+        List<ExcelColumn>? columns = null;
+        while (reader.Read())
+        {
+            if (TryDetectHeaderRow(reader, out columns))
+            {
+                break;
+            }
+        }
+
+        if (columns is null || columns.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"No header row found. Expected a row with at least {MIN_CONSECUTIVE_STRINGS} consecutive text columns.");
+        }
+
+        var rows = new List<Dictionary<int, string>>();
+        var samples = new List<Dictionary<string, string>>();
+
+        while (reader.Read())
+        {
+            if (IsEmptyRow(reader, columns))
+            {
+                continue;
+            }
+
+            var dict = new Dictionary<int, string>();
+            foreach (var col in columns)
+            {
+                dict[col.Index] = FormatCell(reader, col.Index - 1);
+            }
+            rows.Add(dict);
+
+            if (samples.Count < MAX_SAMPLE_ROWS)
+            {
+                var sample = new Dictionary<string, string>();
+                foreach (var col in columns)
+                {
+                    sample[col.Name] = dict[col.Index];
+                }
+                samples.Add(sample);
+            }
+        }
+
+        var sessionId = Guid.NewGuid();
+        Sessions[sessionId] = new ImportSession
+        {
+            Columns = columns,
+            Rows = rows,
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        return new AnalyzeResponse
+        {
+            SessionId = sessionId,
+            Columns = columns,
+            SampleRows = samples,
+            MappableFields = MappableFields,
+        };
+    }
+
+    /// <summary>
+    /// .xls / .xlsx have a binary signature. CSV does not, so ExcelDataReader needs its CSV reader.
+    /// </summary>
+    private static IExcelDataReader OpenSpreadsheet(MemoryStream buffer)
+    {
+        try
+        {
+            return ExcelReaderFactory.CreateReader(buffer);
+        }
+        catch (Exception)
+        {
+            buffer.Position = 0;
+            return ExcelReaderFactory.CreateCsvReader(buffer);
+        }
+    }
+
+    /// <summary>
+    /// A header row has at least MIN_CONSECUTIVE_STRINGS consecutive cells with valid non-empty strings.
+    /// When found, every non-empty string cell on that row becomes a mappable column.
+    /// </summary>
+    private static bool TryDetectHeaderRow(IExcelDataReader reader, out List<ExcelColumn>? columns)
+    {
+        columns = null;
+        var fieldCount = reader.FieldCount;
+        var consecutive = 0;
+        var hasThreeConsecutive = false;
+
+        for (var i = 0; i < fieldCount; i++)
+        {
+            if (IsValidHeaderString(reader.GetValue(i)))
+            {
+                consecutive++;
+                if (consecutive >= MIN_CONSECUTIVE_STRINGS)
+                {
+                    hasThreeConsecutive = true;
+                    break;
+                }
+            }
+            else
+            {
+                consecutive = 0;
+            }
+        }
+
+        if (!hasThreeConsecutive)
+        {
+            return false;
+        }
+
+        var detected = new List<ExcelColumn>();
+        for (var i = 0; i < fieldCount; i++)
+        {
+            var value = reader.GetValue(i);
+            if (!IsValidHeaderString(value))
+            {
+                continue;
+            }
+
+            detected.Add(new ExcelColumn
+            {
+                Index = i + 1,
+                Name = ((string)value!).Trim(),
+            });
+        }
+
+        if (detected.Count == 0)
+        {
+            return false;
+        }
+
+        columns = detected;
+        return true;
+    }
+
+    private static bool IsValidHeaderString(object? value)
+    {
+        return value is string headerString && !string.IsNullOrWhiteSpace(headerString);
+    }
+
+    private static void EnsureEncodingsRegistered()
+    {
+        if (Interlocked.Exchange(ref _encodingsRegistered, 1) == 0)
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        }
+    }
+
+    private static bool IsEmptyRow(IExcelDataReader reader, List<ExcelColumn> columns)
+    {
+        return columns.All(col => string.IsNullOrWhiteSpace(FormatCell(reader, col.Index - 1)));
+    }
+
+    private static string FormatCell(IExcelDataReader reader, int zeroBasedIndex)
+    {
+        if (zeroBasedIndex < 0 || zeroBasedIndex >= reader.FieldCount)
+        {
+            return string.Empty;
+        }
+
+        var value = reader.GetValue(zeroBasedIndex);
+        return value switch
+        {
+            null => string.Empty,
+            DateTime dt => dt.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
+            double d when reader.GetFieldType(zeroBasedIndex) == typeof(DateTime)
+                => DateTime.FromOADate(d).ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
+            double d => d.ToString(CultureInfo.InvariantCulture),
+            float f => f.ToString(CultureInfo.InvariantCulture),
+            decimal m => m.ToString(CultureInfo.InvariantCulture),
+            bool b => b.ToString(),
+            _ => Convert.ToString(value, CultureInfo.InvariantCulture)?.Trim() ?? string.Empty,
+        };
+    }
+
+    public static PreviewResponse Preview(PreviewRequest request)
+    {
+        if (!Sessions.TryGetValue(request.SessionId, out var session))
+        {
+            throw new KeyNotFoundException("Import session expired or not found. Re-upload the file.");
+        }
+
+        ValidateMapping(request.Mapping);
+
+        var drafts = new List<Transaction>();
+        var errors = new List<string>();
+
+        for (var i = 0; i < session.Rows.Count; i++)
+        {
+            var row = session.Rows[i];
+            var rowNumber = i + 2; // Excel is 1-indexed and row 1 is the header
+
+            try
+            {
+                drafts.Add(BuildTransaction(row, request.Mapping, request.PocketId, request.DefaultCategory));
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"Row {rowNumber}: {ex.Message}");
+            }
+        }
+
+        return new PreviewResponse
+        {
+            SessionId = request.SessionId,
+            Transactions = drafts,
+            Errors = errors,
+        };
+    }
+
+    // ── Step 3: Confirm ──────────────────────────────────────────────────────
+
+    public static Task<ConfirmResponse> Confirm(ConfirmRequest request)
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
+        {
+            var pocket = await dbContext.Pockets.FindAsync(request.PocketId);
+            if (pocket is null)
+            {
+                throw new KeyNotFoundException($"Pocket {request.PocketId} not found.");
+            }
+
+            var saved = new List<Transaction>();
+
+            foreach (var draft in request.Transactions)
+            {
+                draft.Id = null;
+                draft.PocketId = pocket.Id;
+                draft.Pocket = pocket;
+
+                pocket.Balance += draft.Amount;
+                dbContext.Transactions.Add(draft);
+                saved.Add(draft);
+            }
+
+            await dbContext.SaveChangesAsync();
+
+            // Session no longer needed
+            Sessions.TryRemove(request.SessionId, out _);
+
+            return new ConfirmResponse
+            {
+                SavedCount = saved.Count,
+                Transactions = saved,
+            };
+        });
+    }
+
+    private static void ValidateMapping(List<ColumnMapping> mapping)
+    {
+        var targets = mapping
+            .Where(m => m.TargetField != "Ignore")
+            .Select(m => m.TargetField)
+            .ToList();
+
+        if (targets.Contains("Amount") == false)
+        {
+            throw new ArgumentException("Mapping must include an Amount column.");
+        }
+
+        if (targets.Contains("Date") == false)
+        {
+            throw new ArgumentException("Mapping must include a Date column.");
+        }
+
+        var duplicates = targets.GroupBy(t => t).Where(g => g.Count() > 1).Select(g => g.Key);
+        if (duplicates.Any())
+        {
+            throw new ArgumentException($"Duplicate mappings: {string.Join(", ", duplicates)}");
+        }
+    }
+
+    private static Transaction BuildTransaction(
+        Dictionary<int, string> row,
+        List<ColumnMapping> mapping,
+        int pocketId,
+        Transaction.TransactionCategory defaultCategory)
+    {
+        string? description = null;
+        decimal? amount = null;
+        DateTime? date = null;
+        var category = defaultCategory;
+
+        foreach (var map in mapping)
+        {
+            if (map.TargetField == "Ignore")
+            {
+                continue;
+            }
+
+            if (!row.TryGetValue(map.ColumnIndex, out var raw) || string.IsNullOrWhiteSpace(raw))
+            {
+                continue;
+            }
+
+            switch (map.TargetField)
+            {
+                case "Description":
+                    description = raw.Trim();
+                    break;
+
+                case "Amount":
+                    amount = ParseAmount(raw);
+                    break;
+
+                case "Date":
+                    date = ParseDate(raw);
+                    break;
+
+                case "Category":
+                    if (TryParseCategory(raw, out var parsed))
+                    {
+                        category = parsed;
+                    }
+                    break;
+            }
+        }
+
+        if (amount is null)
+        {
+            throw new InvalidOperationException("Missing or invalid Amount.");
+        }
+
+        if (date is null)
+        {
+            throw new InvalidOperationException("Missing or invalid Date.");
+        }
+
+        return new Transaction
+        {
+            Description = description,
+            Amount = amount.Value,
+            Date = DateTime.SpecifyKind(date.Value, DateTimeKind.Utc),
+            Category = category,
+            PocketId = pocketId,
+        };
+    }
+
+    private static bool TryParseCategory(string raw, out Transaction.TransactionCategory category)
+    {
+        var key = NormalizeCategoryLabel(raw);
+        if (Enum.TryParse(key, ignoreCase: true, out category))
+        {
+            return true;
+        }
+
+        return ItalianCategoryAliases.TryGetValue(key, out category);
+    }
+
+    private static string NormalizeCategoryLabel(string raw)
+    {
+        var decomposed = raw.Trim().Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(decomposed.Length);
+        foreach (var character in decomposed)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(character);
+            }
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC);
+    }
+
+    private static decimal ParseAmount(string raw)
+    {
+        // Keep digits/sign/separators only: "−356 €", "$12.50", "USD -90" all reduce to a number.
+        var normalized = StripAmountNoise(raw);
+
+        if (normalized.Contains(',') && normalized.Contains('.'))
+        {
+            // Decide decimal separator by whichever comes last
+            if (normalized.LastIndexOf(',') > normalized.LastIndexOf('.'))
+            {
+                normalized = normalized.Replace(".", "").Replace(',', '.');
+            }
+            else
+            {
+                normalized = normalized.Replace(",", "");
+            }
+        }
+        else if (normalized.Contains(','))
+        {
+            normalized = normalized.Replace(',', '.');
+        }
+
+        if (decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out var value))
+        {
+            return value;
+        }
+
+        throw new InvalidOperationException($"Cannot parse amount '{raw}'.");
+    }
+
+    private static string StripAmountNoise(string raw)
+    {
+        var builder = new StringBuilder(raw.Length);
+        foreach (var character in raw)
+        {
+            if (char.IsWhiteSpace(character))
+            {
+                continue;
+            }
+
+            var mapped = character switch
+            {
+                '\u2212' or '\u2012' or '\u2013' => '-',
+                _ => character,
+            };
+
+            if (mapped is '+' or '-' or '.' or ',' || char.IsAsciiDigit(mapped))
+            {
+                builder.Append(mapped);
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    private static DateTime ParseDate(string raw)
+    {
+        var formats = new[]
+        {
+            "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "yyyy-MM-dd",
+            "dd/MM/yy", "d/M/yy", "MM/dd/yyyy", "M/d/yyyy",
+        };
+
+        if (DateTime.TryParseExact(raw.Trim(), formats, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var exact))
+        {
+            return exact;
+        }
+
+        if (DateTime.TryParse(raw.Trim(), CultureInfo.GetCultureInfo("it-IT"),
+                DateTimeStyles.None, out var it))
+        {
+            return it;
+        }
+
+        if (DateTime.TryParse(raw.Trim(), CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var invariant))
+        {
+            return invariant;
+        }
+
+        // Excel serial date number
+        if (double.TryParse(raw.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var oaDate))
+        {
+            return DateTime.FromOADate(oaDate);
+        }
+
+        throw new InvalidOperationException($"Cannot parse date '{raw}'.");
+    }
+
+    // ── Session / DTO types ──────────────────────────────────────────────────
+
+    private sealed class ImportSession
+    {
+        public required List<ExcelColumn> Columns { get; init; }
+        public required List<Dictionary<int, string>> Rows { get; init; }
+        public required DateTime CreatedAt { get; init; }
+    }
+
+    public class ExcelColumn
+    {
+        public int Index { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public class ColumnMapping
+    {
+        /// <summary>1-based Excel column index from Analyze.</summary>
+        public int ColumnIndex { get; set; }
+
+        /// <summary>One of MappableFields: Ignore | Description | Amount | Date | Category.</summary>
+        public string TargetField { get; set; } = "Ignore";
+    }
+
+    public class AnalyzeResponse
+    {
+        public Guid SessionId { get; set; }
+        public List<ExcelColumn> Columns { get; set; } = [];
+        public List<Dictionary<string, string>> SampleRows { get; set; } = [];
+        public string[] MappableFields { get; set; } = [];
+    }
+
+    public class PreviewRequest
+    {
+        public Guid SessionId { get; set; }
+        public int PocketId { get; set; }
+        public List<ColumnMapping> Mapping { get; set; } = [];
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public Transaction.TransactionCategory DefaultCategory { get; set; } = Transaction.TransactionCategory.Other;
+    }
+
+    public class PreviewResponse
+    {
+        public Guid SessionId { get; set; }
+        public List<Transaction> Transactions { get; set; } = [];
+        public List<string> Errors { get; set; } = [];
+    }
+
+    public class ConfirmRequest
+    {
+        public Guid SessionId { get; set; }
+        public int PocketId { get; set; }
+        public List<Transaction> Transactions { get; set; } = [];
+    }
+
+    public class ConfirmResponse
+    {
+        public int SavedCount { get; set; }
+        public List<Transaction> Transactions { get; set; } = [];
+    }
+}

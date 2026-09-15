@@ -32,7 +32,7 @@ public class Analytics
         var currentMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
         var currentMonthBalance = pockets.Sum(p => p.Balance);
-        var totalExpenses = transactions.Where(t => t.Amount < 0).Sum(t => t.Amount);
+        var totalExpenses = transactions.Where(IsExpense).Sum(t => t.Amount);
         var totalIncome = transactions.Where(t => t.Amount > 0).Sum(t => t.Amount);
 
         var monthlyTransactions = transactions
@@ -42,12 +42,12 @@ public class Analytics
             .Where(t => t.Date.Year == previousMonth.Year && t.Date.Month == previousMonth.Month)
             .ToList();
 
-        var monthlyExpenses = monthlyTransactions.Where(t => t.Amount < 0).ToList();
+        var monthlyExpenses = monthlyTransactions.Where(IsExpense).ToList();
         var monthlyIncome = monthlyTransactions.Where(t => t.Amount > 0).ToList();
         var monthlyTotalExpenses = monthlyExpenses.Sum(t => t.Amount);
         var monthlyTotalIncome = monthlyIncome.Sum(t => t.Amount);
         var previousMonthlyTotalIncome = previousMonthTransactions.Where(t => t.Amount > 0).Sum(t => t.Amount);
-        var previousMonthlyTotalExpenses = previousMonthTransactions.Where(t => t.Amount < 0).Sum(t => t.Amount);
+        var previousMonthlyTotalExpenses = previousMonthTransactions.Where(IsExpense).Sum(t => t.Amount);
 
         var currentMonthNetByPocket = monthlyTransactions
             .GroupBy(t => t.PocketId)
@@ -97,12 +97,12 @@ public class Analytics
             .ToDictionary(g => g.Key, g => g.Sum(t => t.Amount));
 
         var expensesPerPocket = pockets
-            .Select(pocket => new ExpensePerPocket
+            .ConvertAll(pocket => new ExpensePerPocket
             {
                 Pocket = pocket,
                 TotalExpenses = expensesPerPocketTotals.GetValueOrDefault(pocket.Id, 0)
             })
-            .ToList();
+;
 
         return new Analytics
         {
@@ -120,6 +120,11 @@ public class Analytics
             PreviousMonthTotalBalance = previousMonthBalance
         };
     }
+
+    private static bool IsExpense(Transaction transaction) =>
+        transaction.Amount < 0
+        && transaction.Category is not TransactionCategory.Savings
+        && transaction.Category is not TransactionCategory.Investments;
 
     public class ExpenseByCategory
     {
