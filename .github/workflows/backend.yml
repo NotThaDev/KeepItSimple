@@ -65,15 +65,34 @@ jobs:
       - name: Build backend
         run: dotnet build KeepItSimple.sln --configuration Release --no-restore
 
+  Test:
+    runs-on: ubuntu-latest
+    needs: [changes, Build]
+    if: needs.changes.outputs.backend == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore KeepItSimple.sln
+
+      - name: Run tests
+        run: dotnet test KeepItSimple.sln --configuration Release --no-restore
+
   CI:
     name: Backend / CI
     runs-on: ubuntu-latest
     if: needs.changes.outputs.backend == 'true'
-    needs: [changes, Format, Build]
+    needs: [changes, Format, Build, Test]
     steps:
       - name: Validate backend jobs
         run: |
-          if [[ "${{ needs.Format.result }}" != "success" || "${{ needs.Build.result }}" != "success" ]]; then
-            echo "Backend CI failed: format/build did not complete successfully"
+          if [[ "${{ needs.Format.result }}" != "success" || "${{ needs.Build.result }}" != "success" || "${{ needs.Test.result }}" != "success" ]]; then
+            echo "Backend CI failed: format/build/test did not complete successfully"
             exit 1
           fi
