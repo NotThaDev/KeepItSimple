@@ -125,8 +125,8 @@ export function TransactionPageContent({
     return (
       <>
         <DataTable
+          key={selectionResetTrigger}
           onRowSelectionChange={setSelectedRows}
-          resetSelectionTrigger={selectionResetTrigger}
           className="min-h-[580px]"
           columns={transactionDataColumns}
           data={transactions}
