@@ -118,6 +118,8 @@ export const INCOME_TRANSACTION_CATEGORIES: TransactionCategory[] = [
   TransactionCategory.Dividends,
   TransactionCategory.RentalIncome,
   TransactionCategory.Refund,
+  TransactionCategory.Savings,
+  TransactionCategory.Investments,
 ];
 
 export async function getTransactions(): Promise<
@@ -207,4 +209,74 @@ export async function deleteTransactions(
   }
 
   return { status: deleteTransactionsResponse.status };
+}
+
+export interface TransactionImportColumn {
+  index: number;
+  name: string;
+}
+
+export interface TransactionImportAnalyzeResponse {
+  sessionId: string;
+  columns: TransactionImportColumn[];
+  sampleRows: Record<string, string>[];
+  mappableFields: string[];
+}
+
+export interface TransactionImportColumnMapping {
+  columnIndex: number;
+  targetField: string;
+}
+
+export interface TransactionImportDraft {
+  description?: string;
+  amount: number;
+  date: string;
+  category: TransactionCategory;
+  pocketId: number;
+}
+
+export interface TransactionImportPreviewResponse {
+  sessionId: string;
+  transactions: TransactionImportDraft[];
+  errors: string[];
+}
+
+export interface TransactionImportConfirmResponse {
+  savedCount: number;
+  transactions: TransactionImportDraft[];
+}
+
+export async function analyzeTransactionImport(
+  file: File,
+): Promise<FetchWrapperResponse<TransactionImportAnalyzeResponse>> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return post<TransactionImportAnalyzeResponse>(
+    "/api/transactions/import/analyze",
+    formData,
+  );
+}
+
+export async function previewTransactionImport(request: {
+  sessionId: string;
+  pocketId: number;
+  mapping: TransactionImportColumnMapping[];
+  defaultCategory?: TransactionCategory;
+}): Promise<FetchWrapperResponse<TransactionImportPreviewResponse>> {
+  return post<TransactionImportPreviewResponse>(
+    "/api/transactions/import/preview",
+    request,
+  );
+}
+
+export async function confirmTransactionImport(request: {
+  sessionId: string;
+  pocketId: number;
+  transactions: TransactionImportDraft[];
+}): Promise<FetchWrapperResponse<TransactionImportConfirmResponse>> {
+  return post<TransactionImportConfirmResponse>(
+    "/api/transactions/import/confirm",
+    request,
+  );
 }

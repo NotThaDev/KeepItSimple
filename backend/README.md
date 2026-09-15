@@ -30,9 +30,8 @@ backend/
 | Area | Routes | Notes |
 |------|--------|--------|
 | Pockets | `/api/pocket` | Accounts with balance / currency |
-| Transactions | `/api/transactions` | CRUD + filter by pocket |
+| Transactions | `/api/transactions` | CRUD, filter by pocket, and file import |
 | Analytics | `/api/analytics` | Aggregations over transactions |
-| Import | `/api/transactions/import` | Multi-step file → transaction flow |
 
 Persistence goes through `KeepItSimpleDbContext`; app code typically uses the static `KeepItSimpleContext` helper to open a scoped DbContext.
 

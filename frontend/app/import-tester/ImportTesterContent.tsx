@@ -1,7 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { Selection } from "@/components/common/selector/Selection";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Selection } from "@/components/common/selector/Selection";
 import {
   Select,
   SelectContent,
@@ -35,41 +33,18 @@ import {
 } from "@/lib/helpers/colors";
 import { Pocket } from "@/lib/models/Pocket";
 import {
+  analyzeTransactionImport,
+  confirmTransactionImport,
   EXPENSE_TRANSACTION_CATEGORIES,
   INCOME_TRANSACTION_CATEGORIES,
+  previewTransactionImport,
   TransactionCategory,
+  TransactionImportAnalyzeResponse,
+  TransactionImportConfirmResponse,
+  TransactionImportPreviewResponse,
 } from "@/lib/models/Transaction";
-
-interface ExcelColumn {
-  index: number;
-  name: string;
-}
-
-interface AnalyzeResponse {
-  sessionId: string;
-  columns: ExcelColumn[];
-  sampleRows: Record<string, string>[];
-  mappableFields: string[];
-}
-
-interface PreviewTransaction {
-  description?: string;
-  amount: number;
-  date: string;
-  category: TransactionCategory;
-  pocketId: number;
-}
-
-interface PreviewResponse {
-  sessionId: string;
-  transactions: PreviewTransaction[];
-  errors: string[];
-}
-
-interface ConfirmResponse {
-  savedCount: number;
-  transactions: PreviewTransaction[];
-}
+import { FormEvent, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 interface ImportTesterContentProps {
   pockets: Pocket[];
@@ -79,11 +54,14 @@ export function ImportTesterContent({
   pockets,
 }: Readonly<ImportTesterContentProps>) {
   const [file, setFile] = useState<File | null>(null);
-  const [analyze, setAnalyze] = useState<AnalyzeResponse | null>(null);
+  const [analyze, setAnalyze] =
+    useState<TransactionImportAnalyzeResponse | null>(null);
   const [mapping, setMapping] = useState<Record<number, string>>({});
   const [pocketId, setPocketId] = useState(pockets[0]?.id.toString() ?? "");
-  const [preview, setPreview] = useState<PreviewResponse | null>(null);
-  const [confirm, setConfirm] = useState<ConfirmResponse | null>(null);
+  const [preview, setPreview] =
+    useState<TransactionImportPreviewResponse | null>(null);
+  const [confirm, setConfirm] =
+    useState<TransactionImportConfirmResponse | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -113,18 +91,12 @@ export function ImportTesterContent({
     setPreview(null);
     setConfirm(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const result = await postForm<AnalyzeResponse>(
-      "/api/transactions/import/analyze",
-      formData,
-    );
+    const result = await analyzeTransactionImport(file);
 
     setIsAnalyzing(false);
 
-    if (result.error || !result.data) {
-      toast.error(result.error ?? "Analyze failed.");
+    if (result.status !== 200 || !result.data) {
+      toast.error(importErrorMessage(result.status, "analyze"));
       setAnalyze(null);
       return;
     }
@@ -153,23 +125,20 @@ export function ImportTesterContent({
     setIsPreviewing(true);
     setConfirm(null);
 
-    const result = await postJson<PreviewResponse>(
-      "/api/transactions/import/preview",
-      {
-        sessionId: analyze.sessionId,
-        pocketId: Number(pocketId),
-        defaultCategory: TransactionCategory.Other,
-        mapping: analyze.columns.map((column) => ({
-          columnIndex: column.index,
-          targetField: mapping[column.index] ?? "Ignore",
-        })),
-      },
-    );
+    const result = await previewTransactionImport({
+      sessionId: analyze.sessionId,
+      pocketId: Number(pocketId),
+      defaultCategory: TransactionCategory.Other,
+      mapping: analyze.columns.map((column) => ({
+        columnIndex: column.index,
+        targetField: mapping[column.index] ?? "Ignore",
+      })),
+    });
 
     setIsPreviewing(false);
 
-    if (result.error || !result.data) {
-      toast.error(result.error ?? "Preview failed.");
+    if (result.status !== 200 || !result.data) {
+      toast.error(importErrorMessage(result.status, "preview"));
       setPreview(null);
       return;
     }
@@ -193,19 +162,16 @@ export function ImportTesterContent({
 
     setIsConfirming(true);
 
-    const result = await postJson<ConfirmResponse>(
-      "/api/transactions/import/confirm",
-      {
-        sessionId: preview.sessionId,
-        pocketId: Number(pocketId),
-        transactions: preview.transactions,
-      },
-    );
+    const result = await confirmTransactionImport({
+      sessionId: preview.sessionId,
+      pocketId: Number(pocketId),
+      transactions: preview.transactions,
+    });
 
     setIsConfirming(false);
 
-    if (result.error || !result.data) {
-      toast.error(result.error ?? "Confirm failed.");
+    if (result.status !== 200 || !result.data) {
+      toast.error(importErrorMessage(result.status, "confirm"));
       setConfirm(null);
       return;
     }
@@ -220,11 +186,15 @@ export function ImportTesterContent({
         <CardHeader>
           <CardTitle>1. Analyze</CardTitle>
           <CardDescription>
-            Upload an .xls / .xlsx / .csv file. Hidden tester page, not in the sidebar.
+            Upload an .xls / .xlsx / .csv file. Hidden tester page, not in the
+            sidebar.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="flex flex-col gap-4 md:flex-row md:items-end" onSubmit={handleAnalyze}>
+          <form
+            className="flex flex-col gap-4 md:flex-row md:items-end"
+            onSubmit={handleAnalyze}
+          >
             <div className="flex flex-1 flex-col gap-2">
               <Label htmlFor="import-file">Excel file</Label>
               <Input
@@ -246,8 +216,8 @@ export function ImportTesterContent({
           <CardHeader>
             <CardTitle>2. Mapping</CardTitle>
             <CardDescription>
-              Session {analyze.sessionId}. Map each Excel column to a Transaction
-              field (Amount and Date are required).
+              Session {analyze.sessionId}. Map each Excel column to a
+              Transaction field (Amount and Date are required).
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
@@ -478,9 +448,7 @@ function CategorySelect({
   return (
     <Select
       value={value}
-      onValueChange={(nextValue) =>
-        onChange(nextValue as TransactionCategory)
-      }
+      onValueChange={(nextValue) => onChange(nextValue as TransactionCategory)}
     >
       <SelectTrigger
         className="w-full min-w-44 border dark:bg-transparent dark:hover:bg-transparent [&_svg]:text-current"
@@ -518,79 +486,27 @@ function CategorySelect({
   );
 }
 
-async function postForm<T>(endpoint: string, formData: FormData) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+function importErrorMessage(
+  status: number,
+  step: "analyze" | "preview" | "confirm",
+) {
+  if (status === 0) {
+    return "Server is unreachable.";
+  }
 
-  try {
-    const response = await fetch(`${baseUrl}${endpoint}`, {
-      method: "POST",
-      body: formData,
-    });
-    const text = await response.text();
+  if (status === 404) {
+    return "Import session expired. Analyze the file again.";
+  }
 
-    if (!response.ok) {
-      return {
-        error: readApiError(text, response.status),
-        status: response.status,
-      };
+  if (status === 400) {
+    if (step === "analyze") {
+      return "The file is invalid or unsupported.";
     }
-
-    return {
-      data: JSON.parse(text) as T,
-      status: response.status,
-    };
-  } catch {
-    return {
-      error: "Server is unreachable",
-      status: 0,
-    };
-  }
-}
-
-async function postJson<T>(endpoint: string, body: unknown) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-
-  try {
-    const response = await fetch(`${baseUrl}${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const text = await response.text();
-
-    if (!response.ok) {
-      return {
-        error: readApiError(text, response.status),
-        status: response.status,
-      };
+    if (step === "preview") {
+      return "The column mapping is invalid.";
     }
-
-    return {
-      data: JSON.parse(text) as T,
-      status: response.status,
-    };
-  } catch {
-    return {
-      error: "Server is unreachable",
-      status: 0,
-    };
-  }
-}
-
-function readApiError(text: string, status: number) {
-  const trimmed = text.trim();
-  if (!trimmed) {
-    return `Request failed with status ${status}`;
+    return "Nothing to save.";
   }
 
-  try {
-    const parsed = JSON.parse(trimmed);
-    if (typeof parsed === "string") {
-      return parsed;
-    }
-  } catch {
-    // Keep the raw body when it is not JSON.
-  }
-
-  return trimmed;
+  return "Something went wrong. Please try again.";
 }

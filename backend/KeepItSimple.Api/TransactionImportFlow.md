@@ -27,7 +27,7 @@ The user never dumps raw Excel into the database. Each step is an explicit API r
 sequenceDiagram
   actor User
   participant UI
-  participant API as TransactionImportController
+  participant API as TransactionController
   participant Helper as TransactionImportHelper
   participant DB as PostgreSQL
 

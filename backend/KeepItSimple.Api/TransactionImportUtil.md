@@ -2,7 +2,7 @@
 
 Implementation reference for [`helpers/TransactionImportHelper.cs`](./helpers/TransactionImportHelper.cs).
 
-**Controller:** [`controllers/TransactionImportController.cs`](./controllers/TransactionImportController.cs)  
+**Controller:** [`controllers/TransactionController.cs`](./controllers/TransactionController.cs) (`POST /api/transactions/import/...`)  
 **Product flow (UI conversation):** [TransactionImportFlow.md](./TransactionImportFlow.md)  
 **Backend overview:** [../README.md](../README.md)
 
@@ -14,7 +14,7 @@ POC that imports bank/export files whose layout is **unknown in advance**. The U
 
 Supported formats: `.xls`, `.xlsx`, `.xlsm`, `.csv`. ExcelDataReader opens workbooks from the file bytes; CSV falls back to the CSV reader.
 
-Logic lives in `TransactionImportHelper` (static methods + nested DTOs). The controller only validates HTTP input and maps exceptions to status codes. Sessions live in a process-local `ConcurrentDictionary` (POC: lost on restart / multi-instance).
+Logic lives in `TransactionImportHelper` (static methods + nested DTOs). `TransactionController` only validates HTTP input and maps exceptions to status codes. Sessions live in a process-local `ConcurrentDictionary` (POC: lost on restart / multi-instance).
 
 ---
 
