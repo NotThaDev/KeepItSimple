@@ -1,7 +1,7 @@
 "use client";
 
 import { Transaction } from "@/lib/models/Transaction";
-import { ColumnDef } from "@tanstack/react-table";
+import { createColumnHelper } from "@tanstack/react-table";
 import { DeleteTransactionButton } from "./DeleteTransactionButton";
 import { ENGLISH_DATE_FORMATTER } from "@/components/common/DateUtils";
 import { Button } from "@/components/ui/button";
@@ -13,18 +13,21 @@ import {
   DEFAULT_CATEGORY_COLORS,
 } from "@/lib/helpers/colors";
 import { Checkbox } from "@/components/ui/checkbox";
+import { type DataTableFeatures } from "@/components/common/dataTable/DataTableFeatures";
 
 interface TransactionColumnsProps {
   pockets: Pocket[];
   onEdit: (transaction: Transaction) => void;
 }
 
+const columnHelper = createColumnHelper<DataTableFeatures, Transaction>();
+
 export function getTransactionDataColumns({
   pockets,
   onEdit,
-}: Readonly<TransactionColumnsProps>): ColumnDef<Transaction>[] {
-  return [
-    {
+}: Readonly<TransactionColumnsProps>) {
+  return columnHelper.columns([
+    columnHelper.display({
       id: "select",
       size: 1,
       header: ({ table }) => (
@@ -46,28 +49,25 @@ export function getTransactionDataColumns({
       ),
       enableSorting: false,
       enableHiding: false,
-    },
-    {
-      accessorKey: "amount",
+    }),
+    columnHelper.accessor("amount", {
       header: "Amount",
       cell: ({ getValue }) => {
-        const amount = getValue() as number;
+        const amount = getValue();
         return `€${amount.toFixed(2)}`;
       },
-    },
-    {
-      accessorKey: "date",
+    }),
+    columnHelper.accessor("date", {
       header: "Date",
       cell: ({ getValue }) => {
-        const date = getValue() as Date;
+        const date = getValue();
         return ENGLISH_DATE_FORMATTER.format(date);
       },
-    },
-    {
-      accessorKey: "category",
+    }),
+    columnHelper.accessor("category", {
       header: "Category",
       cell: ({ getValue }) => {
-        const category = getValue() as string;
+        const category = getValue();
         const colors =
           CategoryColorMap[category as keyof typeof CategoryColorMap] ??
           DEFAULT_CATEGORY_COLORS;
@@ -85,29 +85,27 @@ export function getTransactionDataColumns({
           </Badge>
         );
       },
-    },
-    {
-      accessorKey: "pocketId",
+    }),
+    columnHelper.accessor("pocketId", {
       header: "Pocket",
       cell: ({ getValue }) => {
-        const pocket = getValue() as number;
+        const pocket = getValue();
         const pocketName = pockets.find((p: Pocket) => p.id === pocket)?.name;
         return <div className="capitalize">{pocketName}</div>;
       },
-    },
-    {
-      accessorKey: "description",
+    }),
+    columnHelper.accessor("description", {
       header: "Description",
       cell: ({ getValue }) => {
-        const description = getValue() as string | undefined;
+        const description = getValue();
         return (
           <div className="max-w-xs truncate text-ellipsis">
             {description || "-"}
           </div>
         );
       },
-    },
-    {
+    }),
+    columnHelper.display({
       id: "actions",
       size: 1,
       header: () => <div className="text-center">Actions</div>,
@@ -127,6 +125,6 @@ export function getTransactionDataColumns({
           </div>
         );
       },
-    },
-  ];
+    }),
+  ]);
 }
