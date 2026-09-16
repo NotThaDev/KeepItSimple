@@ -69,7 +69,7 @@ public static class TransactionQuery
             var term = query.Search.Trim().ToLower();
             filtered = filtered.Where(transaction =>
                 transaction.Description != null
-                && transaction.Description.Contains(term, StringComparison.CurrentCultureIgnoreCase));
+                && transaction.Description.ToLower().Contains(term));
         }
 
         return filtered;
