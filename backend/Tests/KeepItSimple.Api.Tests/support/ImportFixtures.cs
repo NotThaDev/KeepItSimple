@@ -1,10 +1,12 @@
 using System.Reflection;
+using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Helpers;
+using static KeepItSimple.Api.Helpers.TransactionImporter;
 
 namespace KeepItSimple.Api.Tests.Support;
 
 /// <summary>
-/// Locates the committed Excel fixtures and builds the mappings the import helper expects.
+/// Locates the committed Excel fixtures and builds the mappings the importer expects.
 /// </summary>
 public static class ImportFixtures
 {
@@ -26,15 +28,15 @@ public static class ImportFixtures
         return File.OpenRead(path);
     }
 
-    public static TransactionImportHelper.AnalyzeResponse Analyze(string fileName)
+    public static AnalyzeResponse Analyze(string fileName)
     {
         using var stream = Open(fileName);
-        return TransactionImportHelper.Analyze(stream);
+        return TransactionImporter.Analyze(stream);
     }
 
-    public static TransactionImportHelper.ColumnMapping Map(int columnIndex, string targetField)
+    public static ColumnMapping Map(int columnIndex, MappableField targetField)
     {
-        return new TransactionImportHelper.ColumnMapping
+        return new ColumnMapping
         {
             ColumnIndex = columnIndex,
             TargetField = targetField,
@@ -44,13 +46,11 @@ public static class ImportFixtures
     /// <summary>
     /// Maps the given target fields onto consecutive columns starting at <paramref name="firstColumnIndex"/>.
     /// </summary>
-    public static List<TransactionImportHelper.ColumnMapping> MapInOrder(
+    public static List<ColumnMapping> MapInOrder(
         int firstColumnIndex,
-        params string[] targetFields)
+        params MappableField[] targetFields)
     {
-        return targetFields
-            .Select((targetField, offset) => Map(firstColumnIndex + offset, targetField))
-            .ToList();
+        return [.. targetFields.Select((targetField, offset) => Map(firstColumnIndex + offset, targetField))];
     }
 
     /// <summary>

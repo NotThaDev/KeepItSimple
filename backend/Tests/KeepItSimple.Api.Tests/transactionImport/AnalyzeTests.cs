@@ -37,7 +37,7 @@ public class AnalyzeTests
     {
         var response = ImportFixtures.Analyze("transactions.xlsx");
 
-        Assert.Equal(TransactionImportHelper.MappableFields, response.MappableFields);
+        Assert.Equal(TransactionImporter.MappableFields, response.MappableFields);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class AnalyzeTests
         using var stream = ImportFixtures.Open(ExcelFixtureGenerator.NoHeaderFile);
 
         var exception = Assert.Throws<InvalidOperationException>(
-            () => TransactionImportHelper.Analyze(stream));
+            () => TransactionImporter.Analyze(stream));
 
         Assert.Contains("No header row found", exception.Message);
     }

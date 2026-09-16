@@ -1,7 +1,9 @@
 using System.Text;
+using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models;
 using KeepItSimple.Api.Tests.Support;
+using static KeepItSimple.Api.Helpers.TransactionImporter;
 
 namespace KeepItSimple.Api.Tests.TransactionImport;
 
@@ -94,7 +96,7 @@ public class PreviewTests
     {
         var exception = Assert.Throws<ArgumentException>(() => Preview(
             ImportFixtures.Analyze(StandardStatement),
-            ImportFixtures.MapInOrder(1, "Date", "Description", "Ignore", "Ignore")));
+            ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Description, MappableField.Ignore, MappableField.Ignore)));
 
         Assert.Contains("Amount", exception.Message);
     }
@@ -104,7 +106,7 @@ public class PreviewTests
     {
         var exception = Assert.Throws<ArgumentException>(() => Preview(
             ImportFixtures.Analyze(StandardStatement),
-            ImportFixtures.MapInOrder(1, "Ignore", "Description", "Amount", "Ignore")));
+            ImportFixtures.MapInOrder(1, MappableField.Ignore, MappableField.Description, MappableField.Amount, MappableField.Ignore)));
 
         Assert.Contains("Date", exception.Message);
     }
@@ -114,7 +116,7 @@ public class PreviewTests
     {
         var exception = Assert.Throws<ArgumentException>(() => Preview(
             ImportFixtures.Analyze(StandardStatement),
-            ImportFixtures.MapInOrder(1, "Date", "Amount", "Amount", "Ignore")));
+            ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Amount, MappableField.Amount, MappableField.Ignore)));
 
         Assert.Contains("Duplicate mappings", exception.Message);
     }
@@ -122,14 +124,14 @@ public class PreviewTests
     [Fact]
     public void Preview_rejects_an_unknown_session()
     {
-        var request = new TransactionImportHelper.PreviewRequest
+        var request = new PreviewRequest
         {
             SessionId = Guid.NewGuid(),
             PocketId = PocketId,
-            Mapping = ImportFixtures.MapInOrder(1, "Date", "Description", "Amount", "Ignore"),
+            Mapping = ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Description, MappableField.Amount, MappableField.Ignore),
         };
 
-        Assert.Throws<KeyNotFoundException>(() => TransactionImportHelper.Preview(request));
+        Assert.Throws<KeyNotFoundException>(() => TransactionImporter.Preview(request));
     }
 
     /// <summary>
@@ -141,8 +143,8 @@ public class PreviewTests
     {
         var analyzed = ImportFixtures.Analyze(StandardStatement);
 
-        var byDetails = Preview(analyzed, ImportFixtures.MapInOrder(1, "Date", "Description", "Amount", "Ignore"));
-        var byCurrency = Preview(analyzed, ImportFixtures.MapInOrder(1, "Date", "Ignore", "Amount", "Description"));
+        var byDetails = Preview(analyzed, ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Description, MappableField.Amount, MappableField.Ignore));
+        var byCurrency = Preview(analyzed, ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Ignore, MappableField.Amount, MappableField.Description));
 
         Assert.Equal("Salary", byDetails.Transactions[0].Description);
         Assert.Equal("EUR", byCurrency.Transactions[0].Description);
@@ -163,10 +165,10 @@ public class PreviewTests
         stream.Write(Encoding.UTF8.GetBytes(csv));
         stream.Position = 0;
 
-        var analyzed = TransactionImportHelper.Analyze(stream);
+        var analyzed = TransactionImporter.Analyze(stream);
         var response = Preview(
             analyzed,
-            ImportFixtures.MapInOrder(1, "Date", "Description", "Amount"));
+            ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Description, MappableField.Amount));
 
         Assert.Empty(response.Errors);
         Assert.Equal([-356m, 12.50m, 1234.56m, -90m], response.Transactions.Select(t => t.Amount));
@@ -248,36 +250,36 @@ public class PreviewTests
             });
     }
 
-    private static TransactionImportHelper.PreviewResponse PreviewStatement(
+    private static PreviewResponse PreviewStatement(
         string fileName,
         Transaction.TransactionCategory defaultCategory = Transaction.TransactionCategory.Other)
     {
         return Preview(
             ImportFixtures.Analyze(fileName),
-            ImportFixtures.MapInOrder(1, "Date", "Description", "Amount", "Ignore"),
+            ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Description, MappableField.Amount, MappableField.Ignore),
             defaultCategory);
     }
 
-    private static TransactionImportHelper.PreviewResponse PreviewMessyFormats()
+    private static PreviewResponse PreviewMessyFormats()
     {
         return Preview(
             ImportFixtures.Analyze(ExcelFixtureGenerator.MessyFormatsFile),
-            ImportFixtures.MapInOrder(1, "Date", "Description", "Amount", "Category"));
+            ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Description, MappableField.Amount, MappableField.Category));
     }
 
-    private static TransactionImportHelper.PreviewResponse PreviewInvalidRows()
+    private static PreviewResponse PreviewInvalidRows()
     {
         return Preview(
             ImportFixtures.Analyze(ExcelFixtureGenerator.InvalidRowsFile),
-            ImportFixtures.MapInOrder(1, "Date", "Description", "Amount"));
+            ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Description, MappableField.Amount));
     }
 
-    private static TransactionImportHelper.PreviewResponse Preview(
-        TransactionImportHelper.AnalyzeResponse analyzed,
-        List<TransactionImportHelper.ColumnMapping> mapping,
+    private static PreviewResponse Preview(
+        AnalyzeResponse analyzed,
+        List<ColumnMapping> mapping,
         Transaction.TransactionCategory defaultCategory = Transaction.TransactionCategory.Other)
     {
-        return TransactionImportHelper.Preview(new TransactionImportHelper.PreviewRequest
+        return TransactionImporter.Preview(new PreviewRequest
         {
             SessionId = analyzed.SessionId,
             PocketId = PocketId,
