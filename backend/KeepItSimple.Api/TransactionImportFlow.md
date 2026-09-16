@@ -2,7 +2,7 @@
 
 End-to-end conversation between UI and API: **file → columns → map → save**.
 
-**Helper details:** [TransactionImportUtil.md](./TransactionImportUtil.md)  
+**Importer details:** [TransactionImportUtil.md](./TransactionImportUtil.md)  
 **Backend overview:** [../README.md](../README.md)
 
 ---
@@ -11,8 +11,8 @@ End-to-end conversation between UI and API: **file → columns → map → save*
 
 ```mermaid
 flowchart LR
-  A[File<br/>xls / xlsx / csv] --> B[Columns<br/>discovered headers]
-  B --> C[Map<br/>column → field]
+  A[File<br/>xls / xlsx / xlsm / csv] --> B[Columns<br/>discovered headers]
+  B --> C[Map<br/>column → MappableField]
   C --> D[Preview<br/>draft transactions]
   D --> E[Save<br/>confirm & persist]
 ```
@@ -28,30 +28,30 @@ sequenceDiagram
   actor User
   participant UI
   participant API as TransactionController
-  participant Helper as TransactionImportHelper
+  participant Importer as TransactionImporter
   participant DB as PostgreSQL
 
   User->>UI: Uploads bank export
   UI->>API: POST /analyze (multipart file)
-  API->>Helper: Analyze(stream)
-  Helper->>Helper: Detect header (≥3 consecutive strings)
-  Helper->>Helper: Store rows in session
-  Helper-->>API: sessionId + columns + samples
+  API->>Importer: Analyze(stream)
+  Importer->>Importer: Detect header (≥3 consecutive strings)
+  Importer->>Importer: Store rows in session
+  Importer-->>API: sessionId + columns + samples
   API-->>UI: AnalyzeResponse
 
   User->>UI: Maps each column → Date / Amount / … / Ignore
   UI->>API: POST /preview (sessionId + mapping + pocketId)
-  API->>Helper: Preview(request)
-  Helper->>Helper: Build draft Transaction list
-  Helper-->>API: drafts + per-row errors
+  API->>Importer: Preview(request)
+  Importer->>Importer: Build draft Transaction list
+  Importer-->>API: drafts + per-row errors
   API-->>UI: PreviewResponse
 
   User->>UI: Reviews / edits drafts, confirms
   UI->>API: POST /confirm (sessionId + pocketId + transactions)
-  API->>Helper: Confirm(request)
-  Helper->>DB: Insert transactions, update pocket balance
-  Helper->>Helper: Drop session
-  Helper-->>API: savedCount + entities
+  API->>Importer: Confirm(request)
+  Importer->>DB: Insert transactions, update pocket balance
+  Importer->>Importer: Drop session
+  Importer-->>API: savedCount + entities
   API-->>UI: ConfirmResponse
 ```
 
@@ -63,7 +63,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-  U[Upload .xls / .xlsx / .csv] --> R[Open with ExcelDataReader]
+  U[Upload .xls / .xlsx / .xlsm / .csv] --> R[Open with ExcelDataReader]
   R --> S[Scan rows from top]
   S --> H{Row has ≥3 consecutive<br/>non-empty strings?}
   H -->|No| S
@@ -72,7 +72,7 @@ flowchart TD
   D --> OUT[Return sessionId,<br/>columns, sampleRows,<br/>mappableFields]
 ```
 
-**UI responsibility:** render each discovered column and let the user pick a target field (`Ignore`, `Description`, `Amount`, `Date`, `Category`). Sample rows help disambiguate labels like `"Data di erogazione"`.
+**UI responsibility:** render each discovered column and let the user pick a `MappableField` (`Ignore`, `Description`, `Amount`, `Date`, `Category`). Sample rows help disambiguate labels like `"Data di erogazione"`.
 
 | Excel column | User maps to |
 |--------------|--------------|
@@ -142,6 +142,8 @@ stateDiagram-v2
 | File → columns | `POST` | `/api/transactions/import/analyze` | `multipart`: `file` |
 | Columns → map | `POST` | `/api/transactions/import/preview` | JSON: `sessionId`, `pocketId`, `mapping`, `defaultCategory?` |
 | Map → save | `POST` | `/api/transactions/import/confirm` | JSON: `sessionId`, `pocketId`, `transactions` |
+
+`mapping[].targetField` is a `MappableField` enum, serialized as a string (`"Date"`, `"Amount"`, …).
 
 ---
 

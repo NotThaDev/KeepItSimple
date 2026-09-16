@@ -16,11 +16,12 @@ backend/
 ├── README.md                 ← this file
 ├── KeepItSimple.Api/
 │   ├── controllers/          ← HTTP endpoints
-│   ├── helpers/              ← shared utilities (DB access, import, currency)
+│   ├── dtos/Transaction/     ← import request / response types
+│   ├── helpers/              ← TransactionImporter, DB access, currency
 │   ├── models/               ← domain entities (Active Record style)
 │   ├── Migrations/
 │   └── Program.cs
-└── tests/
+└── Tests/
     ├── data/                 ← fixtures shared by every test project
     └── KeepItSimple.Api.Tests/
 ```
@@ -37,11 +38,11 @@ Persistence goes through `KeepItSimpleDbContext`; app code typically uses the st
 
 ## Transaction import
 
-Bank/export files (`.xls` / `.xlsx` / `.csv`) have **unknown layouts**. The API discovers columns, the user maps them, drafts are previewed, then saved.
+Bank/export files (`.xls` / `.xlsx` / `.xlsm` / `.csv`) have **unknown layouts**. The API discovers columns, the user maps them onto `MappableField` values, drafts are previewed, then saved.
 
 Docs inside the API project:
 
-- **[TransactionImportUtil.md](./KeepItSimple.Api/TransactionImportUtil.md)** – how the helper works (analyze / preview / confirm)
+- **[TransactionImportUtil.md](./KeepItSimple.Api/TransactionImportUtil.md)** – how `TransactionImporter` works (analyze / preview / confirm)
 - **[TransactionImportFlow.md](./KeepItSimple.Api/TransactionImportFlow.md)** – UI ↔ API conversation: file → columns → map → save
 
 ```mermaid
@@ -56,7 +57,7 @@ flowchart LR
 
 `dotnet test KeepItSimple.sln` from the repo root.
 
-`KeepItSimple.Api.Tests` currently covers the import helper's `Analyze` and `Preview`, which are pure and need no database. The Excel fixtures they read live in `tests/data/transactionImports` and are committed as binaries; `ExcelFixtureGenerator` writes them with NPOI, so after changing a dataset rebuild them with:
+`KeepItSimple.Api.Tests` covers `TransactionImporter.Analyze` and `Preview`, which are pure and need no database. The Excel fixtures they read live in `Tests/data/transactionImports` and are committed as binaries; `ExcelFixtureGenerator` writes them with NPOI, so after changing a dataset rebuild them with:
 
 ```bash
 REGENERATE_IMPORT_FIXTURES=1 dotnet test

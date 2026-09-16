@@ -1,8 +1,9 @@
 # TransactionImportUtil
 
-Implementation reference for [`helpers/TransactionImportHelper.cs`](./helpers/TransactionImportHelper.cs).
+Implementation reference for [`helpers/TransactionImporter.cs`](./helpers/TransactionImporter.cs).
 
 **Controller:** [`controllers/TransactionController.cs`](./controllers/TransactionController.cs) (`POST /api/transactions/import/...`)  
+**DTOs:** [`dtos/Transaction/`](./dtos/Transaction/)  
 **Product flow (UI conversation):** [TransactionImportFlow.md](./TransactionImportFlow.md)  
 **Backend overview:** [../README.md](../README.md)
 
@@ -10,11 +11,13 @@ Implementation reference for [`helpers/TransactionImportHelper.cs`](./helpers/Tr
 
 ## Purpose
 
-POC that imports bank/export files whose layout is **unknown in advance**. The UI never assumes fixed column names: the API discovers headers, the user maps them onto `Transaction` fields, drafts are previewed, then saved.
+Imports bank/export files whose layout is **unknown in advance**. The UI never assumes fixed column names: the API discovers headers, the user maps them onto `Transaction` fields (`MappableField`), drafts are previewed, then saved.
 
-Supported formats: `.xls`, `.xlsx`, `.xlsm`, `.csv`. ExcelDataReader opens workbooks from the file bytes; CSV falls back to the CSV reader.
+Supported formats: `.xls`, `.xlsx`, `.xlsm`, `.csv`. ExcelDataReader opens workbooks from the file bytes; if that fails, it falls back to the CSV reader.
 
-Logic lives in `TransactionImportHelper` (static methods + nested DTOs). `TransactionController` only validates HTTP input and maps exceptions to status codes. Sessions live in a process-local `ConcurrentDictionary` (POC: lost on restart / multi-instance).
+Logic lives in `TransactionImporter` (static methods). Request/response types live in `dtos/Transaction/`. Nested types that are also part of the payload (`ExcelColumn`, `ColumnMapping`, `MappableField`) stay on the importer. `TransactionController` only validates HTTP input and maps exceptions to status codes.
+
+Sessions live in a process-local `ConcurrentDictionary` (lost on restart / not shared across instances).
 
 ---
 
@@ -26,13 +29,13 @@ Logic lives in `TransactionImportHelper` (static methods + nested DTOs). `Transa
 | `Preview(PreviewRequest)`   | Apply user column mapping → draft `Transaction` list                  |
 | `Confirm(ConfirmRequest)`   | Persist drafts, update pocket balance, drop session                   |
 
-Mappable target fields (`MappableFields`):
+Mappable target fields (`MappableField`):
 
 - `Ignore` – skip column
 - `Description`
 - `Amount` (**required** in mapping)
 - `Date` (**required** in mapping)
-- `Category` – optional; must match `Transaction.TransactionCategory` enum name
+- `Category` – optional; enum name or Italian alias (see below)
 
 `PocketId` is never taken from the file: the UI supplies it on preview/confirm.
 
@@ -43,27 +46,27 @@ Mappable target fields (`MappableFields`):
 1. Registers code-page encodings once (needed for legacy `.xls`).
 2. Copies the upload into a seekable `MemoryStream` (ExcelDataReader requirement).
 3. Opens the file with `OpenSpreadsheet` (Excel workbook, or CSV if that fails).
-4. **Header detection** (not “first row”):
+4. **`DetectHeaderColumns`** (not “first row”):
    - Scans rows from the top.
    - A row is a header when it contains **at least 3 consecutive cells** whose value is a **non-empty `string`** (numbers/dates do not count).
    - Rationale: a real statement header always includes at least date, description/causale, amount.
-5. On that row, **every** non-empty string cell becomes an `ExcelColumn` (`Index` 1-based, `Name` = cell text). Empty cells are skipped.
-6. All following non-empty data rows are stored in the session as `Dictionary<columnIndex, string>`.
-7. Returns `AnalyzeResponse`:
+   - On that row, **every** non-empty string cell becomes an `ExcelColumn` (`Index` 1-based, `Name` = cell text). Empty cells are skipped.
+5. **`ReadDataRows`**: all following non-empty rows are stored in the session as `Dictionary<columnIndex, string>`. Up to **10** sample rows (keyed by column name) go back to the UI.
+6. Returns `AnalyzeResponse`:
    - `sessionId` – opaque handle for preview/confirm
    - `columns` – discovered headers
-   - `sampleRows` – first 5 data rows (keyed by column name)
-   - `mappableFields` – allowed mapping targets
+   - `sampleRows` – first 10 data rows
+   - `mappableFields` – `MappableField` values (JSON strings)
 
 ```mermaid
 flowchart TD
   A[Upload stream] --> B[Seekable buffer]
   B --> E[OpenSpreadsheet]
-  E --> F[Scan rows]
+  E --> F[DetectHeaderColumns]
   F --> G{≥3 consecutive<br/>non-empty strings?}
   G -- No --> F
   G -- Yes --> H[Collect all string headers on row]
-  H --> I[Cache remaining data rows]
+  H --> I[ReadDataRows]
   I --> J[Return sessionId + columns + samples]
 ```
 
@@ -81,9 +84,9 @@ If no header row is found → `InvalidOperationException` → HTTP 400.
 3. For each cached data row, `BuildTransaction`:
    - walks the mapping; `Ignore` skipped
    - `ParseAmount` – strips `€`/spaces; handles `1.234,56` and `1,234.56`
-   - `ParseDate` – common EU/US formats, `it-IT`, invariant, Excel OA date serial
-   - `Category` – enum parse, else `defaultCategory` (default `Other`)
-4. Successful rows → `transactions`; failures → `errors` like `"Row N: …"` (drafts are still returned).
+   - `ParseDate` – common EU/US formats, `it-IT` (month names, dotted dates), invariant, Excel OA date serial
+   - `Category` – `Transaction.TransactionCategory` enum name (case-insensitive), else Italian aliases after accent stripping (`stipendio` → `Salary`), else `defaultCategory` (default `Other`)
+4. Successful rows → `transactions`; failures → `errors` like `"Row N: …"` (drafts are still returned). `N` is 1-based from the header row (header = 1).
 
 Nothing is written to the DB here. The UI may edit drafts before confirm.
 
@@ -105,21 +108,24 @@ flowchart TD
 
 ## Step 3 – `Confirm` in detail
 
-1. Resolves `Pocket` by `pocketId` (missing → 404).
-2. For each draft in the request body:
-   - clears `Id`
-   - sets `PocketId` / navigation
+1. Rejects an empty `transactions` list (HTTP 400).
+2. Resolves `Pocket` by `pocketId` (missing → 404).
+3. For each draft in the request body:
+   - clears `Id` (callers cannot overwrite existing rows)
+   - sets `PocketId` / navigation from the request (not from the draft)
    - `pocket.Balance += amount`
    - `Add` to `Transactions`
-3. Single `SaveChangesAsync`.
-4. Removes the import session from memory.
-5. Returns `savedCount` + persisted entities.
+4. Single `SaveChangesAsync`.
+5. Removes the import session from memory.
+6. Returns `savedCount` + persisted entities.
 
 Balance semantics match the rest of the app: negative amount = expense, positive = income.
 
 ```mermaid
 flowchart TD
-  R[ConfirmRequest] --> P[Find Pocket]
+  R[ConfirmRequest] --> E{Any transactions?}
+  E -- no --> BR[400]
+  E -- yes --> P[Find Pocket]
   P -- missing --> NF[404]
   P -- ok --> W[Insert each Transaction<br/>balance += amount]
   W --> S[SaveChangesAsync]
@@ -198,7 +204,7 @@ Base route: `/api/transactions/import`
 
 ---
 
-## POC limits
+## Current limits
 
 - Sessions are **in-memory only** (not shared across instances; cleared on restart).
 - Only the **first sheet** is read.
