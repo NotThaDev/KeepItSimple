@@ -1,3 +1,4 @@
+using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -95,7 +96,7 @@ public class TransactionController : ControllerBase
 
     [HttpPost("import/analyze")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public ActionResult<TransactionImportHelper.AnalyzeResponse> AnalyzeImport(IFormFile file)
+    public ActionResult<AnalyzeResponse> AnalyzeImport(IFormFile file)
     {
         if (file is null || file.Length == 0)
         {
@@ -111,7 +112,7 @@ public class TransactionController : ControllerBase
         try
         {
             using var stream = file.OpenReadStream();
-            var result = TransactionImportHelper.Analyze(stream);
+            var result = TransactionImporter.Analyze(stream);
             return Ok(result);
         }
         catch (Exception ex)
@@ -121,12 +122,12 @@ public class TransactionController : ControllerBase
     }
 
     [HttpPost("import/preview")]
-    public ActionResult<TransactionImportHelper.PreviewResponse> PreviewImport(
-        [FromBody] TransactionImportHelper.PreviewRequest request)
+    public ActionResult<PreviewResponse> PreviewImport(
+        [FromBody] PreviewRequest request)
     {
         try
         {
-            var result = TransactionImportHelper.Preview(request);
+            var result = TransactionImporter.Preview(request);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)
@@ -140,8 +141,8 @@ public class TransactionController : ControllerBase
     }
 
     [HttpPost("import/confirm")]
-    public async Task<ActionResult<TransactionImportHelper.ConfirmResponse>> ConfirmImport(
-        [FromBody] TransactionImportHelper.ConfirmRequest request)
+    public async Task<ActionResult<ConfirmResponse>> ConfirmImport(
+        [FromBody] ConfirmRequest request)
     {
         if (request.Transactions.Count == 0)
         {
@@ -150,7 +151,7 @@ public class TransactionController : ControllerBase
 
         try
         {
-            var result = await TransactionImportHelper.Confirm(request);
+            var result = await TransactionImporter.Confirm(request);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)

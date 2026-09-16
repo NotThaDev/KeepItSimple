@@ -3,36 +3,56 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json.Serialization;
 using ExcelDataReader;
+using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Models;
 
 namespace KeepItSimple.Api.Helpers;
 
 /// <summary>
-/// POC: 3-step file → Transaction import flow (.xls / .xlsx / .csv).
-/// 1. Analyze  – discover columns from an unknown file layout
-/// 2. Preview  – apply user column mapping and build draft transactions
-/// 3. Confirm  – persist the reviewed transactions
+/// Imports bank/export files into <see cref="Transaction"/> records when the spreadsheet
+/// layout is unknown. The UI never assumes fixed column names: the importer discovers
+/// headers, the user maps them onto transaction fields, drafts are previewed, then saved.
+/// <para>
+/// <see cref="Analyze"/> opens .xls / .xlsx / .xlsm / .csv, finds the header row, stores
+/// data rows in a session, and returns discovered columns with sample values.
+/// </para>
+/// <para>
+/// <see cref="Preview"/> applies the column mapping and builds draft transactions.
+/// Amount and Date must be mapped; Description and Category are optional. Pocket is chosen
+/// in the UI, not read from the file. Nothing is persisted yet.
+/// </para>
+/// <para>
+/// <see cref="Confirm"/> writes the reviewed drafts, updates the pocket balance, and
+/// discards the session.
+/// </para>
 /// </summary>
-public static class TransactionImportHelper
+public static class TransactionImporter
 {
-    // #TODO IMHO this can cause memory issues with large files, or with a massive number of sessions.
+    // #TODO This can cause memory issues with large files, or with a massive number of sessions.
     private static readonly ConcurrentDictionary<Guid, ImportSession> Sessions = new();
     private static int _encodingsRegistered;
     private const int MIN_CONSECUTIVE_STRINGS = 3;
     private const int MAX_SAMPLE_ROWS = 10;
 
-    // ── Target fields the UI can map columns onto ────────────────────────────
+    /// <summary>
+    /// The fields the UI can map columns onto.
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum MappableField
+    {
+        Ignore,
+        Description,
+        Amount,
+        Date,
+        Category,
+    }
 
-    public static readonly string[] MappableFields =
-    [
-        "Ignore",
-        "Description",
-        "Amount",
-        "Date",
-        "Category",
-    ];
+    public static readonly MappableField[] MappableFields = Enum.GetValues<MappableField>();
 
-    private static readonly Dictionary<string, Transaction.TransactionCategory> ItalianCategoryAliases =
+    // #TODO On a second step we should be able to have a list of rules that the user can configure to map the categories.
+    // #TODO We can also add other rules that looks at the description to map the category.
+    // e.g if the description contains "Amazon" then the category should be "Shopping".
+    private static readonly Dictionary<string, Transaction.TransactionCategory> CategoryAliases =
         new(StringComparer.OrdinalIgnoreCase)
         {
             ["caffe"] = Transaction.TransactionCategory.Coffe,
@@ -114,6 +134,7 @@ public static class TransactionImportHelper
 
     public static AnalyzeResponse Analyze(Stream fileStream)
     {
+        // Ensure the .xls can be parsed by ExcelDataReader
         EnsureEncodingsRegistered();
 
         // Seekable copy: ExcelDataReader needs it for .xls / format detection
@@ -122,51 +143,8 @@ public static class TransactionImportHelper
         buffer.Position = 0;
 
         using var reader = OpenSpreadsheet(buffer);
-
-        // Skip preamble rows until we find a header: ≥ MIN_CONSECUTIVE_STRINGS (3) consecutive valid strings
-        // (minimum expected: date, description/causale, amount).
-        List<ExcelColumn>? columns = null;
-        while (reader.Read())
-        {
-            if (TryDetectHeaderRow(reader, out columns))
-            {
-                break;
-            }
-        }
-
-        if (columns is null || columns.Count == 0)
-        {
-            throw new InvalidOperationException(
-                $"No header row found. Expected a row with at least {MIN_CONSECUTIVE_STRINGS} consecutive text columns.");
-        }
-
-        var rows = new List<Dictionary<int, string>>();
-        var samples = new List<Dictionary<string, string>>();
-
-        while (reader.Read())
-        {
-            if (IsEmptyRow(reader, columns))
-            {
-                continue;
-            }
-
-            var dict = new Dictionary<int, string>();
-            foreach (var col in columns)
-            {
-                dict[col.Index] = FormatCell(reader, col.Index - 1);
-            }
-            rows.Add(dict);
-
-            if (samples.Count < MAX_SAMPLE_ROWS)
-            {
-                var sample = new Dictionary<string, string>();
-                foreach (var col in columns)
-                {
-                    sample[col.Name] = dict[col.Index];
-                }
-                samples.Add(sample);
-            }
-        }
+        var columns = DetectHeaderColumns(reader);
+        var (rows, samples) = ReadDataRows(reader, columns);
 
         var sessionId = Guid.NewGuid();
         Sessions[sessionId] = new ImportSession
@@ -202,45 +180,86 @@ public static class TransactionImportHelper
     }
 
     /// <summary>
+    /// Skips preamble rows until a header is found: at least
+    /// <see cref="MIN_CONSECUTIVE_STRINGS"/> consecutive non-empty strings
+    /// (date, description/causale, amount).
+    /// </summary>
+    private static List<ExcelColumn> DetectHeaderColumns(IExcelDataReader reader)
+    {
+        while (reader.Read())
+        {
+            if (TryDetectHeaderRow(reader, out var columns) && columns is { Count: > 0 })
+            {
+                return columns;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"No header row found. Expected a row with at least {MIN_CONSECUTIVE_STRINGS} consecutive text columns.");
+    }
+
+    /// <summary>
+    /// Reads remaining non-empty rows after the header. Session rows are keyed by
+    /// 1-based column index; sample rows are keyed by column name for the UI.
+    /// </summary>
+    private static (List<Dictionary<int, string>> Rows, List<Dictionary<string, string>> Samples)
+        ReadDataRows(IExcelDataReader reader, List<ExcelColumn> columns)
+    {
+        var rows = new List<Dictionary<int, string>>();
+        var samples = new List<Dictionary<string, string>>();
+
+        while (reader.Read())
+        {
+            if (IsEmptyRow(reader, columns))
+            {
+                continue;
+            }
+
+            var dict = new Dictionary<int, string>();
+            var collectSample = samples.Count < MAX_SAMPLE_ROWS;
+            var sample = collectSample ? new Dictionary<string, string>() : null;
+
+            foreach (var col in columns)
+            {
+                var value = FormatCell(reader, col.Index - 1);
+                dict[col.Index] = value;
+                sample?[col.Name] = value;
+            }
+
+            rows.Add(dict);
+            if (sample is not null)
+            {
+                samples.Add(sample);
+            }
+        }
+
+        return (rows, samples);
+    }
+
+    /// <summary>
     /// A header row has at least MIN_CONSECUTIVE_STRINGS consecutive cells with valid non-empty strings.
     /// When found, every non-empty string cell on that row becomes a mappable column.
     /// </summary>
     private static bool TryDetectHeaderRow(IExcelDataReader reader, out List<ExcelColumn>? columns)
     {
         columns = null;
-        var fieldCount = reader.FieldCount;
         var consecutive = 0;
         var hasThreeConsecutive = false;
-
-        for (var i = 0; i < fieldCount; i++)
-        {
-            if (IsValidHeaderString(reader.GetValue(i)))
-            {
-                consecutive++;
-                if (consecutive >= MIN_CONSECUTIVE_STRINGS)
-                {
-                    hasThreeConsecutive = true;
-                    break;
-                }
-            }
-            else
-            {
-                consecutive = 0;
-            }
-        }
-
-        if (!hasThreeConsecutive)
-        {
-            return false;
-        }
-
         var detected = new List<ExcelColumn>();
-        for (var i = 0; i < fieldCount; i++)
+
+        for (var i = 0; i < reader.FieldCount; i++)
         {
             var value = reader.GetValue(i);
             if (!IsValidHeaderString(value))
             {
+                consecutive = 0;
                 continue;
+            }
+
+            consecutive++;
+            if (consecutive >= MIN_CONSECUTIVE_STRINGS)
+            {
+                hasThreeConsecutive = true;
             }
 
             detected.Add(new ExcelColumn
@@ -250,7 +269,7 @@ public static class TransactionImportHelper
             });
         }
 
-        if (detected.Count == 0)
+        if (!hasThreeConsecutive)
         {
             return false;
         }
@@ -299,6 +318,13 @@ public static class TransactionImportHelper
         };
     }
 
+    /// <summary>
+    /// Applies the user's column mapping to the session opened by <see cref="Analyze"/>
+    /// and builds draft <see cref="Transaction"/> records. Amount and Date must be mapped;
+    /// Description and Category are optional. Rows that fail to parse are collected in
+    /// <see cref="PreviewResponse.Errors"/> instead of aborting the whole preview.
+    /// Nothing is written to the database.
+    /// </summary>
     public static PreviewResponse Preview(PreviewRequest request)
     {
         if (!Sessions.TryGetValue(request.SessionId, out var session))
@@ -334,18 +360,16 @@ public static class TransactionImportHelper
         };
     }
 
-    // ── Step 3: Confirm ──────────────────────────────────────────────────────
-
+    /// <summary>
+    /// Persists the reviewed draft transactions from <see cref="Preview"/> into the given
+    /// pocket, updates its balance, and discards the import session. Draft ids are ignored
+    /// so callers cannot overwrite existing rows; <c>PocketId</c> always comes from the request.
+    /// </summary>
     public static Task<ConfirmResponse> Confirm(ConfirmRequest request)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var pocket = await dbContext.Pockets.FindAsync(request.PocketId);
-            if (pocket is null)
-            {
-                throw new KeyNotFoundException($"Pocket {request.PocketId} not found.");
-            }
-
+            var pocket = await dbContext.Pockets.FindAsync(request.PocketId) ?? throw new KeyNotFoundException($"Pocket {request.PocketId} not found.");
             var saved = new List<Transaction>();
 
             foreach (var draft in request.Transactions)
@@ -375,16 +399,16 @@ public static class TransactionImportHelper
     private static void ValidateMapping(List<ColumnMapping> mapping)
     {
         var targets = mapping
-            .Where(m => m.TargetField != "Ignore")
+            .Where(m => m.TargetField != MappableField.Ignore)
             .Select(m => m.TargetField)
             .ToList();
 
-        if (targets.Contains("Amount") == false)
+        if (!targets.Contains(MappableField.Amount))
         {
             throw new ArgumentException("Mapping must include an Amount column.");
         }
 
-        if (targets.Contains("Date") == false)
+        if (!targets.Contains(MappableField.Date))
         {
             throw new ArgumentException("Mapping must include a Date column.");
         }
@@ -396,6 +420,10 @@ public static class TransactionImportHelper
         }
     }
 
+    /// <summary>
+    /// Builds a <see cref="Transaction"/> record from a row of the session opened by <see cref="Analyze"/>
+    /// and the user's column mapping. Amount and Date must be mapped; Description and Category are optional.
+    /// </summary>
     private static Transaction BuildTransaction(
         Dictionary<int, string> row,
         List<ColumnMapping> mapping,
@@ -409,7 +437,7 @@ public static class TransactionImportHelper
 
         foreach (var map in mapping)
         {
-            if (map.TargetField == "Ignore")
+            if (map.TargetField is MappableField.Ignore)
             {
                 continue;
             }
@@ -421,19 +449,19 @@ public static class TransactionImportHelper
 
             switch (map.TargetField)
             {
-                case "Description":
+                case MappableField.Description:
                     description = raw.Trim();
                     break;
 
-                case "Amount":
+                case MappableField.Amount:
                     amount = ParseAmount(raw);
                     break;
 
-                case "Date":
+                case MappableField.Date:
                     date = ParseDate(raw);
                     break;
 
-                case "Category":
+                case MappableField.Category:
                     if (TryParseCategory(raw, out var parsed))
                     {
                         category = parsed;
@@ -462,6 +490,12 @@ public static class TransactionImportHelper
         };
     }
 
+    /// <summary>
+    /// Tries to parse the category from the raw string.
+    /// If the category is not found in the <see cref="Transaction.TransactionCategory"/> enum, 
+    /// it tries to parse it using the <see cref="CategoryAliases"/> dictionary.
+    /// </summary>
+    // #TODO On a second step we should be able to have a list of rules that the user can configure to map the categories.
     private static bool TryParseCategory(string raw, out Transaction.TransactionCategory category)
     {
         var key = NormalizeCategoryLabel(raw);
@@ -470,7 +504,7 @@ public static class TransactionImportHelper
             return true;
         }
 
-        return ItalianCategoryAliases.TryGetValue(key, out category);
+        return CategoryAliases.TryGetValue(key, out category);
     }
 
     private static string NormalizeCategoryLabel(string raw)
@@ -578,8 +612,6 @@ public static class TransactionImportHelper
         throw new InvalidOperationException($"Cannot parse date '{raw}'.");
     }
 
-    // ── Session / DTO types ──────────────────────────────────────────────────
-
     private sealed class ImportSession
     {
         public required List<ExcelColumn> Columns { get; init; }
@@ -598,45 +630,7 @@ public static class TransactionImportHelper
         /// <summary>1-based Excel column index from Analyze.</summary>
         public int ColumnIndex { get; set; }
 
-        /// <summary>One of MappableFields: Ignore | Description | Amount | Date | Category.</summary>
-        public string TargetField { get; set; } = "Ignore";
-    }
-
-    public class AnalyzeResponse
-    {
-        public Guid SessionId { get; set; }
-        public List<ExcelColumn> Columns { get; set; } = [];
-        public List<Dictionary<string, string>> SampleRows { get; set; } = [];
-        public string[] MappableFields { get; set; } = [];
-    }
-
-    public class PreviewRequest
-    {
-        public Guid SessionId { get; set; }
-        public int PocketId { get; set; }
-        public List<ColumnMapping> Mapping { get; set; } = [];
-
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public Transaction.TransactionCategory DefaultCategory { get; set; } = Transaction.TransactionCategory.Other;
-    }
-
-    public class PreviewResponse
-    {
-        public Guid SessionId { get; set; }
-        public List<Transaction> Transactions { get; set; } = [];
-        public List<string> Errors { get; set; } = [];
-    }
-
-    public class ConfirmRequest
-    {
-        public Guid SessionId { get; set; }
-        public int PocketId { get; set; }
-        public List<Transaction> Transactions { get; set; } = [];
-    }
-
-    public class ConfirmResponse
-    {
-        public int SavedCount { get; set; }
-        public List<Transaction> Transactions { get; set; } = [];
+        /// <summary>Target <see cref="MappableField"/> for this column.</summary>
+        public MappableField TargetField { get; set; } = MappableField.Ignore;
     }
 }
