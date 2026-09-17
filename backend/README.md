@@ -22,7 +22,6 @@ backend/
 │   ├── Migrations/
 │   └── Program.cs
 └── Tests/
-    ├── data/                 ← fixtures shared by every test project
     └── KeepItSimple.Api.Tests/
 ```
 
@@ -57,11 +56,9 @@ flowchart LR
 
 `dotnet test KeepItSimple.sln` from the repo root.
 
-`KeepItSimple.Api.Tests` covers `TransactionImporter.Analyze` and `Preview`, which are pure and need no database. The Excel fixtures they read live in `Tests/data/transactionImports` and are committed as binaries; `ExcelFixtureGenerator` writes them with NPOI, so after changing a dataset rebuild them with:
+`KeepItSimple.Api.Tests` covers `TransactionImporter.Analyze` and `Preview`, which are pure and need no database.
 
-```bash
-REGENERATE_IMPORT_FIXTURES=1 dotnet test
-```
+Excel/CSV fixtures are **not committed**. `ExcelFixtureGenerator` writes them with NPOI into the test output directory (`bin/.../transactionImports`) when the test run starts. After a successful run the folder is deleted; if a test fails the files are left there so they can be inspected.
 
 ## Run (dev)
 
