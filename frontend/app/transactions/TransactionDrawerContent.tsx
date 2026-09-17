@@ -19,6 +19,7 @@ import { Pocket } from "@/lib/models/Pocket";
 import {
   createTransaction,
   EXPENSE_TRANSACTION_CATEGORIES,
+  formatCategoryLabel,
   INCOME_TRANSACTION_CATEGORIES,
   Transaction,
   TransactionCategory,
@@ -66,10 +67,6 @@ function getInitialTransactionData(
 enum TransactionType {
   Income = "income",
   Expense = "expense",
-}
-
-function formatCategoryLabel(category: TransactionCategory): string {
-  return category.replace(/([A-Z])/g, " $1").trim();
 }
 
 export function TransactionDrawerContent({

@@ -2,7 +2,14 @@
 
 import { DataTable } from "@/components/common/dataTable/DataTable";
 import { FetchWrapperResponse } from "@/lib/fetchWrapper";
-import { deleteTransactions, Transaction } from "@/lib/models/Transaction";
+import {
+  DEFAULT_TRANSACTION_PAGE_SIZE,
+  deleteTransactions,
+  PagedTransactions,
+  toTransactionSearchParams,
+  Transaction,
+  TransactionListQuery,
+} from "@/lib/models/Transaction";
 import { toast } from "sonner";
 import { getTransactionDataColumns } from "./transactionTable/TransactionColumns";
 import { Pocket } from "@/lib/models/Pocket";
@@ -10,24 +17,28 @@ import { useCallback, useMemo, useState } from "react";
 import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
 import { TransactionDrawerContent } from "./TransactionDrawerContent";
 import { Button } from "@/components/ui/button";
-import { HandCoins, Plus, Trash2, WalletCards } from "lucide-react";
+import { Plus, Trash2, WalletCards } from "lucide-react";
 import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ConfirmationDialogContent } from "@/components/common/ConfirmationDialogContent";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { TransactionFilters } from "./TransactionFilters";
 
 const OPEN_NEW_POCKET_DRAWER_KEY = "kis:open-new-pocket-drawer";
 
 interface TransactionPageContentProps {
-  transactionDataResponse: FetchWrapperResponse<Transaction[]>;
+  transactionDataResponse: FetchWrapperResponse<PagedTransactions>;
   pockets: FetchWrapperResponse<Pocket[]>;
+  filters: TransactionListQuery;
 }
 
 export function TransactionPageContent({
   transactionDataResponse,
   pockets,
+  filters,
 }: Readonly<TransactionPageContentProps>) {
   const router = useRouter();
+  const pathname = usePathname();
 
   if ("error" in transactionDataResponse || "error" in pockets) {
     toast.error("Failed to load transactions. Please try again later.");
@@ -40,6 +51,25 @@ export function TransactionPageContent({
   const [selectedTransaction, setSelectedTransaction] = useState<
     Transaction | undefined
   >(undefined);
+
+  const applyFilters = useCallback(
+    (patch: Partial<TransactionListQuery>) => {
+      const nextFilters: TransactionListQuery = {
+        ...filters,
+        ...patch,
+      };
+      const queryString = toTransactionSearchParams(nextFilters);
+      router.replace(queryString ? `${pathname}?${queryString}` : pathname);
+    },
+    [filters, pathname, router],
+  );
+
+  const handleFilterChange = useCallback(
+    (patch: Partial<TransactionListQuery>) => {
+      applyFilters({ ...patch, page: 1 });
+    },
+    [applyFilters],
+  );
 
   const handleSave = useCallback(() => {
     setOpen(false);
@@ -86,10 +116,17 @@ export function TransactionPageContent({
     [handleEditTransaction, pockets.data],
   );
 
-  const content = useMemo(() => {
-    const transactions = transactionDataResponse.data ?? [];
-    const pocketsData = pockets.data ?? [];
+  const pocketsData = useMemo(() => pockets.data ?? [], [pockets.data]);
+  const pagedTransactions = transactionDataResponse.data;
+  const transactions = useMemo(
+    () => pagedTransactions?.items ?? [],
+    [pagedTransactions?.items],
+  );
+  const totalCount = pagedTransactions?.totalCount ?? 0;
+  const pageSize = pagedTransactions?.pageSize ?? DEFAULT_TRANSACTION_PAGE_SIZE;
+  const pageCount = Math.ceil(totalCount / pageSize);
 
+  const content = useMemo(() => {
     if (pocketsData.length === 0) {
       return (
         <EmptyStateCard
@@ -105,32 +142,23 @@ export function TransactionPageContent({
       );
     }
 
-    if (transactions.length === 0) {
-      return (
-        <>
-          <EmptyStateCard
-            title="No transactions yet"
-            description="Start by creating a new transaction to keep track of your expenses and income."
-            actionText="Create Transaction"
-            onAction={() => {
-              setSelectedTransaction(undefined);
-              setOpen(true);
-            }}
-            icon={HandCoins}
-          />
-        </>
-      );
-    }
-
     return (
       <>
+        <TransactionFilters
+          pockets={pocketsData}
+          filters={filters}
+          onChange={handleFilterChange}
+        />
         <DataTable
           key={selectionResetTrigger}
           onRowSelectionChange={setSelectedRows}
           className="min-h-[580px]"
           columns={transactionDataColumns}
           data={transactions}
-          initialState={{ pagination: { pageSize: 10 } }}
+          pageCount={pageCount}
+          pageIndex={Math.max(filters.page - 1, 0)}
+          onPageChange={(pageIndex) => applyFilters({ page: pageIndex + 1 })}
+          initialState={{ pagination: { pageSize } }}
           extraContent={
             <div className="flex gap-2 items-center">
               <Dialog
@@ -173,31 +201,30 @@ export function TransactionPageContent({
       </>
     );
   }, [
-    transactionDataResponse.data,
-    pockets.data,
+    applyFilters,
+    deleteTransactionOpen,
+    filters,
+    handleFilterChange,
+    onDeleteSelected,
+    pageCount,
+    pageSize,
+    pocketsData,
+    router,
+    selectedRows,
     selectionResetTrigger,
     transactionDataColumns,
-    deleteTransactionOpen,
-    selectedRows,
-    router,
-    onDeleteSelected,
+    transactions,
   ]);
-
-  const isEmptyState = useMemo(() => {
-    const transactions = transactionDataResponse.data ?? [];
-    const pocketsData = pockets.data ?? [];
-    return transactions.length === 0 || pocketsData.length === 0;
-  }, [transactionDataResponse.data, pockets.data]);
 
   return (
     <div
-      className={`flex flex-col gap-4 ${isEmptyState ? "items-center" : "items-end"}`}
+      className={`flex w-full flex-col gap-4 ${pocketsData.length === 0 ? "items-center" : "items-stretch"}`}
     >
       <Drawer
         open={open}
-        onOpenChange={(open) => {
-          setOpen(open);
-          if (!open) {
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (!nextOpen) {
             setSelectedTransaction(undefined);
           }
         }}

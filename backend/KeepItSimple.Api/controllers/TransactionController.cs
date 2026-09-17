@@ -12,10 +12,11 @@ public class TransactionController : ControllerBase
     private static readonly string[] ImportSupportedExtensions = [".xls", ".xlsx", ".xlsm", ".csv"];
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Transaction>>> GetAll()
+    public async Task<ActionResult<PagedTransactionsResponse>> GetAll(
+        [FromQuery] TransactionListQuery query)
     {
-        var transaction = await Transaction.GetAllAsync();
-        return Ok(transaction);
+        var transactions = await Transaction.GetPagedAsync(query);
+        return Ok(transactions);
     }
 
     [HttpGet("{id}")]
