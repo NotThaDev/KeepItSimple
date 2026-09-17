@@ -102,7 +102,10 @@ export interface PagedTransactions {
   pageSize: number;
 }
 
-export function currentMonthRange(date = new Date()): { from: string; to: string } {
+export function currentMonthRange(date = new Date()): {
+  from: string;
+  to: string;
+} {
   return {
     from: format(startOfMonth(date), "yyyy-MM-dd"),
     to: format(endOfMonth(date), "yyyy-MM-dd"),
@@ -146,9 +149,7 @@ export function parseTransactionSearchParams(
   };
 }
 
-export function toTransactionSearchParams(
-  query: TransactionListQuery,
-): string {
+export function toTransactionSearchParams(query: TransactionListQuery): string {
   const params = new URLSearchParams();
 
   if (query.page > 1) {

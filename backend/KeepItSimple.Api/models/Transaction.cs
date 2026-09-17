@@ -33,10 +33,7 @@ public class Transaction
 
     public static Task<List<Transaction>> GetByPocketIdAsync(int pocketId)
     {
-        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
-        {
-            return await dbContext.Transactions.Where(t => t.PocketId == pocketId).OrderByDescending(t => t.Date).ToListAsync();
-        });
+        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext => await dbContext.Transactions.Where(t => t.PocketId == pocketId).OrderByDescending(t => t.Date).ToListAsync());
     }
 
     public static Task<Transaction?> GetByIdAsync(int id)
