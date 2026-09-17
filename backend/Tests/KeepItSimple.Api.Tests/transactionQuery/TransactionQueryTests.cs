@@ -1,8 +1,8 @@
-using KeepItSimple.Api.Dtos;
+using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models;
 
-namespace KeepItSimple.Api.Tests.TransactionList;
+namespace KeepItSimple.Api.Tests.transactionQuery;
 
 public class TransactionQueryTests
 {
