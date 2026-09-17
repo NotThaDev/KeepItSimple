@@ -1,17 +1,28 @@
 import { PageWrapper } from "@/components/common/pageContainer/PageWrapper";
-import { getTransactions } from "@/lib/models/Transaction";
+import {
+  getTransactions,
+  parseTransactionSearchParams,
+} from "@/lib/models/Transaction";
 import { TransactionPageContent } from "./TransactionPageContent";
 import { getPockets } from "@/lib/models/Pocket";
 
-export default async function TransactionsPage() {
-  const transactions = await getTransactions();
-  const pockets = await getPockets();
+export default async function TransactionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const filters = parseTransactionSearchParams(await searchParams);
+  const [transactions, pockets] = await Promise.all([
+    getTransactions(filters),
+    getPockets(),
+  ]);
 
   return (
     <PageWrapper title="Transactions">
       <TransactionPageContent
         transactionDataResponse={transactions}
         pockets={pockets}
+        filters={filters}
       />
     </PageWrapper>
   );

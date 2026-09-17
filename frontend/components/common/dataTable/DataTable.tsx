@@ -31,6 +31,9 @@ interface DataTableProps<TData extends RowData> {
   columns: ColumnDef<DataTableFeatures, TData>[];
   data: TData[];
   enablePagination?: boolean;
+  pageCount?: number;
+  pageIndex?: number;
+  onPageChange?: (pageIndex: number) => void;
   initialState?: Omit<Partial<TableState<DataTableFeatures>>, "pagination"> & {
     pagination?: Partial<TableState<DataTableFeatures>["pagination"]>;
   };
@@ -74,11 +77,15 @@ export function DataTable<TData extends RowData>({
   data,
   initialState,
   enablePagination = true,
+  pageCount: controlledPageCount,
+  pageIndex: controlledPageIndex = 0,
+  onPageChange,
   className,
   extraContent,
   onRowSelectionChange,
 }: DataTableProps<TData>) {
   const [rowSelection, setRowSelection] = useState({});
+  const isManualPagination = onPageChange != null;
 
   const table = useTable({
     features,
@@ -96,10 +103,19 @@ export function DataTable<TData extends RowData>({
             : undefined,
         }
       : undefined,
-    manualPagination: !enablePagination,
+    manualPagination: isManualPagination || !enablePagination,
+    pageCount: controlledPageCount,
     onRowSelectionChange: setRowSelection,
     state: {
       rowSelection,
+      ...(isManualPagination
+        ? {
+            pagination: {
+              pageIndex: controlledPageIndex,
+              pageSize: initialState?.pagination?.pageSize ?? 10,
+            },
+          }
+        : {}),
     },
   });
 
@@ -119,9 +135,22 @@ export function DataTable<TData extends RowData>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onRowSelectionChange, rowSelection]);
 
-  const pageCount = table.getPageCount();
-  const currentPage = table.state.pagination.pageIndex;
+  const pageCount = controlledPageCount ?? table.getPageCount();
+  const currentPage = isManualPagination
+    ? controlledPageIndex
+    : table.state.pagination.pageIndex;
   const visiblePages = getVisiblePages(pageCount, currentPage);
+  const canPreviousPage = currentPage > 0;
+  const canNextPage = currentPage < pageCount - 1;
+
+  const goToPage = (page: number) => {
+    if (onPageChange) {
+      onPageChange(page);
+      return;
+    }
+
+    table.setPageIndex(page);
+  };
 
   return (
     <div className={`flex w-full flex-col gap-2 ${className ?? ""}`}>
@@ -185,12 +214,12 @@ export function DataTable<TData extends RowData>({
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    table.previousPage();
+                    if (canPreviousPage) {
+                      goToPage(currentPage - 1);
+                    }
                   }}
                   className={
-                    !table.getCanPreviousPage()
-                      ? "pointer-events-none opacity-50"
-                      : ""
+                    !canPreviousPage ? "pointer-events-none opacity-50" : ""
                   }
                 />
               </PaginationItem>
@@ -204,7 +233,7 @@ export function DataTable<TData extends RowData>({
                       isActive={page === currentPage}
                       onClick={(e) => {
                         e.preventDefault();
-                        table.setPageIndex(page);
+                        goToPage(page);
                       }}
                     >
                       {page + 1}
@@ -217,12 +246,12 @@ export function DataTable<TData extends RowData>({
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    table.nextPage();
+                    if (canNextPage) {
+                      goToPage(currentPage + 1);
+                    }
                   }}
                   className={
-                    !table.getCanNextPage()
-                      ? "pointer-events-none opacity-50"
-                      : ""
+                    !canNextPage ? "pointer-events-none opacity-50" : ""
                   }
                 />
               </PaginationItem>

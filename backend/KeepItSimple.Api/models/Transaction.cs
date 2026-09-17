@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,9 +19,15 @@ public class Transaction
 
     public static Task<List<Transaction>> GetAllAsync()
     {
-        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
+        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext => await dbContext.Transactions.OrderByDescending(t => t.Date).ToListAsync());
+    }
+
+    public static Task<PagedTransactionsResponse> GetPagedAsync(TransactionListQuery query)
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(dbContext =>
         {
-            return await dbContext.Transactions.OrderByDescending(t => t.Date).ToListAsync();
+            var result = TransactionQuery.Apply(dbContext.Transactions.AsNoTracking(), query);
+            return Task.FromResult(result);
         });
     }
 
