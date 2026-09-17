@@ -1,4 +1,3 @@
-using System.Reflection;
 using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Helpers;
 using static KeepItSimple.Api.Helpers.TransactionImporter;
@@ -6,7 +5,9 @@ using static KeepItSimple.Api.Helpers.TransactionImporter;
 namespace KeepItSimple.Api.Tests.Support;
 
 /// <summary>
-/// Locates the committed Excel fixtures and builds the mappings the importer expects.
+/// Generates Excel/CSV fixtures into the test output directory and builds the
+/// mappings the importer expects. Binaries are not committed; see
+/// <see cref="ExcelFixtureGenerator"/>.
 /// </summary>
 public static class ImportFixtures
 {
@@ -21,8 +22,7 @@ public static class ImportFixtures
         var path = Path.Combine(TransactionImportsDirectory, fileName);
         if (!File.Exists(path))
         {
-            throw new FileNotFoundException(
-                $"Missing fixture '{fileName}'. Regenerate it with ExcelFixtureGeneratorRunner.", path);
+            throw new FileNotFoundException($"Missing generated fixture '{fileName}'.", path);
         }
 
         return File.OpenRead(path);
@@ -54,39 +54,24 @@ public static class ImportFixtures
     }
 
     /// <summary>
-    /// Rewriting the binaries here, rather than from a test, guarantees they land on disk before
-    /// any test reads them, whatever order xUnit picks:
-    /// REGENERATE_IMPORT_FIXTURES=1 dotnet test
+    /// Removes the generated fixtures after a successful test run. Left in place on failure
+    /// so the files can be inspected under the test output directory.
     /// </summary>
-    private static string InitialiseTransactionImports()
+    internal static void DeleteGeneratedFilesIfPresent()
     {
-        var directory = Path.Combine(ResolveTestDataRoot(), "transactionImports");
-
-        if (Environment.GetEnvironmentVariable("REGENERATE_IMPORT_FIXTURES") == "1")
+        var directory = Path.Combine(AppContext.BaseDirectory, "transactionImports");
+        if (!Directory.Exists(directory))
         {
-            ExcelFixtureGenerator.WriteAll(directory);
+            return;
         }
 
-        return directory;
+        Directory.Delete(directory, recursive: true);
     }
 
-    /// <summary>
-    /// The tests/data folder is baked in at build time by the TestDataRoot assembly metadata,
-    /// so fixtures are read from, and regenerated into, the same place.
-    /// </summary>
-    private static string ResolveTestDataRoot()
+    private static string InitialiseTransactionImports()
     {
-        var root = typeof(ImportFixtures).Assembly
-            .GetCustomAttributes<AssemblyMetadataAttribute>()
-            .FirstOrDefault(attribute => attribute.Key == "TestDataRoot")
-            ?.Value;
-
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            throw new InvalidOperationException(
-                "TestDataRoot assembly metadata is missing; check KeepItSimple.Api.Tests.csproj.");
-        }
-
-        return root;
+        var directory = Path.Combine(AppContext.BaseDirectory, "transactionImports");
+        ExcelFixtureGenerator.WriteAll(directory);
+        return directory;
     }
 }

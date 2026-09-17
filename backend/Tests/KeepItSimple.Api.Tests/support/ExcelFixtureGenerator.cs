@@ -5,9 +5,8 @@ using NPOI.XSSF.UserModel;
 namespace KeepItSimple.Api.Tests.Support;
 
 /// <summary>
-/// Writes the binary Excel fixtures consumed by the transaction import tests.
-/// The generated files are committed under tests/data/transactionImports; see
-/// <see cref="ExcelFixtureGeneratorRunner"/> to refresh them.
+/// Writes the binary Excel/CSV fixtures consumed by the transaction import tests.
+/// Files are generated into the test output directory at run time; they are not committed.
 /// </summary>
 public static class ExcelFixtureGenerator
 {
@@ -215,32 +214,5 @@ public static class ExcelFixtureGenerator
         row.CreateCell(startColumn + 1).SetCellValue(description);
         row.CreateCell(startColumn + 2).SetCellValue(amount);
         row.CreateCell(startColumn + 3).SetCellValue("EUR");
-    }
-}
-
-public class ExcelFixtureFilesTests
-{
-    /// <summary>
-    /// Guards against a fixture being deleted or never committed. After changing the datasets in
-    /// <see cref="ExcelFixtureGenerator"/>, rewrite the binaries with:
-    /// REGENERATE_IMPORT_FIXTURES=1 dotnet test
-    /// </summary>
-    [Fact]
-    public void Every_fixture_is_present_on_disk()
-    {
-        string[] expected =
-        [
-            .. ExcelFixtureGenerator.StandardStatementFiles,
-            ExcelFixtureGenerator.WithPreambleFile,
-            ExcelFixtureGenerator.MessyFormatsFile,
-            ExcelFixtureGenerator.InvalidRowsFile,
-            ExcelFixtureGenerator.NoHeaderFile,
-        ];
-
-        var missing = expected
-            .Where(file => !File.Exists(Path.Combine(ImportFixtures.TransactionImportsDirectory, file)))
-            .ToList();
-
-        Assert.Empty(missing);
     }
 }

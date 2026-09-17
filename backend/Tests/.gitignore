@@ -5,3 +5,6 @@
 # Test results
 [Tt]est[Rr]esult*/
 TestResults/
+
+# Generated import fixtures (also written under bin at test time)
+data/

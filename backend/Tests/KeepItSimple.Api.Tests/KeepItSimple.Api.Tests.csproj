@@ -7,15 +7,6 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- Fixture files are read from, and regenerated into, the shared tests/data folder. -->
-    <TestDataRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '..', 'data'))</TestDataRoot>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <AssemblyMetadata Include="TestDataRoot" Value="$(TestDataRoot)" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
