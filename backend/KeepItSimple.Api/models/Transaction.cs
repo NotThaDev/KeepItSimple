@@ -136,6 +136,13 @@ public class Transaction
             foreach (var id in ids)
             {
                 var expense = await dbContext.Transactions.FindAsync(id);
+
+                // We are already checking that the expense exists, but just in case.
+                if (expense is null)
+                {
+                    continue;
+                }
+
                 var pocket = await dbContext.Pockets.FindAsync(expense.PocketId);
                 // Revert the transaction: subtract the signed amount (negative for expenses, positive for income).
                 pocket?.Balance -= expense.Amount;
@@ -176,5 +183,31 @@ public class Transaction
         RentalIncome,
         Refund,
         Other,
+        Car,
+        Clothing,
+        Accessories,
+        Furniture,
+        Home,
+        Newsstand,
+        Events,
+        Computers,
+        Hotel,
+        School,
+        Books,
+        Motorcycle,
+        Music,
+        Gym,
+        Hairdresser,
+        Personal,
+        Repairs,
+        Relationships,
+        Services,
+        Special,
+        Groceries,
+        Sport,
+        Leisure,
+        Taxes,
+        Phone,
+        Film,
     }
 }
