@@ -23,6 +23,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ConfirmationDialogContent } from "@/components/common/ConfirmationDialogContent";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { TransactionFilters } from "./TransactionFilters";
+import { TransactionImportDialog } from "./import/TransactionImportDialog";
 
 const OPEN_NEW_POCKET_DRAWER_KEY = "kis:open-new-pocket-drawer";
 
@@ -185,6 +186,10 @@ export function TransactionPageContent({
                   confirmButtonVariant="destructive"
                 />
               </Dialog>
+              <TransactionImportDialog
+                pockets={pocketsData}
+                onImported={() => router.refresh()}
+              />
               <DrawerTrigger asChild>
                 <Button
                   size="lg"
