@@ -64,8 +64,8 @@ export function InsightCategoryChart({
   return (
     <DashboardCard title="By category" icon={PieChartIcon}>
       {chartData.length > 0 ? (
-        <div className="flex h-full min-h-0 w-full items-center gap-4">
-          <ChartContainer config={chartConfig} className="aspect-square flex-1">
+        <div className="flex h-full min-h-0 w-full items-start gap-4">
+          <ChartContainer config={chartConfig} className="aspect-square max-w-[240px] flex-1">
             <PieChart>
               <ChartTooltip
                 cursor={false}
@@ -97,8 +97,8 @@ export function InsightCategoryChart({
                 data={chartData}
                 dataKey="total"
                 nameKey="category"
-                innerRadius={80}
-                outerRadius={100}
+                innerRadius={70}
+                outerRadius={90}
                 paddingAngle={4}
                 cornerRadius={6}
               >
@@ -115,13 +115,13 @@ export function InsightCategoryChart({
                           <tspan
                             x={viewBox.cx}
                             y={viewBox.cy}
-                            className="fill-foreground text-2xl font-bold"
+                            className="fill-foreground text-xl font-bold"
                           >
                             {formatMoney(total, insight.currency)}
                           </tspan>
                           <tspan
                             x={viewBox.cx}
-                            y={(viewBox.cy || 0) + 24}
+                            y={(viewBox.cy || 0) + 22}
                             className="fill-muted-foreground"
                           >
                             {formatCategoryLabelTitle(insight)}
@@ -134,6 +134,31 @@ export function InsightCategoryChart({
               </Pie>
             </PieChart>
           </ChartContainer>
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+            <p className="mb-1 text-sm text-muted-foreground">
+              {formatCategoryLabelTitle(insight)} by category
+            </p>
+            {chartData.map((entry) => (
+              <div
+                key={entry.category}
+                className="flex items-center justify-between gap-2"
+              >
+                <div className="flex min-w-0 items-center">
+                  <SquircleDashed
+                    className="mr-2 shrink-0"
+                    size={18}
+                    color={entry.fill}
+                  />
+                  <p className="truncate font-semibold">
+                    {formatCategoryLabel(entry.category)}
+                  </p>
+                </div>
+                <p className="shrink-0 rounded-md bg-secondary px-2 py-0.5 text-secondary-foreground">
+                  {formatMoney(entry.total, insight.currency)}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="flex h-full min-h-[240px] w-full items-center justify-center">

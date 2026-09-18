@@ -188,7 +188,7 @@ function ChangeHint({
     <div className={`mt-1 flex items-center gap-1 ${color}`}>
       <Icon className="h-4 w-4" />
       <p className="text-sm">
-        {formatMoney(insight.changeAmount, insight.currency)} ({percentLabel}) vs{" "}
+        {formatMoney(Math.abs(insight.changeAmount), insight.currency)} ({percentLabel}) vs{" "}
         {previousLabel}
       </p>
     </div>
