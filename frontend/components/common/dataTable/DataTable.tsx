@@ -15,17 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { useEffect, useState } from "react";
 import { features, type DataTableFeatures } from "./DataTableFeatures";
+import { PaginationComponent } from "./Pagination";
 
 interface DataTableProps<TData extends RowData> {
   columns: ColumnDef<DataTableFeatures, TData>[];
@@ -40,36 +32,6 @@ interface DataTableProps<TData extends RowData> {
   className?: string;
   extraContent?: React.ReactNode;
   onRowSelectionChange?: (selectedRows: TData[]) => void;
-}
-
-function getVisiblePages(pageCount: number, currentPage: number) {
-  if (pageCount <= 7) {
-    return Array.from({ length: pageCount }, (_, index) => index);
-  }
-
-  if (currentPage <= 2) {
-    return [0, 1, 2, "ellipsis", pageCount - 1] as const;
-  }
-
-  if (currentPage >= pageCount - 3) {
-    return [
-      0,
-      "ellipsis",
-      pageCount - 3,
-      pageCount - 2,
-      pageCount - 1,
-    ] as const;
-  }
-
-  return [
-    0,
-    "ellipsis",
-    currentPage - 1,
-    currentPage,
-    currentPage + 1,
-    "ellipsis",
-    pageCount - 1,
-  ] as const;
 }
 
 export function DataTable<TData extends RowData>({
@@ -139,9 +101,6 @@ export function DataTable<TData extends RowData>({
   const currentPage = isManualPagination
     ? controlledPageIndex
     : table.state.pagination.pageIndex;
-  const visiblePages = getVisiblePages(pageCount, currentPage);
-  const canPreviousPage = currentPage > 0;
-  const canNextPage = currentPage < pageCount - 1;
 
   const goToPage = (page: number) => {
     if (onPageChange) {
@@ -206,58 +165,13 @@ export function DataTable<TData extends RowData>({
       </div>
 
       <div className="flex items-center justify-between px-2">
-        {enablePagination && visiblePages.length > 1 && (
-          <Pagination className="justify-start">
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (canPreviousPage) {
-                      goToPage(currentPage - 1);
-                    }
-                  }}
-                  className={
-                    !canPreviousPage ? "pointer-events-none opacity-50" : ""
-                  }
-                />
-              </PaginationItem>
-              {visiblePages.map((page, index) => (
-                <PaginationItem key={`page-${index}-${page}`}>
-                  {page === "ellipsis" ? (
-                    <PaginationEllipsis />
-                  ) : (
-                    <PaginationLink
-                      href="#"
-                      isActive={page === currentPage}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        goToPage(page);
-                      }}
-                    >
-                      {page + 1}
-                    </PaginationLink>
-                  )}
-                </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (canNextPage) {
-                      goToPage(currentPage + 1);
-                    }
-                  }}
-                  className={
-                    !canNextPage ? "pointer-events-none opacity-50" : ""
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        )}
+        {enablePagination ? (
+          <PaginationComponent
+            pageIndex={currentPage}
+            pageCount={pageCount}
+            onPageChange={goToPage}
+          />
+        ) : null}
 
         <div className="ml-auto">{extraContent}</div>
       </div>

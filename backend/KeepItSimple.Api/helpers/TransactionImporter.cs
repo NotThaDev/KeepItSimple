@@ -47,8 +47,6 @@ public static class TransactionImporter
         Category,
     }
 
-    public static readonly MappableField[] MappableFields = Enum.GetValues<MappableField>();
-
     // #TODO On a second step we should be able to have a list of rules that the user can configure to map the categories.
     // #TODO We can also add other rules that looks at the description to map the category.
     // e.g if the description contains "Amazon" then the category should be "Shopping".
@@ -159,7 +157,6 @@ public static class TransactionImporter
             SessionId = sessionId,
             Columns = columns,
             SampleRows = samples,
-            MappableFields = MappableFields,
         };
     }
 

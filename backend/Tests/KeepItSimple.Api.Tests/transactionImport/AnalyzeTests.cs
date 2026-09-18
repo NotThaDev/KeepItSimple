@@ -33,14 +33,6 @@ public class AnalyzeTests
     }
 
     [Fact]
-    public void Analyze_advertises_the_mappable_target_fields()
-    {
-        var response = ImportFixtures.Analyze("transactions.xlsx");
-
-        Assert.Equal(TransactionImporter.MappableFields, response.MappableFields);
-    }
-
-    [Fact]
     public void Analyze_returns_a_fresh_session_per_upload()
     {
         var first = ImportFixtures.Analyze("transactions.xlsx");
