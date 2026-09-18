@@ -1,14 +1,6 @@
 "use client";
 
-import { PaginationComponent } from "@/components/common/dataTable/Pagination";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { CommonTable } from "@/components/common/table/CommonTable";
 import { TransactionImportDraft } from "@/lib/models/Transaction";
 import { IMPORT_TABLE_PAGE_SIZE } from "../../utils";
 import { DescriptionCell } from "../../DescriptionCell";
@@ -26,39 +18,48 @@ export function DraftSummaryTable({
   );
 
   return (
-    <div className="flex flex-col gap-4">
-      <Table className="table-fixed">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-44">Date</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead className="w-24">Amount</TableHead>
-            <TableHead className="w-44">Category</TableHead>
-            <TableHead className="w-12" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {pageItems.map(({ item: transaction, index }) => (
-            <TableRow key={`${transaction.date}-${index}`}>
-              <TableCell>{formatDraftDate(transaction.date)}</TableCell>
-              <DescriptionCell value={transaction.description} />
-              <TableCell>€{transaction.amount.toFixed(2)}</TableCell>
-              <TableCell>
-                <CategoryBadge category={transaction.category} />
-              </TableCell>
-              <TableCell className="text-right">
-                <RemoveDraftButton index={index} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <PaginationComponent
-        pageIndex={pageIndex}
-        pageCount={pageCount}
-        onPageChange={setPageIndex}
-        className="justify-end"
-      />
-    </div>
+    <CommonTable
+      tableClassName="table-fixed"
+      columns={[
+        {
+          id: "date",
+          header: "Date",
+          headerClassName: "w-44",
+          cell: ({ item }) => formatDraftDate(item.date),
+        },
+        {
+          id: "description",
+          header: "Description",
+          cellClassName: "max-w-0 overflow-hidden",
+          cell: ({ item }) => <DescriptionCell value={item.description} />,
+        },
+        {
+          id: "amount",
+          header: "Amount",
+          headerClassName: "w-24",
+          cell: ({ item }) => `€${item.amount.toFixed(2)}`,
+        },
+        {
+          id: "category",
+          header: "Category",
+          headerClassName: "w-44",
+          cell: ({ item }) => <CategoryBadge category={item.category} />,
+        },
+        {
+          id: "actions",
+          headerClassName: "w-12",
+          cellClassName: "text-right",
+          cell: ({ index }) => <RemoveDraftButton index={index} />,
+        },
+      ]}
+      data={pageItems}
+      getRowKey={({ item, index }) => `${item.date}-${index}`}
+      pagination={{
+        pageIndex,
+        pageCount,
+        onPageChange: setPageIndex,
+        className: "justify-end",
+      }}
+    />
   );
 }

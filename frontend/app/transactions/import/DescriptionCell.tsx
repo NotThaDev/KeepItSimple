@@ -1,6 +1,5 @@
 "use client";
 
-import { TableCell } from "@/components/ui/table";
 import {
   Tooltip,
   TooltipContent,
@@ -14,19 +13,17 @@ export function DescriptionCell({
   const text = value?.trim() ? value : "-";
 
   return (
-    <TableCell className="max-w-0 overflow-hidden">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <p className="block w-full min-w-0 cursor-default truncate">
-              {text}
-            </p>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-sm">
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <p className="block w-full min-w-0 cursor-default truncate">
             {text}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </TableCell>
+          </p>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-sm">
+          {text}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
