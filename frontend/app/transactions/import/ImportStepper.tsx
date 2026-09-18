@@ -83,7 +83,7 @@ export function ImportStepper() {
                 </p>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <p className="mt-1 h-4 cursor-default truncate text-xs leading-4 text-muted-foreground">
+                    <p className="mt-1 h-4 cursor-default text-xs leading-4 text-muted-foreground">
                       {step.description}
                     </p>
                   </TooltipTrigger>
