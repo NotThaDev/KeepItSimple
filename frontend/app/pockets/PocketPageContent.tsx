@@ -46,7 +46,7 @@ export function PocketPageContent({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-4">
         <Drawer open={isOpen} onOpenChange={setIsOpen} direction="right">
           {isOpen && (
             <PocketDrawerContent
@@ -75,7 +75,7 @@ export function PocketPageContent({
 
           {pockets.length > 0 && (
             <DrawerTrigger asChild>
-              <Card className="cursor-pointer border-dashed border-2 hover:bg-muted/50 h-[250px] transition-colors hover:shadow-lg hover:border-primary/50 flex flex-col items-center justify-center gap-2">
+              <Card className="h-full cursor-pointer border-dashed border-2 hover:bg-muted/50 transition-colors hover:shadow-lg hover:border-primary/50 flex flex-col items-center justify-center gap-2">
                 <div className="flex flex-col items-center justify-center gap-2 p-6">
                   <Plus className="h-8 w-8 text-muted-foreground" />
                   <p className="text-base font-medium">Create New Pocket</p>
