@@ -69,10 +69,6 @@ export function CommonTable<T>({
     </Table>
   );
 
-  if (!pagination && !className) {
-    return table;
-  }
-
   return (
     <div className={cn("flex flex-col gap-4", className)}>
       {table}
