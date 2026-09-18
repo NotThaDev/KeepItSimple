@@ -65,8 +65,7 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
             {
                 Balance = SeedPocketInitialBalance,
                 Currency = "EUR",
-                Name = SeedPocketName,
-                Iban = "IT60X0542811101000000123456"
+                Name = SeedPocketName
             };
 
             dbContext.Pockets.Add(pocket);

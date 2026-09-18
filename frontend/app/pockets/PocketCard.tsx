@@ -19,7 +19,7 @@ interface PocketCardProps {
 
 export function PocketCard({ pocket }: Readonly<PocketCardProps>) {
   return (
-    <Card className="relative overflow-hidden cursor-default h-[250px]">
+    <Card className="relative h-full overflow-hidden cursor-default">
       <CardHeader className="relative pb-2">
         <div className="flex items-start justify-between align-center">
           <CardTitle className="text-lg font-semibold">
@@ -38,15 +38,10 @@ export function PocketCard({ pocket }: Readonly<PocketCardProps>) {
             {pocket.balance.toFixed(2)}{" "}
             {getCurrencySymbolFromCode(pocket.currency)}
           </p>
-          {pocket.iban && (
-            <p className="text-xs text-muted-foreground font-mono truncate mt-1">
-              {pocket.iban}
-            </p>
-          )}
         </div>
       </CardContent>
 
-      <CardFooter className="relative flex gap-2 pt-2">
+      <CardFooter className="relative mt-auto gap-2 py-3 justify-end">
         <EditPocketButton pocket={pocket} />
         <DeletePocketButton pocketId={pocket.id} />
       </CardFooter>

@@ -5,7 +5,6 @@ export interface Pocket {
   balance: number;
   currency: string;
   name: string;
-  iban: string;
 }
 
 export async function getPockets(): Promise<FetchWrapperResponse<Pocket[]>> {
