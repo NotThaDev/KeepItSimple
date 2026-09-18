@@ -1,9 +1,10 @@
 "use client";
 
-import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { ImportStep, useTransactionImportContext } from "@/stores/transactionImport";
+import { Stepper } from "@/components/common/stepper/Stepper";
+import {
+  ImportStep,
+  useTransactionImportContext,
+} from "@/stores/transactionImport";
 
 export const IMPORT_STEPS = [
   {
@@ -29,65 +30,14 @@ export const IMPORT_STEPS = [
 ] as const;
 
 export function ImportStepper() {
-  const { step: currentStep } = useTransactionImportContext();
-
-  const currentIndex = IMPORT_STEPS.findIndex(
-    (item) => item.id === currentStep,
-  );
+  const { step } = useTransactionImportContext();
 
   return (
-    <TooltipProvider>
-      <ol className="flex h-full w-64 shrink-0 flex-col self-stretch pr-2">
-        {IMPORT_STEPS.map((step, index) => {
-          const isCompleted = currentIndex > index;
-          const isCurrent = currentStep === step.id;
-          const isLast = index === IMPORT_STEPS.length - 1;
-
-          return (
-            <li
-              key={step.id}
-              className={cn("flex min-h-0 gap-3", !isLast && "flex-1")}
-            >
-              <div className="flex w-7 shrink-0 flex-col items-center">
-                <div
-                  className={cn(
-                    "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-medium",
-                    isCompleted &&
-                      "border-primary bg-primary text-primary-foreground",
-                    isCurrent && "border-primary bg-primary/10 text-primary",
-                    !isCompleted &&
-                      !isCurrent &&
-                      "border-border text-muted-foreground",
-                  )}
-                >
-                  {isCompleted ? <Check className="size-3.5" /> : index + 1}
-                </div>
-                {isLast ? null : (
-                  <div
-                    className={cn(
-                      "mt-1 w-px min-h-4 flex-1",
-                      isCompleted ? "bg-primary" : "bg-border",
-                    )}
-                  />
-                )}
-              </div>
-              <div className="min-w-0 pt-0.5">
-                <p
-                  className={cn(
-                    "text-sm font-medium",
-                    isCurrent ? "text-foreground" : "text-muted-foreground",
-                  )}
-                >
-                  {step.title}
-                </p>
-                <p className="mt-1 h-4 cursor-default text-xs leading-4 text-muted-foreground">
-                  {step.description}
-                </p>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-    </TooltipProvider>
+    <Stepper
+      steps={IMPORT_STEPS}
+      currentStep={step}
+      direction="vertical"
+      className="w-64 shrink-0 self-stretch pr-2"
+    />
   );
 }

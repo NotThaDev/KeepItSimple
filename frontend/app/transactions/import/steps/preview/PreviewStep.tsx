@@ -1,14 +1,7 @@
 "use client";
 
 import { PaginationComponent } from "@/components/common/dataTable/Pagination";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { CommonTable } from "@/components/common/table/CommonTable";
 import { useTransactionImportContext } from "@/stores/transactionImport";
 import { DescriptionCell } from "../../DescriptionCell";
 import { RemoveDraftButton } from "../../RemoveDraftButton";
@@ -30,6 +23,13 @@ export function PreviewStep() {
     return null;
   }
 
+  const pagination = {
+    pageIndex,
+    pageCount,
+    onPageChange: setPageIndex,
+    className: "justify-end",
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <p className="text-sm text-muted-foreground">
@@ -43,46 +43,57 @@ export function PreviewStep() {
       ) : null}
 
       {pageItems.length > 0 ? (
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-44">Date</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="w-24">Amount</TableHead>
-              <TableHead className="w-52">Category</TableHead>
-              <TableHead className="w-12" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pageItems.map(({ item: transaction, index }) => (
-              <TableRow key={`${transaction.date}-${index}`}>
-                <TableCell>{formatDraftDate(transaction.date)}</TableCell>
-                <DescriptionCell value={transaction.description} />
-                <TableCell>€{transaction.amount.toFixed(2)}</TableCell>
-                <TableCell>
-                  <TransactionCategorySelector
-                    value={transaction.category}
-                    isIncome={transaction.amount > 0}
-                    onChange={(category) =>
-                      updateDraftCategory(index, category)
-                    }
-                  />
-                </TableCell>
-                <TableCell className="text-right">
-                  <RemoveDraftButton index={index} />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      ) : null}
-
-      <PaginationComponent
-        pageIndex={pageIndex}
-        pageCount={pageCount}
-        onPageChange={setPageIndex}
-        className="justify-end"
-      />
+        <CommonTable
+          tableClassName="table-fixed"
+          columns={[
+            {
+              id: "date",
+              header: "Date",
+              headerClassName: "w-44",
+              cell: ({ item }) => formatDraftDate(item.date),
+            },
+            {
+              id: "description",
+              header: "Description",
+              cellClassName: "max-w-0 overflow-hidden",
+              cell: ({ item }) => (
+                <DescriptionCell value={item.description} />
+              ),
+            },
+            {
+              id: "amount",
+              header: "Amount",
+              headerClassName: "w-24",
+              cell: ({ item }) => `€${item.amount.toFixed(2)}`,
+            },
+            {
+              id: "category",
+              header: "Category",
+              headerClassName: "w-52",
+              cell: ({ item, index }) => (
+                <TransactionCategorySelector
+                  value={item.category}
+                  isIncome={item.amount > 0}
+                  onChange={(category) =>
+                    updateDraftCategory(index, category)
+                  }
+                />
+              ),
+            },
+            {
+              id: "actions",
+              headerClassName: "w-12",
+              cellClassName: "text-right",
+              cell: ({ index }) => <RemoveDraftButton index={index} />,
+            },
+          ]}
+          data={pageItems}
+          getRowKey={({ item, index }) => `${item.date}-${index}`}
+          pagination={pagination}
+        />
+      ) : (
+        <PaginationComponent {...pagination} />
+      )}
     </div>
   );
 }
