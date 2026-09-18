@@ -38,11 +38,6 @@ export function PocketCard({ pocket }: Readonly<PocketCardProps>) {
             {pocket.balance.toFixed(2)}{" "}
             {getCurrencySymbolFromCode(pocket.currency)}
           </p>
-          {pocket.iban && (
-            <p className="text-xs text-muted-foreground font-mono truncate mt-1">
-              {pocket.iban}
-            </p>
-          )}
         </div>
       </CardContent>
 

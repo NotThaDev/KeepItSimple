@@ -9,7 +9,6 @@ public class Pocket
     public decimal Balance { get; set; }
     public string Currency { get; set; } = "EUR";
     public string Name { get; set; } = string.Empty;
-    public string Iban { get; set; } = string.Empty;
     public ICollection<Transaction> Transactions { get; set; } = [];
 
     public static Task<List<Pocket>> GetAllAsync()
@@ -54,7 +53,6 @@ public class Pocket
             existingPocket.Balance = pocket.Balance;
             existingPocket.Currency = pocket.Currency;
             existingPocket.Name = pocket.Name;
-            existingPocket.Iban = pocket.Iban;
 
             await dbContext.SaveChangesAsync();
             return existingPocket;
