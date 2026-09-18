@@ -12,7 +12,7 @@ interface TotalBalanceCardProps {
   analytics: Analytics;
 }
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 3;
 
 export function TotalBalanceCard({
   analytics,
@@ -47,7 +47,11 @@ export function TotalBalanceCard({
   const totalBalanceProps = getBalanceProps(analytics);
 
   return (
-    <DashboardCard title="Total balance" icon={Wallet}>
+    <DashboardCard
+      title="Total balance"
+      icon={Wallet}
+      className="h-auto min-h-[21rem] shrink-0 xl:h-full xl:min-h-0"
+    >
       <div className="flex h-full min-h-0 flex-col gap-0">
         <div className="flex flex-col gap-1">
           <p className="text-3xl font-semibold">
@@ -111,7 +115,7 @@ export function TotalBalanceCard({
           </div>
 
           {sortedPockets.length > ITEMS_PER_PAGE && (
-            <div className="mt-auto flex items-center justify-end gap-2 pt-3">
+            <div className="flex shrink-0 items-center justify-end gap-2 pt-3">
               <Button
                 variant="outline"
                 size="icon"
