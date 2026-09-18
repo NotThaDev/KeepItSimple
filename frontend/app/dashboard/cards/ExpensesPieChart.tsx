@@ -59,7 +59,10 @@ export function ExpensesPieChart({
   }, [chartData]);
 
   return (
-    <ChartContainer config={chartConfig} className="aspect-square flex-1">
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-square size-[220px] shrink-0 self-start"
+    >
       <PieChart>
         <ChartTooltip
           cursor={false}

@@ -5,6 +5,7 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 import { LucideIcon } from "lucide-react";
 
@@ -24,8 +25,8 @@ export function DashboardCard({
   children,
 }: Readonly<DashboardStatCardProps>) {
   return (
-    <Card className={`h-[100%] ${className ?? ""}`}>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
+    <Card className={cn("h-full min-h-0", className)}>
+      <CardHeader className="flex shrink-0 flex-row items-start justify-between space-y-0">
         <div className="space-y-1">
           <CardDescription>{title}</CardDescription>
           {value && <CardTitle className="text-2xl">{value}</CardTitle>}
@@ -35,7 +36,9 @@ export function DashboardCard({
         </div>
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col">
-        {children && <div className="h-full min-h-0">{children}</div>}
+        {children ? (
+          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        ) : null}
       </CardContent>
     </Card>
   );

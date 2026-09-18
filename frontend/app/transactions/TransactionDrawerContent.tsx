@@ -180,8 +180,8 @@ export function TransactionDrawerContent({
         </DrawerDescription>
       </DrawerHeader>
 
-      <FieldGroup className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
-        <Field>
+      <FieldGroup className="mt-4 grid sm:grid-cols-5 gap-4 p-5">
+        <Field className="sm:col-span-3">
           <FieldLabel className="">Transaction Date</FieldLabel>
           <DatePicker
             defaultDate={transactionData.date}
@@ -191,7 +191,7 @@ export function TransactionDrawerContent({
           />
         </Field>
 
-        <Field data-invalid={errors.amount}>
+        <Field className="sm:col-span-2" data-invalid={errors.amount}>
           <FieldLabel>Amount</FieldLabel>
           <Input
             type="number"
@@ -212,7 +212,7 @@ export function TransactionDrawerContent({
           />
         </Field>
 
-        <Field className="sm:col-span-2" data-invalid={errors.pocketId}>
+        <Field className="sm:col-span-5" data-invalid={errors.pocketId}>
           <FieldLabel>Pocket</FieldLabel>
           <Selection
             items={pocketsSelectionItems}
@@ -232,7 +232,7 @@ export function TransactionDrawerContent({
           />
         </Field>
 
-        <Field className="sm:col-span-2" data-invalid={errors.category}>
+        <Field className="sm:col-span-5" data-invalid={errors.category}>
           <FieldLabel>Category</FieldLabel>
           <TransactionCategorySelector
             key={transactionType}
@@ -250,7 +250,7 @@ export function TransactionDrawerContent({
           />
         </Field>
 
-        <Field className="sm:col-span-2">
+        <Field className="sm:col-span-5">
           <FieldLabel>Description</FieldLabel>
           <Textarea
             rows={6}
@@ -267,7 +267,7 @@ export function TransactionDrawerContent({
 
         <ToggleGroup
           type="single"
-          className="w-full sm:col-span-2"
+          className="w-full sm:col-span-5"
           value={transactionType}
           onValueChange={(value) => {
             if (!value) return;
