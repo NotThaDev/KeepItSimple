@@ -36,6 +36,32 @@ export enum TransactionCategory {
   Dividends = "Dividends",
   RentalIncome = "RentalIncome",
   Refund = "Refund",
+  Car = "Car",
+  Clothing = "Clothing",
+  Accessories = "Accessories",
+  Furniture = "Furniture",
+  Home = "Home",
+  Newsstand = "Newsstand",
+  Events = "Events",
+  Computers = "Computers",
+  Hotel = "Hotel",
+  School = "School",
+  Books = "Books",
+  Motorcycle = "Motorcycle",
+  Music = "Music",
+  Gym = "Gym",
+  Hairdresser = "Hairdresser",
+  Personal = "Personal",
+  Repairs = "Repairs",
+  Relationships = "Relationships",
+  Services = "Services",
+  Special = "Special",
+  Groceries = "Groceries",
+  Sport = "Sport",
+  Leisure = "Leisure",
+  Taxes = "Taxes",
+  Phone = "Phone",
+  Film = "Film",
 }
 
 export const EXPENSE_TRANSACTION_CATEGORIES: TransactionCategory[] = [
@@ -56,6 +82,32 @@ export const EXPENSE_TRANSACTION_CATEGORIES: TransactionCategory[] = [
   TransactionCategory.Love,
   TransactionCategory.Charity,
   TransactionCategory.Other,
+  TransactionCategory.Car,
+  TransactionCategory.Clothing,
+  TransactionCategory.Accessories,
+  TransactionCategory.Furniture,
+  TransactionCategory.Home,
+  TransactionCategory.Newsstand,
+  TransactionCategory.Events,
+  TransactionCategory.Computers,
+  TransactionCategory.Hotel,
+  TransactionCategory.School,
+  TransactionCategory.Books,
+  TransactionCategory.Motorcycle,
+  TransactionCategory.Music,
+  TransactionCategory.Gym,
+  TransactionCategory.Hairdresser,
+  TransactionCategory.Personal,
+  TransactionCategory.Repairs,
+  TransactionCategory.Relationships,
+  TransactionCategory.Services,
+  TransactionCategory.Special,
+  TransactionCategory.Groceries,
+  TransactionCategory.Sport,
+  TransactionCategory.Leisure,
+  TransactionCategory.Taxes,
+  TransactionCategory.Phone,
+  TransactionCategory.Film,
 ];
 
 export const INCOME_TRANSACTION_CATEGORIES: TransactionCategory[] = [
@@ -67,6 +119,8 @@ export const INCOME_TRANSACTION_CATEGORIES: TransactionCategory[] = [
   TransactionCategory.Dividends,
   TransactionCategory.RentalIncome,
   TransactionCategory.Refund,
+  TransactionCategory.Savings,
+  TransactionCategory.Investments,
 ];
 
 export const DEFAULT_TRANSACTION_PAGE_SIZE = 10;
@@ -300,4 +354,87 @@ export async function deleteTransactions(
   }
 
   return { status: deleteTransactionsResponse.status };
+}
+
+export enum MappableField {
+  Ignore = "Ignore",
+  Description = "Description",
+  Amount = "Amount",
+  Date = "Date",
+  Category = "Category",
+}
+
+const ALL_MAPPABLE_FIELDS = Object.values(MappableField);
+
+export function isMappableField(value: string): value is MappableField {
+  return ALL_MAPPABLE_FIELDS.includes(value as MappableField);
+}
+
+export interface TransactionImportColumn {
+  index: number;
+  name: string;
+}
+
+export interface TransactionImportAnalyzeResponse {
+  sessionId: string;
+  columns: TransactionImportColumn[];
+  sampleRows: Record<string, string>[];
+}
+
+export interface TransactionImportColumnMapping {
+  columnIndex: number;
+  targetField: MappableField;
+}
+
+export interface TransactionImportDraft {
+  description?: string;
+  amount: number;
+  date: string;
+  category: TransactionCategory;
+  pocketId: number;
+}
+
+export interface TransactionImportPreviewResponse {
+  sessionId: string;
+  transactions: TransactionImportDraft[];
+  errors: string[];
+}
+
+export interface TransactionImportConfirmResponse {
+  savedCount: number;
+  transactions: TransactionImportDraft[];
+}
+
+export async function analyzeTransactionImport(
+  file: File,
+): Promise<FetchWrapperResponse<TransactionImportAnalyzeResponse>> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return post<TransactionImportAnalyzeResponse>(
+    "/api/transactions/import/analyze",
+    formData,
+  );
+}
+
+export async function previewTransactionImport(request: {
+  sessionId: string;
+  pocketId: number;
+  mapping: TransactionImportColumnMapping[];
+  defaultCategory?: TransactionCategory;
+}): Promise<FetchWrapperResponse<TransactionImportPreviewResponse>> {
+  return post<TransactionImportPreviewResponse>(
+    "/api/transactions/import/preview",
+    request,
+  );
+}
+
+export async function confirmTransactionImport(request: {
+  sessionId: string;
+  pocketId: number;
+  transactions: TransactionImportDraft[];
+}): Promise<FetchWrapperResponse<TransactionImportConfirmResponse>> {
+  return post<TransactionImportConfirmResponse>(
+    "/api/transactions/import/confirm",
+    request,
+  );
 }

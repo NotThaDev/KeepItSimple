@@ -12,15 +12,18 @@ async function fetch<T>(
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
   const fullUrl = `${baseUrl}${endpoint}`;
 
+  const isFormData = body instanceof FormData;
   const options: RequestInit = {
     method,
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: isFormData
+      ? undefined
+      : {
+          "Content-Type": "application/json",
+        },
   };
 
   if (body) {
-    options.body = JSON.stringify(body);
+    options.body = isFormData ? body : JSON.stringify(body);
   }
 
   try {

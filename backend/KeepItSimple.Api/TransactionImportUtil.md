@@ -56,7 +56,6 @@ Mappable target fields (`MappableField`):
    - `sessionId` – opaque handle for preview/confirm
    - `columns` – discovered headers
    - `sampleRows` – first 10 data rows
-   - `mappableFields` – `MappableField` values (JSON strings)
 
 ```mermaid
 flowchart TD
@@ -163,8 +162,7 @@ Base route: `/api/transactions/import`
       "Importo": "2500.00",
       "Valuta": "EUR"
     }
-  ],
-  "mappableFields": ["Ignore", "Description", "Amount", "Date", "Category"]
+  ]
 }
 ```
 

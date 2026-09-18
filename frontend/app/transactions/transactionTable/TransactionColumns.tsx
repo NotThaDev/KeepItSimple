@@ -7,11 +7,7 @@ import { ENGLISH_DATE_FORMATTER } from "@/components/common/DateUtils";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { Pocket } from "@/lib/models/Pocket";
-import { Badge } from "@/components/ui/badge";
-import {
-  CategoryColorMap,
-  DEFAULT_CATEGORY_COLORS,
-} from "@/lib/helpers/colors";
+import { CategoryBadge } from "@/components/common/CategoryBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { type DataTableFeatures } from "@/components/common/dataTable/DataTableFeatures";
 
@@ -67,23 +63,7 @@ export function getTransactionDataColumns({
     columnHelper.accessor("category", {
       header: "Category",
       cell: ({ getValue }) => {
-        const category = getValue();
-        const colors =
-          CategoryColorMap[category as keyof typeof CategoryColorMap] ??
-          DEFAULT_CATEGORY_COLORS;
-
-        return (
-          <Badge
-            className="capitalize"
-            variant="secondary"
-            style={{
-              backgroundColor: colors.foreground,
-              color: colors.background,
-            }}
-          >
-            {category}
-          </Badge>
-        );
+        return <CategoryBadge category={getValue()} />;
       },
     }),
     columnHelper.accessor("pocketId", {
