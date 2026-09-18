@@ -31,7 +31,7 @@ backend/
 |------|--------|--------|
 | Pockets | `/api/pocket` | Accounts with balance / currency |
 | Transactions | `/api/transactions` | CRUD, filter by pocket, and file import |
-| Analytics | `/api/analytics` | Aggregations over transactions |
+| Analytics | `/api/analytics`, `/api/analytics/{kind}` | Dashboard totals and period insights (income, spending, savings, investments, interest) |
 
 Persistence goes through `KeepItSimpleDbContext`; app code typically uses the static `KeepItSimpleContext` helper to open a scoped DbContext.
 

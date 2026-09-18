@@ -14,4 +14,13 @@ public class AnalyticsController : ControllerBase
 
         return Ok(analytics);
     }
+
+    [HttpGet("{kind}")]
+    public async Task<ActionResult<Analytics.PeriodInsight>> GetByKind(
+        AnalyticsKind kind,
+        [FromQuery] AnalyticsTimeRange range = AnalyticsTimeRange.CurrentMonth)
+    {
+        var insight = await Analytics.GetPeriodAnalyticsAsync(kind, range);
+        return Ok(insight);
+    }
 }

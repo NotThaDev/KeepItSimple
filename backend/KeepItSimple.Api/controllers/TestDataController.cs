@@ -14,6 +14,8 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
     private const decimal SeedPocketInitialBalance = 2800m;
     private const decimal MonthlyExpensesTarget = 1400m;
     private const decimal MonthlyIncomeTarget = 2250m;
+    private const decimal MonthlySavingsTarget = 200m;
+    private const decimal MonthlyInvestmentsTarget = 150m;
     private const string SeedPocketName = "Test Portfolio";
 
     [HttpPost("seed-two-month-history")]
@@ -163,6 +165,16 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
             [TransactionCategory.Refund] = ["Order refund", "Chargeback", "Returned item refund"]
         };
 
+        var savingsDescriptionsByCategory = new Dictionary<TransactionCategory, string[]>
+        {
+            [TransactionCategory.Savings] = ["Emergency fund", "Savings transfer", "Rainy day deposit"]
+        };
+
+        var investmentDescriptionsByCategory = new Dictionary<TransactionCategory, string[]>
+        {
+            [TransactionCategory.Investments] = ["Broker deposit", "ETF contribution", "Investment transfer"]
+        };
+
         var expenseCategories = new[]
         {
             TransactionCategory.Food,
@@ -215,8 +227,36 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
             isExpense: false
         );
 
+        var savingsTransactions = BuildTransactionsForFlow(
+            pocketId,
+            year,
+            month,
+            dayLimit,
+            MonthlySavingsTarget * dayLimit / DateTime.DaysInMonth(year, month),
+            Math.Max(1, dayLimit / 10),
+            [TransactionCategory.Savings],
+            savingsDescriptionsByCategory,
+            random,
+            isExpense: true
+        );
+
+        var investmentTransactions = BuildTransactionsForFlow(
+            pocketId,
+            year,
+            month,
+            dayLimit,
+            MonthlyInvestmentsTarget * dayLimit / DateTime.DaysInMonth(year, month),
+            Math.Max(1, dayLimit / 12),
+            [TransactionCategory.Investments],
+            investmentDescriptionsByCategory,
+            random,
+            isExpense: true
+        );
+
         return expenseTransactions
             .Concat(incomeTransactions)
+            .Concat(savingsTransactions)
+            .Concat(investmentTransactions)
             .OrderBy(t => t.Date)
             .ToList();
     }

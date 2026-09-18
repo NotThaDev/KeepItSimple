@@ -3,7 +3,7 @@ using static KeepItSimple.Api.Models.Transaction;
 
 namespace KeepItSimple.Api.Models;
 
-public class Analytics
+public partial class Analytics
 {
     public decimal CurrentMonthTotalBalance { get; set; }
     public decimal TotalExpenses { get; set; }
