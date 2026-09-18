@@ -2,6 +2,7 @@
 
 import { DatePicker } from "@/components/common/DatePicker";
 import { Selection } from "@/components/common/selector/Selection";
+import { TransactionCategorySelector } from "@/app/transactions/TransactionCategorySelector";
 import { Button } from "@/components/ui/button";
 import {
   DrawerClose,
@@ -19,7 +20,6 @@ import { Pocket } from "@/lib/models/Pocket";
 import {
   createTransaction,
   EXPENSE_TRANSACTION_CATEGORIES,
-  formatCategoryLabel,
   INCOME_TRANSACTION_CATEGORIES,
   Transaction,
   TransactionCategory,
@@ -94,15 +94,6 @@ export function TransactionDrawerContent({
         ? INCOME_TRANSACTION_CATEGORIES
         : EXPENSE_TRANSACTION_CATEGORIES,
     [transactionType],
-  );
-
-  const selectionItems = useMemo(
-    () =>
-      availableCategories.map((category) => ({
-        value: category,
-        label: formatCategoryLabel(category),
-      })),
-    [availableCategories],
   );
 
   const selectedCategory = useMemo(() => {
@@ -243,14 +234,13 @@ export function TransactionDrawerContent({
 
         <Field className="sm:col-span-2" data-invalid={errors.category}>
           <FieldLabel>Category</FieldLabel>
-          <Selection
+          <TransactionCategorySelector
             key={transactionType}
-            items={selectionItems}
-            defaultValue={selectedCategory}
+            value={selectedCategory}
+            isIncome={transactionType === TransactionType.Income}
             placeholder="Select a Category"
             isInvalid={errors.category}
-            onChange={(value) => {
-              const category = value as TransactionCategory;
+            onChange={(category) => {
               setTransactionData((prev) => ({ ...prev, category }));
               setErrors((prev) => ({
                 ...prev,

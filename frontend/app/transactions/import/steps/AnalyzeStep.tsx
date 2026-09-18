@@ -9,11 +9,16 @@ export function AnalyzeStep() {
   const {
     file,
     analyze,
-    pocketId,
-    pocketItems,
+    selectedPocket,
+    pockets,
     handleFileChange,
     setPocketId,
   } = useTransactionImportContext();
+
+  const pocketItems = pockets.map((pocket) => ({
+    value: pocket.id.toString(),
+    label: pocket.name,
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -33,7 +38,7 @@ export function AnalyzeStep() {
           <Label>Pocket</Label>
           <Selection
             items={pocketItems}
-            value={pocketId}
+            value={selectedPocket?.id.toString() ?? ""}
             onChange={setPocketId}
             placeholder="Select a pocket"
           />

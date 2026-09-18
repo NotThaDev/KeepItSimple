@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Select,
   SelectContent,
@@ -12,37 +14,45 @@ import {
 } from "@/lib/helpers/colors";
 import {
   EXPENSE_TRANSACTION_CATEGORIES,
+  formatCategoryLabel,
   INCOME_TRANSACTION_CATEGORIES,
   TransactionCategory,
 } from "@/lib/models/Transaction";
+import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 
-interface TransactionImportCategorySelectProps {
+interface TransactionCategorySelectorProps {
   value: TransactionCategory;
-  amount: number;
+  isIncome: boolean;
   onChange: (category: TransactionCategory) => void;
+  isInvalid?: boolean;
+  placeholder?: string;
+  className?: string;
 }
 
-function categoriesForAmount(amount: number) {
-  return amount > 0
+function categoriesForType(isIncome: boolean) {
+  return isIncome
     ? INCOME_TRANSACTION_CATEGORIES
     : EXPENSE_TRANSACTION_CATEGORIES;
 }
 
-export function TransactionImportCategorySelect({
+export function TransactionCategorySelector({
   value,
-  amount,
+  isIncome,
   onChange,
-}: Readonly<TransactionImportCategorySelectProps>) {
+  isInvalid,
+  placeholder,
+  className,
+}: Readonly<TransactionCategorySelectorProps>) {
   const colors = CategoryColorMap[value] ?? DEFAULT_CATEGORY_COLORS;
   const categoryItems = useMemo(() => {
-    const items = categoriesForAmount(amount);
+    const items = categoriesForType(isIncome);
     if (items.includes(value)) {
       return items;
     }
 
     return [value, ...items];
-  }, [amount, value]);
+  }, [isIncome, value]);
 
   return (
     <Select
@@ -50,14 +60,18 @@ export function TransactionImportCategorySelect({
       onValueChange={(nextValue) => onChange(nextValue as TransactionCategory)}
     >
       <SelectTrigger
-        className="w-full min-w-44 border dark:bg-transparent dark:hover:bg-transparent [&_svg]:text-current"
+        aria-invalid={isInvalid}
+        className={cn(
+          "w-full min-w-44 border dark:bg-transparent dark:hover:bg-transparent [&_svg]:text-current",
+          className,
+        )}
         style={{
           backgroundColor: colors.foreground,
           color: colors.background,
           borderColor: colors.background,
         }}
       >
-        <SelectValue />
+        <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
@@ -71,7 +85,7 @@ export function TransactionImportCategorySelect({
                 value={item}
                 style={{ color: itemColors.background }}
               >
-                {item}
+                {formatCategoryLabel(item)}
               </SelectItem>
             );
           })}

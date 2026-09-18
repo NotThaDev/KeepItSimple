@@ -1,15 +1,12 @@
 "use client";
 
+import { PaginationComponent } from "@/components/common/dataTable/Pagination";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  PaginationComponent,
-  usePagedItems,
-} from "@/components/common/dataTable/Pagination";
 import {
   Table,
   TableBody,
@@ -18,8 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { IMPORT_TABLE_PAGE_SIZE } from "../../utils";
 import type { TransactionImportAnalyzeResponse } from "@/lib/models/Transaction";
+import { IMPORT_TABLE_PAGE_SIZE } from "../../utils";
+import { usePagedItems } from "@/hooks/usePagedItems";
 
 export function SampleRowsAccordion({
   columns,

@@ -2,61 +2,65 @@
 
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
-import { useTransactionImportContext } from "@/stores/transactionImport";
+import {
+  ImportStep,
+  importLoadingMessage,
+  useTransactionImportContext,
+} from "@/stores/transactionImport";
 
 export function ImportDialogFooter() {
   const {
     step,
     analyze,
     file,
-    pocketId,
-    isAnalyzing,
-    isPreviewing,
-    isConfirming,
+    selectedPocket,
+    isLoading,
     preview,
     canContinueToPreview,
     setStep,
-    handleAnalyze,
-    handlePreview,
-    handleConfirm,
+    analyzeFile,
+    previewTransactions: previewTransactions,
+    confirmTransactions: confirmTransactions,
   } = useTransactionImportContext();
 
   return (
     <DialogFooter className="-mx-6 -mb-6 p-6">
-      {step === 1 ? (
+      {step === ImportStep.Analyze ? (
         analyze ? (
-          <Button onClick={() => setStep(2)}>Continue to mapping</Button>
+          <Button onClick={() => setStep(ImportStep.Mapping)}>
+            Continue to mapping
+          </Button>
         ) : (
           <Button
-            onClick={handleAnalyze}
-            disabled={!file || !pocketId || isAnalyzing}
+            onClick={analyzeFile}
+            disabled={!file || !selectedPocket || isLoading}
           >
-            {isAnalyzing ? "Analyzing…" : "Analyze"}
+            {isLoading ? importLoadingMessage(step) : "Analyze"}
           </Button>
         )
       ) : null}
 
-      {step === 2 ? (
+      {step === ImportStep.Mapping ? (
         <>
-          <Button variant="outline" onClick={() => setStep(1)}>
+          <Button variant="outline" onClick={() => setStep(ImportStep.Analyze)}>
             Back
           </Button>
           <Button
-            onClick={handlePreview}
-            disabled={!canContinueToPreview || isPreviewing}
+            onClick={previewTransactions}
+            disabled={!canContinueToPreview || isLoading}
           >
-            {isPreviewing ? "Building preview…" : "Continue to preview"}
+            {isLoading ? importLoadingMessage(step) : "Continue to preview"}
           </Button>
         </>
       ) : null}
 
-      {step === 3 ? (
+      {step === ImportStep.Preview ? (
         <>
-          <Button variant="outline" onClick={() => setStep(2)}>
+          <Button variant="outline" onClick={() => setStep(ImportStep.Mapping)}>
             Back
           </Button>
           <Button
-            onClick={() => setStep(4)}
+            onClick={() => setStep(ImportStep.Confirm)}
             disabled={!preview || preview.transactions.length === 0}
           >
             Continue to confirm
@@ -64,16 +68,16 @@ export function ImportDialogFooter() {
         </>
       ) : null}
 
-      {step === 4 ? (
+      {step === ImportStep.Confirm ? (
         <>
-          <Button variant="outline" onClick={() => setStep(3)}>
+          <Button variant="outline" onClick={() => setStep(ImportStep.Preview)}>
             Back
           </Button>
           <Button
-            onClick={handleConfirm}
-            disabled={isConfirming || !preview?.transactions.length}
+            onClick={confirmTransactions}
+            disabled={isLoading || !preview?.transactions.length}
           >
-            {isConfirming ? "Saving…" : "Confirm and save"}
+            {isLoading ? importLoadingMessage(step) : "Confirm and save"}
           </Button>
         </>
       ) : null}

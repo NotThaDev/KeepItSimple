@@ -69,7 +69,7 @@ flowchart TD
   H -->|No| S
   H -->|Yes| C[Collect ALL string cells<br/>on that row as columns]
   C --> D[Read following rows as data]
-  D --> OUT[Return sessionId,<br/>columns, sampleRows,<br/>mappableFields]
+  D --> OUT[Return sessionId,<br/>columns, sampleRows]
 ```
 
 **UI responsibility:** render each discovered column and let the user pick a `MappableField` (`Ignore`, `Description`, `Amount`, `Date`, `Category`). Sample rows help disambiguate labels like `"Data di erogazione"`.

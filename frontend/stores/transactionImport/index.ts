@@ -2,8 +2,9 @@ export {
   TransactionImportProvider,
   useTransactionImportContext,
 } from "./TransactionImportContext";
+export { ImportStep } from "./types";
+export { importLoadingMessage } from "./utils";
 export type {
-  ImportStep,
   TransactionImportContext,
   TransactionImportContextAction,
   TransactionImportContextState,

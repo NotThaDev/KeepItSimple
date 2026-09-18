@@ -1,15 +1,16 @@
 import type { Pocket } from "@/lib/models/Pocket";
 import type {
+  MappableField,
   TransactionCategory,
   TransactionImportAnalyzeResponse,
   TransactionImportPreviewResponse,
 } from "@/lib/models/Transaction";
 
-export type ImportStep = 1 | 2 | 3 | 4;
-
-export interface SelectionItem {
-  value: string;
-  label: string;
+export enum ImportStep {
+  Analyze = "analyze",
+  Mapping = "mapping",
+  Preview = "preview",
+  Confirm = "confirm",
 }
 
 export interface TransactionImportContextState {
@@ -17,29 +18,24 @@ export interface TransactionImportContextState {
   step: ImportStep;
   file: File | null;
   analyze: TransactionImportAnalyzeResponse | null;
-  mapping: Record<number, string>;
-  pocketId: string;
-  preview: TransactionImportPreviewResponse | null;
-  isAnalyzing: boolean;
-  isPreviewing: boolean;
-  isConfirming: boolean;
-  pockets: Pocket[];
-  mappingItems: SelectionItem[];
-  pocketItems: SelectionItem[];
+  mapping: Record<number, MappableField>;
   selectedPocket: Pocket | undefined;
+  preview: TransactionImportPreviewResponse | null;
+  isLoading: boolean;
+  pockets: Pocket[];
   previewTotal: number;
   canContinueToPreview: boolean;
 }
 
 export interface TransactionImportContextAction {
-  handleOpenChange: (open: boolean) => void;
+  openDialog: (open: boolean) => void;
   setStep: (step: ImportStep) => void;
   handleFileChange: (file: File | null) => void;
   setPocketId: (pocketId: string) => void;
-  setMappingField: (columnIndex: number, targetField: string) => void;
-  handleAnalyze: () => Promise<void>;
-  handlePreview: () => Promise<void>;
-  handleConfirm: () => Promise<void>;
+  setMappingField: (columnIndex: number, targetField: MappableField) => void;
+  analyzeFile: () => Promise<void>;
+  previewTransactions: () => Promise<void>;
+  confirmTransactions: () => Promise<void>;
   updateDraftCategory: (index: number, category: TransactionCategory) => void;
   removeDraft: (index: number) => void;
 }

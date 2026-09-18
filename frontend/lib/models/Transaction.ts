@@ -356,6 +356,20 @@ export async function deleteTransactions(
   return { status: deleteTransactionsResponse.status };
 }
 
+export enum MappableField {
+  Ignore = "Ignore",
+  Description = "Description",
+  Amount = "Amount",
+  Date = "Date",
+  Category = "Category",
+}
+
+const ALL_MAPPABLE_FIELDS = Object.values(MappableField);
+
+export function isMappableField(value: string): value is MappableField {
+  return ALL_MAPPABLE_FIELDS.includes(value as MappableField);
+}
+
 export interface TransactionImportColumn {
   index: number;
   name: string;
@@ -365,12 +379,11 @@ export interface TransactionImportAnalyzeResponse {
   sessionId: string;
   columns: TransactionImportColumn[];
   sampleRows: Record<string, string>[];
-  mappableFields: string[];
 }
 
 export interface TransactionImportColumnMapping {
   columnIndex: number;
-  targetField: string;
+  targetField: MappableField;
 }
 
 export interface TransactionImportDraft {

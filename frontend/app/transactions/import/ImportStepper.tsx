@@ -2,32 +2,27 @@
 
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useTransactionImportContext } from "@/stores/transactionImport";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ImportStep, useTransactionImportContext } from "@/stores/transactionImport";
 
 export const IMPORT_STEPS = [
   {
-    id: 1,
+    id: ImportStep.Analyze,
     title: "Import",
     description: "Choose the file and destination pocket.",
   },
   {
-    id: 2,
+    id: ImportStep.Mapping,
     title: "Map",
     description: "Match file columns to the target fields.",
   },
   {
-    id: 3,
+    id: ImportStep.Preview,
     title: "Preview",
     description: "Review drafts, categories, and errors.",
   },
   {
-    id: 4,
+    id: ImportStep.Confirm,
     title: "Confirm",
     description: "Save transactions to the pocket.",
   },
@@ -36,11 +31,15 @@ export const IMPORT_STEPS = [
 export function ImportStepper() {
   const { step: currentStep } = useTransactionImportContext();
 
+  const currentIndex = IMPORT_STEPS.findIndex(
+    (item) => item.id === currentStep,
+  );
+
   return (
     <TooltipProvider>
       <ol className="flex h-full w-64 shrink-0 flex-col self-stretch pr-2">
         {IMPORT_STEPS.map((step, index) => {
-          const isCompleted = currentStep > step.id;
+          const isCompleted = currentIndex > index;
           const isCurrent = currentStep === step.id;
           const isLast = index === IMPORT_STEPS.length - 1;
 
@@ -61,7 +60,7 @@ export function ImportStepper() {
                       "border-border text-muted-foreground",
                   )}
                 >
-                  {isCompleted ? <Check className="size-3.5" /> : step.id}
+                  {isCompleted ? <Check className="size-3.5" /> : index + 1}
                 </div>
                 {isLast ? null : (
                   <div

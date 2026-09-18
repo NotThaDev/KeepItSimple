@@ -12,6 +12,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Pocket } from "@/lib/models/Pocket";
 import {
+  ImportStep,
   TransactionImportProvider,
   useTransactionImportContext,
 } from "@/stores/transactionImport";
@@ -22,6 +23,13 @@ import { AnalyzeStep } from "./steps/AnalyzeStep";
 import { ConfirmStep } from "./steps/confirm/ConfirmStep";
 import { MappingStep } from "./steps/mapping/MappingStep";
 import { PreviewStep } from "./steps/preview/PreviewStep";
+
+const IMPORT_STEP_CONTENT = {
+  [ImportStep.Analyze]: AnalyzeStep,
+  [ImportStep.Mapping]: MappingStep,
+  [ImportStep.Preview]: PreviewStep,
+  [ImportStep.Confirm]: ConfirmStep,
+} as const;
 
 interface TransactionImportDialogProps {
   pockets: Pocket[];
@@ -40,10 +48,11 @@ export function TransactionImportDialog({
 }
 
 function TransactionImportDialogContent() {
-  const { open, step, handleOpenChange } = useTransactionImportContext();
+  const { open, step, openDialog } = useTransactionImportContext();
+  const StepContent = IMPORT_STEP_CONTENT[step];
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={openDialog}>
       <DialogTrigger asChild>
         <Button size="lg" variant="outline" className="w-[fit-content]">
           <Upload />
@@ -64,10 +73,7 @@ function TransactionImportDialogContent() {
           <Separator orientation="vertical" className="mx-6" />
 
           <div className="min-h-0 min-w-0 flex-1 overflow-y-auto py-1 pr-2">
-            {step === 1 ? <AnalyzeStep /> : null}
-            {step === 2 ? <MappingStep /> : null}
-            {step === 3 ? <PreviewStep /> : null}
-            {step === 4 ? <ConfirmStep /> : null}
+            <StepContent />
           </div>
         </div>
 

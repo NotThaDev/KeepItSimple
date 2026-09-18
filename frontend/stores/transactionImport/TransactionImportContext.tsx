@@ -4,6 +4,7 @@ import { Pocket } from "@/lib/models/Pocket";
 import {
   analyzeTransactionImport,
   confirmTransactionImport,
+  MappableField,
   previewTransactionImport,
   TransactionCategory,
   TransactionImportPreviewResponse,
@@ -18,25 +19,21 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { importErrorMessage } from "./utils";
-import type {
-  ImportStep,
-  TransactionImportContext as TransactionImportContextValue,
-} from "./types";
+import { ImportStep } from "./types";
+import type { TransactionImportContext as TransactionImportContextValue } from "./types";
 
 const TransactionImportContext =
   createContext<TransactionImportContextValue | null>(null);
 
-function mappingTargets(mapping: Record<number, string>) {
-  return Object.values(mapping).filter((field) => field !== "Ignore");
-}
-
-function isMappingReady(mapping: Record<number, string>) {
-  const targets = mappingTargets(mapping);
-  const uniqueTargets = new Set(targets);
+function isMappingReady(mapping: Record<number, MappableField>) {
+  const assignedFields = Object.values(mapping).filter(
+    (field) => field !== MappableField.Ignore,
+  );
+  const uniqueAssignedFields = new Set(assignedFields);
   return (
-    targets.includes("Amount") &&
-    targets.includes("Date") &&
-    uniqueTargets.size === targets.length
+    assignedFields.includes(MappableField.Amount) &&
+    assignedFields.includes(MappableField.Date) &&
+    uniqueAssignedFields.size === assignedFields.length
   );
 }
 
@@ -52,35 +49,15 @@ export function TransactionImportProvider({
   children,
 }: Readonly<TransactionImportProviderProps>) {
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<ImportStep>(1);
+  const [step, setStep] = useState<ImportStep>(ImportStep.Analyze);
   const [file, setFile] = useState<File | null>(null);
   const [analyze, setAnalyze] =
     useState<TransactionImportContextValue["analyze"]>(null);
-  const [mapping, setMapping] = useState<Record<number, string>>({});
+  const [mapping, setMapping] = useState<Record<number, MappableField>>({});
   const [pocketId, setPocketId] = useState(pockets[0]?.id.toString() ?? "");
   const [preview, setPreview] =
     useState<TransactionImportPreviewResponse | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isPreviewing, setIsPreviewing] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
-
-  const mappingItems = useMemo(
-    () =>
-      (analyze?.mappableFields ?? ["Ignore"]).map((field) => ({
-        value: field,
-        label: field,
-      })),
-    [analyze],
-  );
-
-  const pocketItems = useMemo(
-    () =>
-      pockets.map((pocket) => ({
-        value: pocket.id.toString(),
-        label: pocket.name,
-      })),
-    [pockets],
-  );
+  const [isLoading, setIsLoading] = useState(false);
 
   const selectedPocket = useMemo(
     () => pockets.find((pocket) => pocket.id.toString() === pocketId),
@@ -100,18 +77,16 @@ export function TransactionImportProvider({
     Boolean(analyze) && Boolean(pocketId) && isMappingReady(mapping);
 
   const reset = useCallback(() => {
-    setStep(1);
+    setStep(ImportStep.Analyze);
     setFile(null);
     setAnalyze(null);
     setMapping({});
     setPocketId(pockets[0]?.id.toString() ?? "");
     setPreview(null);
-    setIsAnalyzing(false);
-    setIsPreviewing(false);
-    setIsConfirming(false);
+    setIsLoading(false);
   }, [pockets]);
 
-  const handleOpenChange = useCallback(
+  const openDialog = useCallback(
     (nextOpen: boolean) => {
       setOpen(nextOpen);
       if (!nextOpen) {
@@ -129,7 +104,7 @@ export function TransactionImportProvider({
   }, []);
 
   const setMappingField = useCallback(
-    (columnIndex: number, targetField: string) => {
+    (columnIndex: number, targetField: MappableField) => {
       setMapping((current) => ({
         ...current,
         [columnIndex]: targetField,
@@ -138,7 +113,7 @@ export function TransactionImportProvider({
     [],
   );
 
-  const handleAnalyze = useCallback(async () => {
+  const analyzeFile = useCallback(async () => {
     if (!file) {
       toast.error("Pick a file first.");
       return;
@@ -149,29 +124,29 @@ export function TransactionImportProvider({
       return;
     }
 
-    setIsAnalyzing(true);
+    setIsLoading(true);
     setPreview(null);
 
     const result = await analyzeTransactionImport(file);
-    setIsAnalyzing(false);
+    setIsLoading(false);
 
     if (result.status !== 200 || !result.data) {
-      toast.error(importErrorMessage(result.status, "analyze"));
+      toast.error(importErrorMessage(result.status, ImportStep.Analyze));
       setAnalyze(null);
       return;
     }
 
-    const nextMapping: Record<number, string> = {};
+    const nextMapping: Record<number, MappableField> = {};
     for (const column of result.data.columns) {
-      nextMapping[column.index] = "Ignore";
+      nextMapping[column.index] = MappableField.Ignore;
     }
 
     setAnalyze(result.data);
     setMapping(nextMapping);
-    setStep(2);
+    setStep(ImportStep.Mapping);
   }, [file, pocketId]);
 
-  const handlePreview = useCallback(async () => {
+  const previewTransactions = useCallback(async () => {
     if (!analyze) {
       toast.error("Analyze a file first.");
       return;
@@ -187,7 +162,7 @@ export function TransactionImportProvider({
       return;
     }
 
-    setIsPreviewing(true);
+    setIsLoading(true);
 
     const result = await previewTransactionImport({
       sessionId: analyze.sessionId,
@@ -195,29 +170,29 @@ export function TransactionImportProvider({
       defaultCategory: TransactionCategory.Other,
       mapping: analyze.columns.map((column) => ({
         columnIndex: column.index,
-        targetField: mapping[column.index] ?? "Ignore",
+        targetField: mapping[column.index] ?? MappableField.Ignore,
       })),
     });
 
-    setIsPreviewing(false);
+    setIsLoading(false);
 
     if (result.status !== 200 || !result.data) {
-      toast.error(importErrorMessage(result.status, "preview"));
+      toast.error(importErrorMessage(result.status, ImportStep.Preview));
       setPreview(null);
       return;
     }
 
     setPreview(result.data);
-    setStep(3);
+    setStep(ImportStep.Preview);
   }, [analyze, mapping, pocketId]);
 
-  const handleConfirm = useCallback(async () => {
+  const confirmTransactions = useCallback(async () => {
     if (!preview || preview.transactions.length === 0) {
       toast.error("No transactions to save.");
       return;
     }
 
-    setIsConfirming(true);
+    setIsLoading(true);
 
     const result = await confirmTransactionImport({
       sessionId: preview.sessionId,
@@ -225,17 +200,17 @@ export function TransactionImportProvider({
       transactions: preview.transactions,
     });
 
-    setIsConfirming(false);
+    setIsLoading(false);
 
     if (result.status !== 200 || !result.data) {
-      toast.error(importErrorMessage(result.status, "confirm"));
+      toast.error(importErrorMessage(result.status, ImportStep.Confirm));
       return;
     }
 
     toast.success(`Saved ${result.data.savedCount} transactions.`);
-    handleOpenChange(false);
+    openDialog(false);
     onImported();
-  }, [handleOpenChange, onImported, pocketId, preview]);
+  }, [openDialog, onImported, pocketId, preview]);
 
   const updateDraftCategory = useCallback(
     (index: number, category: TransactionCategory) => {
@@ -277,25 +252,20 @@ export function TransactionImportProvider({
       file,
       analyze,
       mapping,
-      pocketId,
-      preview,
-      isAnalyzing,
-      isPreviewing,
-      isConfirming,
-      pockets,
-      mappingItems,
-      pocketItems,
       selectedPocket,
+      preview,
+      isLoading,
+      pockets,
       previewTotal,
       canContinueToPreview,
-      handleOpenChange,
+      openDialog,
       setStep,
       handleFileChange,
       setPocketId,
       setMappingField,
-      handleAnalyze,
-      handlePreview,
-      handleConfirm,
+      analyzeFile,
+      previewTransactions,
+      confirmTransactions,
       updateDraftCategory,
       removeDraft,
     }),
@@ -303,19 +273,14 @@ export function TransactionImportProvider({
       analyze,
       canContinueToPreview,
       file,
-      handleAnalyze,
-      handleConfirm,
+      analyzeFile,
+      confirmTransactions,
       handleFileChange,
-      handleOpenChange,
-      handlePreview,
-      isAnalyzing,
-      isConfirming,
-      isPreviewing,
+      openDialog,
+      previewTransactions,
+      isLoading,
       mapping,
-      mappingItems,
       open,
-      pocketId,
-      pocketItems,
       pockets,
       preview,
       previewTotal,

@@ -10,12 +10,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { isMappableField, MappableField } from "@/lib/models/Transaction";
 import { useTransactionImportContext } from "@/stores/transactionImport";
 import { SampleRowsAccordion } from "./SampleRowsAccordion";
 
+const MAPPING_ITEMS = Object.values(MappableField).map((field) => ({
+  value: field,
+  label: field,
+}));
+
 export function MappingStep() {
-  const { analyze, mapping, mappingItems, setMappingField } =
-    useTransactionImportContext();
+  const { analyze, mapping, setMappingField } = useTransactionImportContext();
 
   if (!analyze) {
     return null;
@@ -41,9 +46,13 @@ export function MappingStep() {
                 <TableCell>{column.name}</TableCell>
                 <TableCell className="w-56">
                   <Selection
-                    items={mappingItems}
-                    value={mapping[column.index] ?? "Ignore"}
-                    onChange={(value) => setMappingField(column.index, value)}
+                    items={MAPPING_ITEMS}
+                    value={mapping[column.index] ?? MappableField.Ignore}
+                    onChange={(value) => {
+                      if (isMappableField(value)) {
+                        setMappingField(column.index, value);
+                      }
+                    }}
                   />
                 </TableCell>
               </TableRow>

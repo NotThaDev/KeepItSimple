@@ -1,7 +1,19 @@
-export function importErrorMessage(
-  status: number,
-  step: "analyze" | "preview" | "confirm",
-) {
+import { ImportStep } from "./types";
+
+export function importLoadingMessage(step: ImportStep) {
+  if (step === ImportStep.Analyze) {
+    return "Analyzing…";
+  }
+  if (step === ImportStep.Mapping) {
+    return "Building preview…";
+  }
+  if (step === ImportStep.Confirm) {
+    return "Saving…";
+  }
+  return "Loading…";
+}
+
+export function importErrorMessage(status: number, step: ImportStep) {
   if (status === 0) {
     return "Server is unreachable.";
   }
@@ -11,10 +23,10 @@ export function importErrorMessage(
   }
 
   if (status === 400) {
-    if (step === "analyze") {
+    if (step === ImportStep.Analyze) {
       return "The file is invalid or unsupported.";
     }
-    if (step === "preview") {
+    if (step === ImportStep.Preview) {
       return "The column mapping is invalid. Amount and Date are required.";
     }
     return "Nothing to save.";
@@ -22,3 +34,4 @@ export function importErrorMessage(
 
   return "Something went wrong. Please try again.";
 }
+

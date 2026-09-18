@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  PaginationComponent,
-  usePagedItems,
-} from "@/components/common/dataTable/Pagination";
+import { PaginationComponent } from "@/components/common/dataTable/Pagination";
 import {
   Table,
   TableBody,
@@ -13,12 +10,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useTransactionImportContext } from "@/stores/transactionImport";
-import { IMPORT_TABLE_PAGE_SIZE } from "../../utils";
 import { DescriptionCell } from "../../DescriptionCell";
-import { formatDraftDate } from "../../utils";
 import { RemoveDraftButton } from "../../RemoveDraftButton";
+import { formatDraftDate, IMPORT_TABLE_PAGE_SIZE } from "../../utils";
 import { PreviewErrorsAccordion } from "./PreviewErrorsAccordion";
-import { TransactionImportCategorySelect } from "./TransactionImportCategorySelect";
+import { TransactionCategorySelector } from "@/app/transactions/TransactionCategorySelector";
+import { usePagedItems } from "@/hooks/usePagedItems";
 
 export function PreviewStep() {
   const { preview, selectedPocket, updateDraftCategory } =
@@ -45,8 +42,8 @@ export function PreviewStep() {
         <PreviewErrorsAccordion errors={preview.errors} />
       ) : null}
 
-      <Table className="table-fixed">
-        {pageItems.length > 0 ? (
+      {pageItems.length > 0 ? (
+        <Table className="table-fixed">
           <TableHeader>
             <TableRow>
               <TableHead className="w-44">Date</TableHead>
@@ -56,27 +53,30 @@ export function PreviewStep() {
               <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
-        ) : null}
-        <TableBody>
-          {pageItems.map(({ item: transaction, index }) => (
-            <TableRow key={`${transaction.date}-${index}`}>
-              <TableCell>{formatDraftDate(transaction.date)}</TableCell>
-              <DescriptionCell value={transaction.description} />
-              <TableCell>€{transaction.amount.toFixed(2)}</TableCell>
-              <TableCell>
-                <TransactionImportCategorySelect
-                  value={transaction.category}
-                  amount={transaction.amount}
-                  onChange={(category) => updateDraftCategory(index, category)}
-                />
-              </TableCell>
-              <TableCell className="text-right">
-                <RemoveDraftButton index={index} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          <TableBody>
+            {pageItems.map(({ item: transaction, index }) => (
+              <TableRow key={`${transaction.date}-${index}`}>
+                <TableCell>{formatDraftDate(transaction.date)}</TableCell>
+                <DescriptionCell value={transaction.description} />
+                <TableCell>€{transaction.amount.toFixed(2)}</TableCell>
+                <TableCell>
+                  <TransactionCategorySelector
+                    value={transaction.category}
+                    isIncome={transaction.amount > 0}
+                    onChange={(category) =>
+                      updateDraftCategory(index, category)
+                    }
+                  />
+                </TableCell>
+                <TableCell className="text-right">
+                  <RemoveDraftButton index={index} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : null}
+
       <PaginationComponent
         pageIndex={pageIndex}
         pageCount={pageCount}

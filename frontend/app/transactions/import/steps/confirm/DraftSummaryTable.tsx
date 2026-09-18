@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  PaginationComponent,
-  usePagedItems,
-} from "@/components/common/dataTable/Pagination";
+import { PaginationComponent } from "@/components/common/dataTable/Pagination";
 import {
   Table,
   TableBody,
@@ -16,8 +13,9 @@ import { TransactionImportDraft } from "@/lib/models/Transaction";
 import { IMPORT_TABLE_PAGE_SIZE } from "../../utils";
 import { DescriptionCell } from "../../DescriptionCell";
 import { formatDraftDate } from "../../utils";
-import { CategoryBadge } from "./CategoryBadge";
+import { CategoryBadge } from "@/components/common/CategoryBadge";
 import { RemoveDraftButton } from "../../RemoveDraftButton";
+import { usePagedItems } from "@/hooks/usePagedItems";
 
 export function DraftSummaryTable({
   transactions,
