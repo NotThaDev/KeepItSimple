@@ -1,10 +1,15 @@
 import { PageWrapper } from "@/components/common/pageContainer/PageWrapper";
+import { getRouteLabel } from "@/components/sidebar/RouteDefinition";
 import {
   getTransactions,
   parseTransactionSearchParams,
 } from "@/lib/models/Transaction";
 import { TransactionPageContent } from "./TransactionPageContent";
 import { getPockets } from "@/lib/models/Pocket";
+
+export const metadata = {
+  title: getRouteLabel("/transactions"),
+};
 
 export default async function TransactionsPage({
   searchParams,

@@ -11,7 +11,10 @@ import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: BRANDING.name,
+  title: {
+    default: BRANDING.name,
+    template: `%s | ${BRANDING.name}`,
+  },
 };
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });

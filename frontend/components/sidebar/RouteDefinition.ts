@@ -23,3 +23,7 @@ export const routes: RouteDefinition[] = [
     icon: Wallet,
   },
 ];
+
+export function getRouteLabel(href: string) {
+  return routes.find((route) => route.href === href)?.label;
+}
