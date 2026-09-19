@@ -1,16 +1,11 @@
 import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
 import { PageWrapper } from "@/components/common/pageContainer/PageWrapper";
-import { getRouteLabel } from "@/components/sidebar/RouteDefinition";
 import { getAnalytics } from "@/lib/models/Analytics";
 import { getPockets } from "@/lib/models/Pocket";
 import { WalletCards } from "lucide-react";
 import { BudgetTrackerCard } from "./cards/BudgetTrackerCard";
 import { SpendingChartCard } from "./cards/SpendingChartCard";
 import { TotalBalanceCard } from "./cards/TotalBalanceCard";
-
-export const metadata = {
-  title: getRouteLabel("/dashboard"),
-};
 
 export default async function DashboardPage() {
   const [pocketsResponse, analyticsResponse] = await Promise.all([
