@@ -8,7 +8,6 @@ import { CSSProperties } from "react";
 import { Toaster } from "@/components/ui/sonner";
 
 export const dynamic = "force-dynamic";
-
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export default function Layout({ children }: { children: React.ReactNode }) {
