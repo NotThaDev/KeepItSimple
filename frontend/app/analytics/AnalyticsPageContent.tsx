@@ -4,9 +4,11 @@ import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
 import { AnalyticsView, useAnalytics } from "@/stores/analytics";
 import { ChartNoAxesCombined, WalletCards } from "lucide-react";
 import { IncomeAnalyticsView } from "./income/IncomeAnalyticsView";
+import { ExpenseAnalyticsView } from "./expense/ExpenseAnalyticsView";
 
 export function AnalyticsPageContent() {
-  const { view, analytics, isLoading, setView } = useAnalytics();
+  const { view, analytics, expenseAnalytics, isLoading, setView } =
+    useAnalytics();
 
   let content;
   if (view === AnalyticsView.Income && analytics == undefined) {
@@ -21,18 +23,29 @@ export function AnalyticsPageContent() {
     );
   } else if (view === AnalyticsView.Income && analytics) {
     content = <IncomeAnalyticsView />;
-  } else if (isLoading) {
+  } else if (view === AnalyticsView.Expense && isLoading) {
     content = (
       <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
         Loading expense analytics...
       </div>
     );
-  } else {
-    const label = view === AnalyticsView.Saving ? "Saving" : "Expense";
+  } else if (view === AnalyticsView.Expense && expenseAnalytics == undefined) {
     content = (
       <EmptyStateCard
-        title={`${label} analytics coming soon`}
-        description={`${label} analytics will load here when this view is enabled.`}
+        title="Analytics unavailable"
+        description="We could not load expense analytics. Create a pocket and add transactions, then try again."
+        actionText="Go to pockets"
+        actionHref="/pockets"
+        icon={WalletCards}
+      />
+    );
+  } else if (view === AnalyticsView.Expense && expenseAnalytics) {
+    content = <ExpenseAnalyticsView />;
+  } else {
+    content = (
+      <EmptyStateCard
+        title="Saving analytics coming soon"
+        description="Saving analytics will load here when this view is enabled."
         actionText="Back to income"
         onAction={() => setView(AnalyticsView.Income)}
         icon={ChartNoAxesCombined}

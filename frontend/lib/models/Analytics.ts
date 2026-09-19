@@ -86,8 +86,49 @@ export async function getIncomeAnalytics(): Promise<
   return income;
 }
 
+export interface DailyCumulativeExpense {
+  day: number;
+  thisMonth: number | null;
+  lastMonth: number | null;
+}
+
+export interface MonthlyExpenseComparison {
+  month: number;
+  thisYear: number | null;
+  lastYear: number;
+}
+
+export interface ExpenseAnalytics {
+  totalMonthlyExpenses: number;
+  previousMonthExpenses: number;
+  dailyBurn: number;
+  monthProjection: number;
+  monthlyIncome: number;
+  spendingRate: number;
+  projectedSpendingRate: number;
+  previousMonthSpendingRate: number;
+  fixedExpenses: number;
+  topExpenses: Transaction[];
+  expensePerDay: Record<string, number>;
+  expenseByCategory: TransactionByCategory[];
+  monthlySpendingPace: DailyCumulativeExpense[];
+  monthlySpendComparison: MonthlyExpenseComparison[];
+  expensePerPocket: TransactionPerPocket[];
+}
+
 export async function getExpenseAnalytics(): Promise<
-  FetchWrapperResponse<unknown>
+  FetchWrapperResponse<ExpenseAnalytics>
 > {
-  return await get<unknown>("/api/analytics/expense");
+  const expense = await get<ExpenseAnalytics>("/api/analytics/expense");
+
+  if (expense.data) {
+    expense.data.topExpenses = (expense.data.topExpenses ?? []).map(
+      (transaction) => ({
+        ...transaction,
+        date: new Date(transaction.date),
+      }),
+    );
+  }
+
+  return expense;
 }
