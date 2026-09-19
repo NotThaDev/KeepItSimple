@@ -1,6 +1,7 @@
 export {
   AnalyticsProvider,
   useActiveAnalytics,
+  useActiveExpenseAnalytics,
   useAnalytics,
 } from "./AnalyticsContext";
 export { AnalyticsView } from "./types";
@@ -9,7 +10,4 @@ export {
   parseAnalyticsView,
   toAnalyticsHref,
 } from "./utils";
-export type {
-  AnalyticsContextValue,
-  AnalyticsProviderProps,
-} from "./types";
+export type { AnalyticsContextValue, AnalyticsProviderProps } from "./types";
