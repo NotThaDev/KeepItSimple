@@ -37,7 +37,10 @@ export default async function DashboardPage() {
     content = (
       <div className="flex min-h-0 flex-1 flex-col gap-[16px] overflow-y-auto p-px xl:grid xl:grid-cols-2 xl:grid-rows-[minmax(0,1fr)_auto] xl:overflow-hidden">
         <TotalBalanceCard analytics={analytics} />
-        <BudgetTrackerCard analytics={analytics} />
+        <BudgetTrackerCard
+          categories={analytics.monthlyExpensesByCategory}
+          currency={analytics.expensesPerPocket[0]?.pocket.currency ?? "USD"}
+        />
         <div className="xl:col-span-2">
           <SpendingChartCard analytics={analytics} />
         </div>

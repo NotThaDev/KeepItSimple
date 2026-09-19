@@ -175,10 +175,28 @@ export function IncomeTrendChart() {
               cursor={false}
               content={
                 <ChartTooltipContent
-                  formatter={(value, name) => [
-                    formatMoney(Number(value), currency),
-                    formatCategoryLabel(name as TransactionCategory),
-                  ]}
+                  className="w-fit min-w-fit"
+                  formatter={(value, name) => {
+                    const category = name as TransactionCategory;
+                    const color =
+                      CategoryColorMap[category]?.background ??
+                      DEFAULT_CATEGORY_COLORS.background;
+
+                    return (
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="text-muted-foreground mr-1">
+                          {formatCategoryLabel(category)}
+                        </span>
+                        <span className="font-mono font-medium text-foreground tabular-nums">
+                          {formatMoney(Number(value), currency)}
+                        </span>
+                      </div>
+                    );
+                  }}
                 />
               }
             />

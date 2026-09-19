@@ -11,22 +11,41 @@ import {
   CategoryColorMap,
   DEFAULT_CATEGORY_COLORS,
 } from "@/lib/helpers/colors";
-import { OverviewAnalytics } from "@/lib/models/Analytics";
+import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
+import { ExpenseByCategory } from "@/lib/models/Analytics";
+import {
+  formatCategoryLabel,
+  TransactionCategory,
+} from "@/lib/models/Transaction";
 import { useMemo } from "react";
 import { SquircleDashed } from "lucide-react";
-import { TransactionCategory } from "@/lib/models/Transaction";
 
 export const description = "A donut chart with text";
 
 interface ExpensesPieChartProps {
-  analytics: OverviewAnalytics;
+  categories: ExpenseByCategory[];
+  currency?: string;
+  label?: string;
+}
+
+function formatAmount(amount: number, currency?: string): string {
+  const formatted = amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  return currency
+    ? `${getCurrencySymbolFromCode(currency)}${formatted}`
+    : formatted;
 }
 
 export function ExpensesPieChart({
-  analytics,
+  categories,
+  currency,
+  label = "Expenses",
 }: Readonly<ExpensesPieChartProps>) {
   const chartData = useMemo(() => {
-    return analytics.monthlyExpensesByCategory
+    return categories
       .map((entry) => ({
         category: entry.category,
         total: Math.abs(entry.total),
@@ -35,26 +54,26 @@ export function ExpensesPieChart({
           DEFAULT_CATEGORY_COLORS.background,
       }))
       .filter((entry) => entry.total > 0);
-  }, [analytics.monthlyExpensesByCategory]);
+  }, [categories]);
 
   const chartConfig = useMemo(() => {
     const config: ChartConfig = {
       total: {
-        label: "Expenses",
+        label,
       },
     };
 
     chartData.forEach((entry) => {
       config[entry.category] = {
-        label: entry.category,
+        label: formatCategoryLabel(entry.category),
         color: entry.fill,
       };
     });
 
     return config;
-  }, [chartData]);
+  }, [chartData, label]);
 
-  const totalExpenses = useMemo(() => {
+  const total = useMemo(() => {
     return chartData.reduce((acc, curr) => acc + curr.total, 0);
   }, [chartData]);
 
@@ -79,14 +98,11 @@ export function ExpensesPieChart({
                         ?.background ?? DEFAULT_CATEGORY_COLORS.background
                     }
                   />
-                  <span className="text-muted-foreground mr-1">{name}</span>
+                  <span className="text-muted-foreground mr-1">
+                    {formatCategoryLabel(name as TransactionCategory)}
+                  </span>
                   <span className="font-mono font-medium text-foreground tabular-nums">
-                    {typeof value === "number"
-                      ? value.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })
-                      : String(value)}
+                    {formatAmount(Number(value), currency)}
                   </span>
                 </div>
               )}
@@ -117,17 +133,14 @@ export function ExpensesPieChart({
                       y={viewBox.cy}
                       className="fill-foreground text-3xl font-bold"
                     >
-                      {totalExpenses.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {formatAmount(total, currency)}
                     </tspan>
                     <tspan
                       x={viewBox.cx}
                       y={(viewBox.cy || 0) + 30}
                       className="fill-muted-foreground"
                     >
-                      Expenses
+                      {label}
                     </tspan>
                   </text>
                 );

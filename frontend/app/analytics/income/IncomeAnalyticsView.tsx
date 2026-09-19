@@ -7,12 +7,13 @@ import {
   Banknote,
   CalendarRange,
   Percent,
+  PieChart as PieChartIcon,
   TrendingUp,
 } from "lucide-react";
 import { useActiveAnalytics } from "@/stores/analytics";
 import { formatMoney, formatPercent } from "../utils";
+import { BudgetTrackerCard } from "@/app/dashboard/cards/BudgetTrackerCard";
 import { IncomeCashFlowChart } from "./IncomeCashFlowChart";
-import { IncomeCategoryChart } from "./IncomeCategoryChart";
 import { IncomePocketList } from "./IncomePocketList";
 import { IncomeTopTable } from "./IncomeTopTable";
 import { IncomeTrendChart } from "./IncomeTrendChart";
@@ -52,10 +53,6 @@ export function IncomeAnalyticsView() {
               Same as last month
             </p>
           )}
-          <p className="mt-3 text-xs text-muted-foreground">
-            Active {formatMoney(analytics.monthlyActiveIncome, currency)} ·
-            Passive {formatMoney(analytics.monthlyPassiveIncome, currency)}
-          </p>
         </DashboardCard>
 
         <DashboardCard title="Last month" icon={CalendarRange}>
@@ -87,13 +84,23 @@ export function IncomeAnalyticsView() {
       </div>
 
       <div className="grid shrink-0 grid-cols-1 gap-4 xl:min-h-[320px] xl:grid-cols-2">
-        <IncomeCategoryChart />
+        <BudgetTrackerCard
+          title="Income by category"
+          listTitle="This month by category"
+          centerLabel="Income"
+          emptyTitle="No income yet"
+          emptyDescription="Income recorded this month will appear here by category."
+          icon={PieChartIcon}
+          className="h-auto min-h-[20rem] flex-none xl:min-h-[20rem]"
+          categories={analytics.monthlyIncomeByCategory}
+          currency={currency}
+        />
         <IncomeCashFlowChart />
       </div>
 
       <IncomeTrendChart />
 
-      <div className="grid shrink-0 grid-cols-1 gap-4 xl:min-h-[320px] xl:grid-cols-2">
+      <div className="grid shrink-0 grid-cols-1 gap-4 xl:grid-cols-2">
         <IncomePocketList />
         <ActivePassiveCard />
       </div>
