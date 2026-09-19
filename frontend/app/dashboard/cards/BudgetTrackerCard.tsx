@@ -6,28 +6,47 @@ import {
   DEFAULT_CATEGORY_COLORS,
 } from "@/lib/helpers/colors";
 import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
-import { OverviewAnalytics } from "@/lib/models/Analytics";
+import { ExpenseByCategory } from "@/lib/models/Analytics";
+import { formatCategoryLabel } from "@/lib/models/Transaction";
+import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
   ChevronRight,
   ReceiptText,
   SquircleDashed,
   BanknoteX,
+  type LucideIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { DashboardCard } from "./DashboardCard";
 import { ExpensesPieChart } from "./ExpensesPieChart";
 
 interface BudgetTrackerCardProps {
-  analytics: OverviewAnalytics;
+  categories: ExpenseByCategory[];
+  currency: string;
+  title?: string;
+  listTitle?: string;
+  centerLabel?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  icon?: LucideIcon;
+  className?: string;
 }
 
 const ITEMS_PER_PAGE = 5;
 
 export function BudgetTrackerCard({
-  analytics,
+  categories,
+  currency,
+  title = "Monthly Expenses",
+  listTitle = "Expenses by category",
+  centerLabel = "Expenses",
+  emptyTitle = "No expenses yet",
+  emptyDescription = "Transactions recorded this month will appear here once you start tracking your expenses.",
+  icon: Icon = ReceiptText,
+  className,
 }: Readonly<BudgetTrackerCardProps>) {
-  const sortedCategories = [...analytics.monthlyExpensesByCategory].sort(
+  const sortedCategories = [...categories].sort(
     (left, right) => Math.abs(right.total) - Math.abs(left.total),
   );
 
@@ -56,17 +75,21 @@ export function BudgetTrackerCard({
 
   return (
     <DashboardCard
-      title="Monthly Expenses"
-      icon={ReceiptText}
-      className="min-h-[20rem] flex-1 xl:min-h-0"
+      title={title}
+      icon={Icon}
+      className={cn("min-h-[20rem] flex-1 xl:min-h-0", className)}
     >
       <div className="flex h-full min-h-0 w-full gap-4">
         {sortedCategories.length > 0 ? (
           <>
-            <ExpensesPieChart analytics={analytics} />
+            <ExpensesPieChart
+              categories={sortedCategories}
+              currency={currency}
+              label={centerLabel}
+            />
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               <p className="mb-3 shrink-0 text-sm text-muted-foreground">
-                Expenses by category
+                {listTitle}
               </p>
               <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
                 {pagedCategories.map((entry) => (
@@ -83,13 +106,12 @@ export function BudgetTrackerCard({
                           DEFAULT_CATEGORY_COLORS.background
                         }
                       />
-                      <p className="font-semibold">{entry.category}</p>
+                      <p className="font-semibold">
+                        {formatCategoryLabel(entry.category)}
+                      </p>
                     </div>
                     <p className="rounded-md bg-secondary px-2 py-0.5 text-secondary-foreground">
-                      {getCurrencySymbolFromCode(
-                        analytics.expensesPerPocket[0]?.pocket.currency ??
-                          "USD",
-                      )}
+                      {getCurrencySymbolFromCode(currency)}
                       {Math.abs(entry.total).toFixed(2)}
                     </p>
                   </div>
@@ -126,10 +148,9 @@ export function BudgetTrackerCard({
                 <BanknoteX className="size-6" />
               </div>
               <div className="space-y-1.5">
-                <p className="text-base font-semibold">No expenses yet</p>
+                <p className="text-base font-semibold">{emptyTitle}</p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Transactions recorded this month will appear here once you
-                  start tracking your expenses.
+                  {emptyDescription}
                 </p>
               </div>
             </div>

@@ -123,6 +123,11 @@ export const INCOME_TRANSACTION_CATEGORIES: TransactionCategory[] = [
   TransactionCategory.Investments,
 ];
 
+export const INCOME_ANALYTICS_CATEGORIES: TransactionCategory[] =
+  INCOME_TRANSACTION_CATEGORIES.filter(
+    (category) => category !== TransactionCategory.Savings,
+  );
+
 export const DEFAULT_TRANSACTION_PAGE_SIZE = 10;
 const ALL_TRANSACTION_CATEGORIES = Object.values(TransactionCategory);
 
