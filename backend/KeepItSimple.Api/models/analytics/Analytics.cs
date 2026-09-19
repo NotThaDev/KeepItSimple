@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using static KeepItSimple.Api.Models.Pocket;
 using static KeepItSimple.Api.Models.Transaction;
 
@@ -69,7 +70,7 @@ public static class Analytics
 
         var monthlyExpensesByCategory = monthlyExpenses
             .GroupBy(t => t.Category)
-            .Select(g => new OverviewAnalytics.ExpenseByCategory
+            .Select(g => new TransactionByCategory
             {
                 Category = g.Key,
                 Total = g.Sum(t => t.Amount)
@@ -83,10 +84,10 @@ public static class Analytics
             .ToDictionary(g => g.Key, g => g.Sum(t => t.Amount));
 
         var expensesPerPocket = pockets
-            .ConvertAll(pocket => new OverviewAnalytics.ExpensePerPocket
+            .ConvertAll(pocket => new TransactionPerPocket
             {
                 Pocket = pocket,
-                TotalExpenses = expensesPerPocketTotals.GetValueOrDefault(pocket.Id, 0)
+                Total = expensesPerPocketTotals.GetValueOrDefault(pocket.Id, 0)
             });
 
         return new OverviewAnalytics
@@ -106,8 +107,130 @@ public static class Analytics
         };
     }
 
+    public static async Task GetExpensesAnalyticsAsync(int? pocketId = null) { }
+
+    public static async Task<IncomeAnalytics> GetIncomeAnalyticsAsync(int? pocketId = null)
+    {
+        var pockets = await Pocket.GetAllAsync();
+        var transactions = pocketId is null ? await Transaction.GetAllAsync() : await Transaction.GetByPocketIdAsync(pocketId.Value);
+        var now = DateTime.UtcNow;
+        var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
+        var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
+
+        var previousMonth = now.AddMonths(-1);
+        var previousMonthIncome = transactions.Where(t => IsIncome(t) && t.Date.Year == previousMonth.Year && t.Date.Month == previousMonth.Month).Sum(t => t.Amount);
+
+        var sixMonthsAgo = now.AddMonths(-6);
+        var sixMonthAverageIncome = transactions.Where(t => IsIncome(t) && t.Date >= sixMonthsAgo && t.Date <= now).Average(t => t.Amount);
+
+        var monthlyExpenses = monthlyTransactions.Where(IsExpense).Sum(t => t.Amount);
+        var monthlyNet = monthlyIncome - monthlyExpenses;
+        var savingsRate = sixMonthAverageIncome > 0 ? monthlyIncome / monthlyNet : 0;
+
+        var monthlyPassiveIncome = monthlyTransactions.Where(t => PassiveIncomeCategories.Contains(t.Category)).Sum(t => t.Amount);
+        var monthlyActiveIncome = monthlyTransactions.Where(t => ActiveIncomeCategories.Contains(t.Category)).Sum(t => t.Amount);
+
+        var incomeByCategory = monthlyTransactions.Where(IsIncome).GroupBy(t => t.Category).Select(g => new TransactionByCategory
+        {
+            Category = g.Key,
+            Total = g.Sum(t => t.Amount)
+        }).ToList().OrderByDescending(t => t.Total).ToList();
+
+        var currentYear = now.Year;
+        var yearIncomeTotalsByMonthAndCategory = transactions
+            .Where(t => t.Date.Year == currentYear && IsIncome(t))
+            .GroupBy(t => (t.Date.Month, t.Category))
+            .ToDictionary(group => group.Key, group => group.Sum(t => t.Amount));
+
+        var yearIncomeByMonth = Enumerable.Range(1, 12)
+            .Select(month => new MonthlyTransactionByCategory
+            {
+                Month = month,
+                Categories = IncomeCategories.ToDictionary(
+                    category => category,
+                    category => yearIncomeTotalsByMonthAndCategory.GetValueOrDefault((month, category), 0)
+                )
+            })
+            .ToList();
+
+        var monthlyIncomePerPocket = monthlyTransactions
+            .GroupBy(t => t.PocketId)
+            .Select(group => new TransactionPerPocket
+            {
+                Pocket = pockets.First(p => p.Id == group.Key),
+                Total = group.Sum(t => t.Amount)
+            })
+            .ToList();
+
+        return new IncomeAnalytics
+        {
+            TotalMonthlyIncome = monthlyIncome,
+            PreviousMonthIncome = previousMonthIncome,
+            SixMonthAverageIncome = sixMonthAverageIncome,
+            SavingsRate = savingsRate,
+            MonthlyIncomeByCategory = incomeByCategory,
+            TwelveMonthIncomeTrend = yearIncomeByMonth,
+            MonthlyIncomePerPocket = monthlyIncomePerPocket,
+        };
+
+    }
+
     private static bool IsExpense(Transaction transaction) =>
         transaction.Amount < 0
         && transaction.Category is not TransactionCategory.Savings
         && transaction.Category is not TransactionCategory.Investments;
+
+    private static bool IsIncome(Transaction transaction) =>
+        transaction.Amount > 0 && IncomeCategories.Contains(transaction.Category);
+
+
+    public class TransactionByCategory
+    {
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public TransactionCategory Category { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class MonthlyTransactionByCategory
+    {
+        public int Month { get; set; }
+        public Dictionary<TransactionCategory, decimal> Categories { get; set; } = [];
+    }
+
+    public class TransactionPerPocket
+    {
+        public Pocket Pocket { get; set; } = null!;
+        public decimal Total { get; set; }
+    }
+
+    private static readonly TransactionCategory[] IncomeCategories =
+    [
+        TransactionCategory.Salary,
+        TransactionCategory.Bonus,
+        TransactionCategory.Freelance,
+        TransactionCategory.Business,
+        TransactionCategory.Interest,
+        TransactionCategory.Dividends,
+        TransactionCategory.RentalIncome,
+        TransactionCategory.Refund,
+        TransactionCategory.Savings,
+        TransactionCategory.Investments,
+    ];
+
+    private static readonly TransactionCategory[] PassiveIncomeCategories =
+    [
+        TransactionCategory.Interest,
+        TransactionCategory.Dividends,
+        TransactionCategory.RentalIncome,
+        TransactionCategory.Refund,
+        TransactionCategory.Investments,
+    ];
+
+    private static readonly TransactionCategory[] ActiveIncomeCategories =
+    [
+        TransactionCategory.Salary,
+        TransactionCategory.Bonus,
+        TransactionCategory.Freelance,
+        TransactionCategory.Business,
+    ];
 }

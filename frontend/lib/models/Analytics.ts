@@ -9,7 +9,7 @@ export interface ExpenseByCategory {
 
 export interface ExpensePerPocket {
   pocket: Pocket;
-  totalExpenses: number;
+  total: number;
 }
 
 export interface DailyExpenseComparison {

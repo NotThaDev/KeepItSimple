@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using static KeepItSimple.Api.Models.Analytics.Analytics;
 using static KeepItSimple.Api.Models.Transaction;
 
 namespace KeepItSimple.Api.Models.Analytics;
@@ -16,21 +17,8 @@ public class OverviewAnalytics
     public List<DailyExpenseComparison> MonthlyExpensesDailyComparison { get; set; } = [];
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public TransactionCategory? TopExpenseCategory { get; set; }
-    public List<ExpenseByCategory> MonthlyExpensesByCategory { get; set; } = [];
-    public List<ExpensePerPocket> ExpensesPerPocket { get; set; } = [];
-
-    public class ExpenseByCategory
-    {
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public TransactionCategory Category { get; set; }
-        public decimal Total { get; set; }
-    }
-
-    public class ExpensePerPocket
-    {
-        public Pocket Pocket { get; set; } = null!;
-        public decimal TotalExpenses { get; set; }
-    }
+    public List<TransactionByCategory> MonthlyExpensesByCategory { get; set; } = [];
+    public List<TransactionPerPocket> ExpensesPerPocket { get; set; } = [];
 
     public class DailyExpenseComparison
     {

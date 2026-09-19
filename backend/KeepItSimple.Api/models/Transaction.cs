@@ -159,7 +159,7 @@ public class Transaction
         });
     }
 
-
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum TransactionCategory
     {
         Coffe,
