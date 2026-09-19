@@ -29,3 +29,26 @@ export const ACTIVE_INCOME_CATEGORIES = [
   TransactionCategory.Business,
 ];
 
+export const FIXED_EXPENSE_CATEGORIES = [
+  TransactionCategory.Lease,
+  TransactionCategory.Rent,
+  TransactionCategory.Mortgage,
+  TransactionCategory.Insurance,
+  TransactionCategory.Phone,
+  TransactionCategory.Subscriptions,
+];
+
+export const MONTH_LABELS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];

@@ -23,4 +23,12 @@ public class AnalyticsController : ControllerBase
 
         return Ok(income);
     }
+
+    [HttpGet("expense")]
+    public async Task<ActionResult<ExpenseAnalytics>> GetExpense()
+    {
+        var expense = await GetExpensesAnalyticsAsync();
+
+        return Ok(expense);
+    }
 }
