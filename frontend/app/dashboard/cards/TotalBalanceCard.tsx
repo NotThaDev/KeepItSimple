@@ -1,7 +1,7 @@
 "use client";
 
 import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
-import { Analytics } from "@/lib/models/Analytics";
+import { OverviewAnalytics } from "@/lib/models/Analytics";
 import { Badge, ChevronLeft, ChevronRight, Wallet } from "lucide-react";
 import { DashboardCard } from "./DashboardCard";
 import { useCallback, useMemo, useState } from "react";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { getBalanceProps } from "./utils";
 
 interface TotalBalanceCardProps {
-  analytics: Analytics;
+  analytics: OverviewAnalytics;
 }
 
 const ITEMS_PER_PAGE = 3;

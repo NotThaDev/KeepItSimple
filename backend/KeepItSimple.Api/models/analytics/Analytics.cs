@@ -1,27 +1,13 @@
-using System.Text.Json.Serialization;
+using static KeepItSimple.Api.Models.Pocket;
 using static KeepItSimple.Api.Models.Transaction;
 
-namespace KeepItSimple.Api.Models;
+namespace KeepItSimple.Api.Models.Analytics;
 
-public class Analytics
+public static class Analytics
 {
-    public decimal CurrentMonthTotalBalance { get; set; }
-    public decimal TotalExpenses { get; set; }
-    public decimal TotalIncome { get; set; }
-    public decimal MonthlyTotalExpenses { get; set; }
-    public decimal MonthlyTotalIncome { get; set; }
-    public decimal PreviousMonthTotalExpenses { get; set; }
-    public decimal PreviousMonthTotalIncome { get; set; }
-    public decimal PreviousMonthTotalBalance { get; set; }
-    public List<DailyExpenseComparison> MonthlyExpensesDailyComparison { get; set; } = [];
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public TransactionCategory? TopExpenseCategory { get; set; }
-    public List<ExpenseByCategory> MonthlyExpensesByCategory { get; set; } = [];
-    public List<ExpensePerPocket> ExpensesPerPocket { get; set; } = [];
-
-    public static async Task<Analytics> GetMonthlyAnalyticsAsync()
+    public static async Task<OverviewAnalytics> GetOverviewAsync()
     {
-        var transactionsTask = GetAllAsync();
+        var transactionsTask = Transaction.GetAllAsync();
         var pocketsTask = Pocket.GetAllAsync();
         await Task.WhenAll(transactionsTask, pocketsTask);
 
@@ -73,7 +59,7 @@ public class Analytics
         );
         var monthlyExpensesDailyComparison = Enumerable
             .Range(1, maxDays)
-            .Select(day => new DailyExpenseComparison
+            .Select(day => new OverviewAnalytics.DailyExpenseComparison
             {
                 Day = day,
                 ThisMonth = thisMonthByDay.GetValueOrDefault(day, 0),
@@ -83,7 +69,7 @@ public class Analytics
 
         var monthlyExpensesByCategory = monthlyExpenses
             .GroupBy(t => t.Category)
-            .Select(g => new ExpenseByCategory
+            .Select(g => new OverviewAnalytics.ExpenseByCategory
             {
                 Category = g.Key,
                 Total = g.Sum(t => t.Amount)
@@ -97,14 +83,13 @@ public class Analytics
             .ToDictionary(g => g.Key, g => g.Sum(t => t.Amount));
 
         var expensesPerPocket = pockets
-            .ConvertAll(pocket => new ExpensePerPocket
+            .ConvertAll(pocket => new OverviewAnalytics.ExpensePerPocket
             {
                 Pocket = pocket,
                 TotalExpenses = expensesPerPocketTotals.GetValueOrDefault(pocket.Id, 0)
-            })
-;
+            });
 
-        return new Analytics
+        return new OverviewAnalytics
         {
             TotalExpenses = totalExpenses,
             TotalIncome = totalIncome,
@@ -125,24 +110,4 @@ public class Analytics
         transaction.Amount < 0
         && transaction.Category is not TransactionCategory.Savings
         && transaction.Category is not TransactionCategory.Investments;
-
-    public class ExpenseByCategory
-    {
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public TransactionCategory Category { get; set; }
-        public decimal Total { get; set; }
-    }
-
-    public class ExpensePerPocket
-    {
-        public Pocket Pocket { get; set; } = null!;
-        public decimal TotalExpenses { get; set; }
-    }
-
-    public class DailyExpenseComparison
-    {
-        public int Day { get; set; }
-        public decimal ThisMonth { get; set; }
-        public decimal LastMonth { get; set; }
-    }
 }

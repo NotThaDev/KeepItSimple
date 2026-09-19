@@ -18,7 +18,7 @@ export interface DailyExpenseComparison {
   lastMonth: number;
 }
 
-export interface Analytics {
+export interface OverviewAnalytics {
   totalExpenses: number;
   totalIncome: number;
   monthlyTotalExpenses: number;
@@ -33,6 +33,8 @@ export interface Analytics {
   previousMonthTotalBalance: number;
 }
 
-export async function getAnalytics(): Promise<FetchWrapperResponse<Analytics>> {
-  return await get<Analytics>("/api/analytics");
+export async function getOverview(): Promise<
+  FetchWrapperResponse<OverviewAnalytics>
+> {
+  return await get<OverviewAnalytics>("/api/analytics/overview");
 }

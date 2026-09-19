@@ -11,7 +11,7 @@ import {
   CategoryColorMap,
   DEFAULT_CATEGORY_COLORS,
 } from "@/lib/helpers/colors";
-import { Analytics } from "@/lib/models/Analytics";
+import { OverviewAnalytics } from "@/lib/models/Analytics";
 import { useMemo } from "react";
 import { SquircleDashed } from "lucide-react";
 import { TransactionCategory } from "@/lib/models/Transaction";
@@ -19,7 +19,7 @@ import { TransactionCategory } from "@/lib/models/Transaction";
 export const description = "A donut chart with text";
 
 interface ExpensesPieChartProps {
-  analytics: Analytics;
+  analytics: OverviewAnalytics;
 }
 
 export function ExpensesPieChart({
