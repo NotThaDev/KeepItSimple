@@ -47,17 +47,8 @@ function AppSidebarHeader() {
           />
         ) : (
           <>
-            <Image
-              src={BRANDING.logo}
-              alt={`${BRANDING.name} Logo`}
-              className="h-6 w-6 shrink-0"
-              width={24}
-              height={24}
-            />
             <span
-              className={cn(
-                "ml-2 flex-1 truncate text-lg font-semibold tracking-tight",
-              )}
+              className={cn("flex-1 truncate text-xl font-bold tracking-tight")}
             >
               {BRANDING.name}
             </span>

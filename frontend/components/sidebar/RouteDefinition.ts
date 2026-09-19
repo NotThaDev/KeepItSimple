@@ -1,4 +1,10 @@
-import { LucideIcon, ArrowDownUp, Wallet, LayoutDashboard } from "lucide-react";
+import {
+  ArrowDownUp,
+  ChartNoAxesCombined,
+  LayoutDashboard,
+  LucideIcon,
+  Wallet,
+} from "lucide-react";
 
 export interface RouteDefinition {
   label: string;
@@ -13,6 +19,12 @@ export const routes: RouteDefinition[] = [
     title: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    label: "Analytics",
+    title: "Analytics",
+    href: "/analytics",
+    icon: ChartNoAxesCombined,
   },
   {
     label: "Transactions",

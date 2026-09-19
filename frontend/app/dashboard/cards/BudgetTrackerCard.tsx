@@ -6,7 +6,7 @@ import {
   DEFAULT_CATEGORY_COLORS,
 } from "@/lib/helpers/colors";
 import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
-import { Analytics } from "@/lib/models/Analytics";
+import { OverviewAnalytics } from "@/lib/models/Analytics";
 import {
   ChevronLeft,
   ChevronRight,
@@ -19,7 +19,7 @@ import { DashboardCard } from "./DashboardCard";
 import { ExpensesPieChart } from "./ExpensesPieChart";
 
 interface BudgetTrackerCardProps {
-  analytics: Analytics;
+  analytics: OverviewAnalytics;
 }
 
 const ITEMS_PER_PAGE = 5;

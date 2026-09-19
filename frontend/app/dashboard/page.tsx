@@ -1,6 +1,6 @@
 import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
 import { PageWrapper } from "@/components/common/pageContainer/PageWrapper";
-import { getAnalytics } from "@/lib/models/Analytics";
+import { getOverview } from "@/lib/models/Analytics";
 import { getPockets } from "@/lib/models/Pocket";
 import { WalletCards } from "lucide-react";
 import { BudgetTrackerCard } from "./cards/BudgetTrackerCard";
@@ -10,7 +10,7 @@ import { TotalBalanceCard } from "./cards/TotalBalanceCard";
 export default async function DashboardPage() {
   const [pocketsResponse, analyticsResponse] = await Promise.all([
     getPockets(),
-    getAnalytics(),
+    getOverview(),
   ]);
 
   const pockets = pocketsResponse.data ?? [];
