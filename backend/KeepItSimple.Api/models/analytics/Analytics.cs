@@ -120,17 +120,28 @@ public static class Analytics
         var previousMonth = now.AddMonths(-1);
         var previousMonthIncome = transactions.Where(t => IsIncome(t) && t.Date.Year == previousMonth.Year && t.Date.Month == previousMonth.Month).Sum(t => t.Amount);
 
-        var sixMonthsAgo = now.AddMonths(-6);
-        var sixMonthAverageIncome = transactions.Where(t => IsIncome(t) && t.Date >= sixMonthsAgo && t.Date <= now).Average(t => t.Amount);
+        var sixMonthAverageIncome = Enumerable.Range(0, 6)
+            .Average(offset =>
+            {
+                var month = now.AddMonths(-offset);
+                return transactions
+                    .Where(t => IsIncome(t) && t.Date.Year == month.Year && t.Date.Month == month.Month)
+                    .Sum(t => t.Amount);
+            });
 
-        var monthlyExpenses = monthlyTransactions.Where(IsExpense).Sum(t => t.Amount);
-        var monthlyNet = monthlyIncome - monthlyExpenses;
-        var savingsRate = sixMonthAverageIncome > 0 ? monthlyIncome / monthlyNet : 0;
+        var monthlyExpenseTotal = Math.Abs(monthlyTransactions.Where(IsExpense).Sum(t => t.Amount));
+        var monthlyNetIncome = monthlyIncome - monthlyExpenseTotal;
+        var savingsRate = monthlyIncome == 0 ? 0 : (monthlyNetIncome / monthlyIncome);
 
-        var monthlyPassiveIncome = monthlyTransactions.Where(t => PassiveIncomeCategories.Contains(t.Category)).Sum(t => t.Amount);
-        var monthlyActiveIncome = monthlyTransactions.Where(t => ActiveIncomeCategories.Contains(t.Category)).Sum(t => t.Amount);
+        var monthlyIncomeTransactions = monthlyTransactions.Where(IsIncome).ToList();
+        var monthlyPassiveIncome = monthlyIncomeTransactions
+            .Where(t => PassiveIncomeCategories.Contains(t.Category))
+            .Sum(t => t.Amount);
+        var monthlyActiveIncome = monthlyIncomeTransactions
+            .Where(t => ActiveIncomeCategories.Contains(t.Category))
+            .Sum(t => t.Amount);
 
-        var incomeByCategory = monthlyTransactions.Where(IsIncome).GroupBy(t => t.Category).Select(g => new TransactionByCategory
+        var incomeByCategory = monthlyIncomeTransactions.GroupBy(t => t.Category).Select(g => new TransactionByCategory
         {
             Category = g.Key,
             Total = g.Sum(t => t.Amount)
@@ -153,13 +164,18 @@ public static class Analytics
             })
             .ToList();
 
-        var monthlyIncomePerPocket = monthlyTransactions
+        var monthlyIncomePerPocketTotals = monthlyIncomeTransactions
             .GroupBy(t => t.PocketId)
-            .Select(group => new TransactionPerPocket
-            {
-                Pocket = pockets.First(p => p.Id == group.Key),
-                Total = group.Sum(t => t.Amount)
-            })
+            .ToDictionary(group => group.Key, group => group.Sum(t => t.Amount));
+        var monthlyIncomePerPocket = pockets.ConvertAll(pocket => new TransactionPerPocket
+        {
+            Pocket = pocket,
+            Total = monthlyIncomePerPocketTotals.GetValueOrDefault(pocket.Id, 0)
+        });
+
+        var topMonthlyIncome = monthlyIncomeTransactions
+            .OrderByDescending(t => t.Amount)
+            .Take(5)
             .ToList();
 
         return new IncomeAnalytics
@@ -168,9 +184,14 @@ public static class Analytics
             PreviousMonthIncome = previousMonthIncome,
             SixMonthAverageIncome = sixMonthAverageIncome,
             SavingsRate = savingsRate,
+            MonthlyActiveIncome = monthlyActiveIncome,
+            MonthlyPassiveIncome = monthlyPassiveIncome,
             MonthlyIncomeByCategory = incomeByCategory,
             TwelveMonthIncomeTrend = yearIncomeByMonth,
             MonthlyIncomePerPocket = monthlyIncomePerPocket,
+            TopMonthlyIncome = topMonthlyIncome,
+            MonthlyExpenses = monthlyExpenseTotal,
+            NetMonthlyIncome = monthlyNetIncome,
         };
 
     }
@@ -213,7 +234,6 @@ public static class Analytics
         TransactionCategory.Dividends,
         TransactionCategory.RentalIncome,
         TransactionCategory.Refund,
-        TransactionCategory.Savings,
         TransactionCategory.Investments,
     ];
 
