@@ -8,8 +8,14 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
+interface SelectionItem {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
 interface SelectionProps {
-  items: { value: string; label: string }[];
+  items: SelectionItem[];
   value?: string;
   defaultValue?: string;
   placeholder?: string;
@@ -42,7 +48,11 @@ export function Selection({
       <SelectContent>
         <SelectGroup>
           {items.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
+            <SelectItem
+              key={item.value}
+              value={item.value}
+              disabled={item.disabled}
+            >
               {item.label}
             </SelectItem>
           ))}
