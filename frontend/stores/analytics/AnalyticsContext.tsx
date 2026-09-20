@@ -49,11 +49,17 @@ export function AnalyticsProvider({
         ...base,
         view,
         analytics,
-        currency: analytics?.monthlyIncomePerPocket[0]?.pocket.currency ?? "EUR",
+        currency:
+          analytics?.monthlyIncomePerPocket[0]?.pocket.currency ?? "EUR",
       };
     }
 
-    return { ...base, view, analytics: undefined, currency: "EUR" };
+    return {
+      ...base,
+      view,
+      analytics,
+      currency: analytics?.currency ?? "EUR",
+    };
   }, [analytics, isPending, setView, view]);
 
   return (
@@ -85,6 +91,15 @@ export function useExpenseAnalytics() {
   const { view, analytics, currency } = useAnalytics();
   if (view !== AnalyticsView.Expense || analytics == undefined) {
     throw new Error("useExpenseAnalytics requires loaded expense analytics");
+  }
+
+  return { analytics, currency };
+}
+
+export function useSavingAnalytics() {
+  const { view, analytics, currency } = useAnalytics();
+  if (view !== AnalyticsView.Saving || analytics == undefined) {
+    throw new Error("useSavingAnalytics requires loaded saving analytics");
   }
 
   return { analytics, currency };
