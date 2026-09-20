@@ -1,89 +1,66 @@
 "use client";
 
-import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Banknote,
-  CalendarClock,
-  Flame,
-  Percent,
-} from "lucide-react";
+import { Banknote, CalendarClock, Flame, Percent } from "lucide-react";
 import { useActiveExpenseAnalytics } from "@/stores/analytics";
 import { formatMoney, formatPercent } from "../utils";
+import { AnalyticsStatRow } from "../AnalyticsStatCard";
 import { ExpenseCategoryList } from "./ExpenseCategoryList";
 import { ExpenseDensity } from "./ExpenseDensity";
 import { ExpenseMonthlyComparisonChart } from "./ExpenseMonthlyComparisonChart";
-import { ExpensePocketList } from "./ExpensePocketList";
 import { ExpenseSpendingPaceChart } from "./ExpenseSpendingPaceChart";
 import { ExpenseTopTable } from "./ExpenseTopTable";
 import { FixedExpensesCard } from "./FixedExpensesCard";
 import { IncomeCoverage } from "./IncomeCoverage";
+import { PocketList } from "../PocketList";
+import { useMemo } from "react";
 
 export function ExpenseAnalyticsView() {
   const { analytics, currency } = useActiveExpenseAnalytics();
-  const delta =
-    analytics.totalMonthlyExpenses - analytics.previousMonthExpenses;
-  const hasDelta =
-    analytics.previousMonthExpenses !== analytics.totalMonthlyExpenses;
-  const isSpendingMore = delta > 0;
+
+  const analyticsItems = useMemo(() => {
+    const delta =
+      analytics.totalMonthlyExpenses - analytics.previousMonthExpenses;
+    const hasDelta =
+      analytics.previousMonthExpenses !== analytics.totalMonthlyExpenses;
+    const isSpendingMore = delta > 0;
+    return [
+      {
+        title: "This month",
+        icon: Banknote,
+        value: formatMoney(analytics.totalMonthlyExpenses, currency),
+        delta: hasDelta
+          ? {
+              formatted: formatMoney(Math.abs(delta), currency),
+              isUp: isSpendingMore,
+              upIsGood: false,
+            }
+          : undefined,
+        description: hasDelta ? undefined : "Same as last month",
+      },
+      {
+        title: "Daily burn",
+        icon: Flame,
+        value: formatMoney(analytics.dailyBurn, currency),
+        description: "Average spent per day this month",
+      },
+      {
+        title: "Month projection",
+        icon: CalendarClock,
+        value: formatMoney(analytics.monthProjection, currency),
+        description: "At the current daily pace",
+      },
+      {
+        title: "Spending rate",
+        icon: Percent,
+        value: formatPercent(analytics.spendingRate),
+        description: "Share of this month's income spent",
+      },
+    ];
+  }, [analytics, currency]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-px pb-4">
-      <div className="grid shrink-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <DashboardCard title="This month" icon={Banknote}>
-          <p className="text-3xl font-semibold">
-            {formatMoney(analytics.totalMonthlyExpenses, currency)}
-          </p>
-          {hasDelta ? (
-            <div
-              className={`mt-1 flex items-center gap-1 ${
-                isSpendingMore ? "text-red-500" : "text-green-500"
-              }`}
-            >
-              {isSpendingMore ? (
-                <ArrowUpRight className="h-4 w-4" />
-              ) : (
-                <ArrowDownRight className="h-4 w-4" />
-              )}
-              <p className="text-sm">
-                {formatMoney(Math.abs(delta), currency)} vs last month
-              </p>
-            </div>
-          ) : (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Same as last month
-            </p>
-          )}
-        </DashboardCard>
-
-        <DashboardCard title="Daily burn" icon={Flame}>
-          <p className="text-3xl font-semibold">
-            {formatMoney(analytics.dailyBurn, currency)}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Average spent per day this month
-          </p>
-        </DashboardCard>
-
-        <DashboardCard title="Month projection" icon={CalendarClock}>
-          <p className="text-3xl font-semibold">
-            {formatMoney(analytics.monthProjection, currency)}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            At the current daily pace
-          </p>
-        </DashboardCard>
-
-        <DashboardCard title="Spending rate" icon={Percent}>
-          <p className="text-3xl font-semibold">
-            {formatPercent(analytics.spendingRate)}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Share of this month&apos;s income spent
-          </p>
-        </DashboardCard>
-      </div>
+      <AnalyticsStatRow items={analyticsItems} />
 
       <div className="grid shrink-0 grid-cols-1 gap-4 xl:grid-cols-2">
         <ExpenseSpendingPaceChart />
@@ -99,7 +76,11 @@ export function ExpenseAnalyticsView() {
 
       <div className="grid shrink-0 grid-cols-1 gap-4 xl:grid-cols-2">
         <ExpenseDensity />
-        <ExpensePocketList />
+        <PocketList
+          title="Expenses by pocket"
+          pockets={analytics.expensePerPocket}
+          emptyMessage="No pockets to show for this expense view."
+        />
       </div>
       <ExpenseTopTable />
     </div>

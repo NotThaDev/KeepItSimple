@@ -33,6 +33,7 @@ export const FIXED_EXPENSE_CATEGORIES = [
   TransactionCategory.Lease,
   TransactionCategory.Rent,
   TransactionCategory.Mortgage,
+  TransactionCategory.Loan,
   TransactionCategory.Insurance,
   TransactionCategory.Phone,
   TransactionCategory.Subscriptions,

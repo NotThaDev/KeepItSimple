@@ -379,6 +379,7 @@ public static class Analytics
         TransactionCategory.Lease,
         TransactionCategory.Rent,
         TransactionCategory.Mortgage,
+        TransactionCategory.Loan,
         TransactionCategory.Insurance,
         TransactionCategory.Phone,
         TransactionCategory.Subscriptions,

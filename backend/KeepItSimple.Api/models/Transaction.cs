@@ -217,5 +217,6 @@ public class Transaction
         Lease,
         Rent,
         Mortgage,
+        Loan,
     }
 }

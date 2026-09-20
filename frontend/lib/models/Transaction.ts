@@ -66,6 +66,7 @@ export enum TransactionCategory {
   Lease = "Lease",
   Rent = "Rent",
   Mortgage = "Mortgage",
+  Loan = "Loan",
 }
 
 export const EXPENSE_TRANSACTION_CATEGORIES: TransactionCategory[] = [
@@ -116,6 +117,7 @@ export const EXPENSE_TRANSACTION_CATEGORIES: TransactionCategory[] = [
   TransactionCategory.Lease,
   TransactionCategory.Rent,
   TransactionCategory.Mortgage,
+  TransactionCategory.Loan,
 ];
 
 export const INCOME_TRANSACTION_CATEGORIES: TransactionCategory[] = [

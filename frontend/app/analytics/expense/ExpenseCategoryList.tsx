@@ -97,7 +97,7 @@ export function ExpenseCategoryList() {
             })}
           </div>
           {sortedCategories.length > ITEMS_PER_PAGE && (
-            <div className="flex shrink-0 items-center justify-end gap-2 pt-3">
+            <div className="mt-auto flex shrink-0 items-center justify-end gap-2 pt-3">
               <Button
                 variant="outline"
                 size="icon"

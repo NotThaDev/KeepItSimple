@@ -82,4 +82,5 @@ export const CategoryColorMap: Record<TransactionCategory, CategoryColors> = {
   [TransactionCategory.Lease]: createCategoryColors("#7C2D12"),
   [TransactionCategory.Rent]: createCategoryColors("#9A3412"),
   [TransactionCategory.Mortgage]: createCategoryColors("#44403C"),
+  [TransactionCategory.Loan]: createCategoryColors("#8B5CF6"),
 };
