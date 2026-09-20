@@ -132,6 +132,17 @@ public static class TransactionImporter
             ["prestito"] = Transaction.TransactionCategory.Loan,
             ["prestiti"] = Transaction.TransactionCategory.Loan,
             ["finanziamento"] = Transaction.TransactionCategory.Loan,
+            ["transfer"] = Transaction.TransactionCategory.Transfer,
+            ["transferimento"] = Transaction.TransactionCategory.Transfer,
+            ["trasferimento"] = Transaction.TransactionCategory.Transfer,
+            ["bonifico"] = Transaction.TransactionCategory.Transfer,
+            ["giroconto"] = Transaction.TransactionCategory.Transfer,
+            ["withdraw"] = Transaction.TransactionCategory.Withdraw,
+            ["withdrawal"] = Transaction.TransactionCategory.Withdraw,
+            ["prelievo"] = Transaction.TransactionCategory.Withdraw,
+            ["prelievi"] = Transaction.TransactionCategory.Withdraw,
+            ["contanti"] = Transaction.TransactionCategory.Withdraw,
+            ["cash"] = Transaction.TransactionCategory.Withdraw,
         };
 
     public static AnalyzeResponse Analyze(Stream fileStream)
