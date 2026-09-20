@@ -68,7 +68,7 @@ export function SavingLeftoverChart() {
 
   return (
     <DashboardCard
-      title="Leftover vs Saved"
+      title="Leftover vs Saved - 12 months"
       icon={BarChart3}
       className="h-auto min-h-[20rem]"
     >

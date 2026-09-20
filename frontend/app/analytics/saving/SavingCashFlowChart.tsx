@@ -20,7 +20,7 @@ const chartConfig: ChartConfig = {
       dark: "#60a5fa",
     },
   },
-  putAside: {
+  saved: {
     label: "Saved",
     theme: {
       light: "#0f766e",
@@ -42,7 +42,7 @@ export function SavingCashFlowChart() {
       key: "saved",
       name: "Saved",
       value: analytics.totalMonthlySavings,
-      fill: "var(--color-putAside)",
+      fill: "var(--color-saved)",
     },
   ];
 
