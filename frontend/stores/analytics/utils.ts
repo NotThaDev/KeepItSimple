@@ -1,4 +1,8 @@
-import { AnalyticsView } from "./types";
+import {
+  getExpenseAnalytics,
+  getIncomeAnalytics,
+} from "@/lib/models/Analytics";
+import { AnalyticsPayload, AnalyticsView } from "./types";
 
 export const ANALYTICS_VIEW_ITEMS: {
   value: AnalyticsView;
@@ -6,22 +10,34 @@ export const ANALYTICS_VIEW_ITEMS: {
   disabled?: boolean;
 }[] = [
   { value: AnalyticsView.Income, label: "Income Analytics" },
-  { value: AnalyticsView.Expense, label: "Expense Analytics", disabled: true },
+  { value: AnalyticsView.Expense, label: "Expense Analytics" },
   { value: AnalyticsView.Saving, label: "Saving Analytics", disabled: true },
 ];
 
-// We'll update this when the new analytics views are implemented
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function parseAnalyticsView(paramKeys: Iterable<string>): AnalyticsView {
-  // const keys = new Set(paramKeys);
-  // For now we always return AnalyticsView.Income
-  return AnalyticsView.Income;
-  // return (
-  //   Object.values(AnalyticsView).find((view) => keys.has(view)) ??
-  //   AnalyticsView.Income
-  // );
+  const keys = new Set(paramKeys);
+  return (
+    Object.values(AnalyticsView).find((view) => keys.has(view)) ??
+    AnalyticsView.Income
+  );
 }
 
 export function toAnalyticsHref(pathname: string, view: AnalyticsView): string {
   return `${pathname}?${view}`;
+}
+
+export async function loadAnalytics(
+  view: AnalyticsView,
+): Promise<AnalyticsPayload> {
+  if (view === AnalyticsView.Expense) {
+    const { data } = await getExpenseAnalytics();
+    return { view, analytics: data };
+  }
+
+  if (view === AnalyticsView.Income) {
+    const { data } = await getIncomeAnalytics();
+    return { view, analytics: data };
+  }
+
+  return { view, analytics: undefined };
 }

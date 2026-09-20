@@ -213,5 +213,10 @@ public class Transaction
         Taxes,
         Phone,
         Film,
+        Insurance,
+        Lease,
+        Rent,
+        Mortgage,
+        Loan,
     }
 }

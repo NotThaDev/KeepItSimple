@@ -1,6 +1,5 @@
 "use client";
 
-import { Label, Pie, PieChart } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
@@ -11,39 +10,29 @@ import {
   CategoryColorMap,
   DEFAULT_CATEGORY_COLORS,
 } from "@/lib/helpers/colors";
-import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 import { ExpenseByCategory } from "@/lib/models/Analytics";
 import {
   formatCategoryLabel,
   TransactionCategory,
 } from "@/lib/models/Transaction";
-import { useMemo } from "react";
 import { SquircleDashed } from "lucide-react";
+import { useMemo } from "react";
+import { Label, Pie, PieChart } from "recharts";
 
 export const description = "A donut chart with text";
 
-interface ExpensesPieChartProps {
+interface TransactionPieChartProps {
   categories: ExpenseByCategory[];
   currency?: string;
   label?: string;
 }
 
-function formatAmount(amount: number, currency?: string): string {
-  const formatted = amount.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-
-  return currency
-    ? `${getCurrencySymbolFromCode(currency)}${formatted}`
-    : formatted;
-}
-
-export function ExpensesPieChart({
+export function TransactionPieChart({
   categories,
   currency,
   label = "Expenses",
-}: Readonly<ExpensesPieChartProps>) {
+}: Readonly<TransactionPieChartProps>) {
   const chartData = useMemo(() => {
     return categories
       .map((entry) => ({
@@ -133,7 +122,7 @@ export function ExpensesPieChart({
                       y={viewBox.cy}
                       className="fill-foreground text-3xl font-bold"
                     >
-                      {formatAmount(total, currency)}
+                      {formatAmount(total, currency, 0)}
                     </tspan>
                     <tspan
                       x={viewBox.cx}

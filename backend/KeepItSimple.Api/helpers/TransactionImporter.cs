@@ -128,6 +128,10 @@ public static class TransactionImporter
             ["tasse"] = Transaction.TransactionCategory.Taxes,
             ["telefono"] = Transaction.TransactionCategory.Phone,
             ["film"] = Transaction.TransactionCategory.Film,
+            ["loan"] = Transaction.TransactionCategory.Loan,
+            ["prestito"] = Transaction.TransactionCategory.Loan,
+            ["prestiti"] = Transaction.TransactionCategory.Loan,
+            ["finanziamento"] = Transaction.TransactionCategory.Loan,
         };
 
     public static AnalyzeResponse Analyze(Stream fileStream)

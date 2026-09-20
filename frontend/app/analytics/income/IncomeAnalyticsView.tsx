@@ -1,90 +1,73 @@
 "use client";
 
-import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   Banknote,
   CalendarRange,
   Percent,
   PieChart as PieChartIcon,
   TrendingUp,
 } from "lucide-react";
-import { useActiveAnalytics } from "@/stores/analytics";
-import { formatMoney, formatPercent } from "../utils";
-import { BudgetTrackerCard } from "@/app/dashboard/cards/BudgetTrackerCard";
+import { useIncomeAnalytics } from "@/stores/analytics";
+import { formatPercent } from "../utils";
+import { TransactionTrackerCard } from "@/components/common/transactionTracker/TransactionTrackerCard";
+import { AnalyticsStatRow } from "../AnalyticsStatCard";
+import { PocketList } from "../PocketList";
 import { IncomeCashFlowChart } from "./IncomeCashFlowChart";
-import { IncomePocketList } from "./IncomePocketList";
 import { IncomeTopTable } from "./IncomeTopTable";
 import { IncomeTrendChart } from "./IncomeTrendChart";
 import { ActivePassiveCard } from "./ActivePassiveCard";
+import { useMemo } from "react";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 export function IncomeAnalyticsView() {
-  const { analytics, currency } = useActiveAnalytics();
-  const delta = analytics.totalMonthlyIncome - analytics.previousMonthIncome;
-  const hasDelta =
-    analytics.previousMonthIncome !== analytics.totalMonthlyIncome;
-  const isUp = delta > 0;
+  const { analytics, currency } = useIncomeAnalytics();
+
+  const analyticsItems = useMemo(() => {
+    const delta = analytics.totalMonthlyIncome - analytics.previousMonthIncome;
+    const hasDelta =
+      analytics.previousMonthIncome !== analytics.totalMonthlyIncome;
+    const isUp = delta > 0;
+
+    return [
+      {
+        title: "This month",
+        icon: Banknote,
+        value: formatAmount(analytics.totalMonthlyIncome, currency),
+        delta: hasDelta
+          ? {
+              formatted: formatAmount(Math.abs(delta), currency),
+              isUp,
+            }
+          : undefined,
+        description: hasDelta ? undefined : "Same as last month",
+      },
+      {
+        title: "Last month",
+        icon: CalendarRange,
+        value: formatAmount(analytics.previousMonthIncome, currency),
+        description: "Previous calendar month",
+      },
+      {
+        title: "6-month average",
+        icon: TrendingUp,
+        value: formatAmount(analytics.sixMonthAverageIncome, currency),
+        description: "Average monthly income",
+      },
+      {
+        title: "Savings rate",
+        icon: Percent,
+        value: formatPercent(analytics.savingsRate),
+        description: "Share of this month kept",
+      },
+    ];
+  }, [analytics, currency]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-px pb-4">
-      <div className="grid shrink-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <DashboardCard title="This month" icon={Banknote}>
-          <p className="text-3xl font-semibold">
-            {formatMoney(analytics.totalMonthlyIncome, currency)}
-          </p>
-          {hasDelta ? (
-            <div
-              className={`mt-1 flex items-center gap-1 ${
-                isUp ? "text-green-500" : "text-red-500"
-              }`}
-            >
-              {isUp ? (
-                <ArrowUpRight className="h-4 w-4" />
-              ) : (
-                <ArrowDownRight className="h-4 w-4" />
-              )}
-              <p className="text-sm">
-                {formatMoney(Math.abs(delta), currency)} vs last month
-              </p>
-            </div>
-          ) : (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Same as last month
-            </p>
-          )}
-        </DashboardCard>
-
-        <DashboardCard title="Last month" icon={CalendarRange}>
-          <p className="text-3xl font-semibold">
-            {formatMoney(analytics.previousMonthIncome, currency)}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Previous calendar month
-          </p>
-        </DashboardCard>
-
-        <DashboardCard title="6-month average" icon={TrendingUp}>
-          <p className="text-3xl font-semibold">
-            {formatMoney(analytics.sixMonthAverageIncome, currency)}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Average monthly income
-          </p>
-        </DashboardCard>
-
-        <DashboardCard title="Savings rate" icon={Percent}>
-          <p className="text-3xl font-semibold">
-            {formatPercent(analytics.savingsRate)}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Share of this month kept
-          </p>
-        </DashboardCard>
-      </div>
+      <AnalyticsStatRow items={analyticsItems} />
 
       <div className="grid shrink-0 grid-cols-1 gap-4 xl:min-h-[320px] xl:grid-cols-2">
-        <BudgetTrackerCard
+        <TransactionTrackerCard
           title="Income by category"
           listTitle="This month by category"
           centerLabel="Income"
@@ -101,7 +84,11 @@ export function IncomeAnalyticsView() {
       <IncomeTrendChart />
 
       <div className="grid shrink-0 grid-cols-1 gap-4 xl:grid-cols-2">
-        <IncomePocketList />
+        <PocketList
+          title="Income by pocket"
+          pockets={analytics.monthlyIncomePerPocket}
+          emptyMessage="No pockets to show for this income view."
+        />
         <ActivePassiveCard />
       </div>
       <IncomeTopTable />

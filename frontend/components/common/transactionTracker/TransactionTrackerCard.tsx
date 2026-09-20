@@ -5,23 +5,23 @@ import {
   CategoryColorMap,
   DEFAULT_CATEGORY_COLORS,
 } from "@/lib/helpers/colors";
-import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 import { ExpenseByCategory } from "@/lib/models/Analytics";
 import { formatCategoryLabel } from "@/lib/models/Transaction";
 import { cn } from "@/lib/utils";
 import {
+  BanknoteX,
   ChevronLeft,
   ChevronRight,
   ReceiptText,
   SquircleDashed,
-  BanknoteX,
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { DashboardCard } from "./DashboardCard";
-import { ExpensesPieChart } from "./ExpensesPieChart";
+import { DashboardCard } from "../../../app/dashboard/cards/DashboardCard";
+import { TransactionPieChart } from "./TransactionPieChart";
 
-interface BudgetTrackerCardProps {
+interface TransactionTrackerCardProps {
   categories: ExpenseByCategory[];
   currency: string;
   title?: string;
@@ -35,7 +35,7 @@ interface BudgetTrackerCardProps {
 
 const ITEMS_PER_PAGE = 5;
 
-export function BudgetTrackerCard({
+export function TransactionTrackerCard({
   categories,
   currency,
   title = "Monthly Expenses",
@@ -45,7 +45,7 @@ export function BudgetTrackerCard({
   emptyDescription = "Transactions recorded this month will appear here once you start tracking your expenses.",
   icon: Icon = ReceiptText,
   className,
-}: Readonly<BudgetTrackerCardProps>) {
+}: Readonly<TransactionTrackerCardProps>) {
   const sortedCategories = [...categories].sort(
     (left, right) => Math.abs(right.total) - Math.abs(left.total),
   );
@@ -82,7 +82,7 @@ export function BudgetTrackerCard({
       <div className="flex h-full min-h-0 w-full gap-4">
         {sortedCategories.length > 0 ? (
           <>
-            <ExpensesPieChart
+            <TransactionPieChart
               categories={sortedCategories}
               currency={currency}
               label={centerLabel}
@@ -111,14 +111,13 @@ export function BudgetTrackerCard({
                       </p>
                     </div>
                     <p className="rounded-md bg-secondary px-2 py-0.5 text-secondary-foreground">
-                      {getCurrencySymbolFromCode(currency)}
-                      {Math.abs(entry.total).toFixed(2)}
+                      {formatAmount(Math.abs(entry.total), currency)}
                     </p>
                   </div>
                 ))}
               </div>
               {sortedCategories.length > ITEMS_PER_PAGE && (
-                <div className="flex shrink-0 items-center justify-end gap-2 pt-3">
+                <div className="mt-auto flex shrink-0 items-center justify-end gap-2 pt-3">
                   <Button
                     variant="outline"
                     size="icon"

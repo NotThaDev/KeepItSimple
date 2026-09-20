@@ -1,15 +1,12 @@
 import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
 import { Activity } from "lucide-react";
-import { useActiveAnalytics } from "@/stores/analytics";
+import { useIncomeAnalytics } from "@/stores/analytics";
 import { Progress } from "@/components/ui/progress";
-import {
-  ACTIVE_INCOME_CATEGORIES,
-  formatMoney,
-  PASSIVE_INCOME_CATEGORIES,
-} from "../utils";
+import { ACTIVE_INCOME_CATEGORIES, PASSIVE_INCOME_CATEGORIES } from "../utils";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 export function ActivePassiveCard() {
-  const { analytics, currency } = useActiveAnalytics();
+  const { analytics, currency } = useIncomeAnalytics();
 
   const activePercentage =
     (analytics?.monthlyActiveIncome / analytics?.totalMonthlyIncome) * 100;
@@ -23,7 +20,7 @@ export function ActivePassiveCard() {
           <div className="flex items-center justify-between gap-2">
             <p className="font-semibold">Active</p>
             <p className="rounded-md bg-secondary px-2 py-0.5 text-secondary-foreground">
-              {formatMoney(analytics.monthlyActiveIncome, currency)}
+              {formatAmount(analytics.monthlyActiveIncome, currency)}
             </p>
           </div>
           <Progress value={activePercentage} />
@@ -36,7 +33,7 @@ export function ActivePassiveCard() {
           <div className="flex items-center justify-between gap-2">
             <p className="font-semibold">Passive</p>
             <p className="rounded-md bg-secondary px-2 py-0.5 text-secondary-foreground">
-              {formatMoney(analytics.monthlyPassiveIncome, currency)}
+              {formatAmount(analytics.monthlyPassiveIncome, currency)}
             </p>
           </div>
           <Progress value={passivePercentage} />

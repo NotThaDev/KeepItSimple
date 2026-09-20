@@ -3,7 +3,7 @@ import { PageWrapper } from "@/components/common/pageContainer/PageWrapper";
 import { getOverview } from "@/lib/models/Analytics";
 import { getPockets } from "@/lib/models/Pocket";
 import { WalletCards } from "lucide-react";
-import { BudgetTrackerCard } from "./cards/BudgetTrackerCard";
+import { TransactionTrackerCard } from "../../components/common/transactionTracker/TransactionTrackerCard";
 import { SpendingChartCard } from "./cards/SpendingChartCard";
 import { TotalBalanceCard } from "./cards/TotalBalanceCard";
 
@@ -37,7 +37,7 @@ export default async function DashboardPage() {
     content = (
       <div className="flex min-h-0 flex-1 flex-col gap-[16px] overflow-y-auto p-px xl:grid xl:grid-cols-2 xl:grid-rows-[minmax(0,1fr)_auto] xl:overflow-hidden">
         <TotalBalanceCard analytics={analytics} />
-        <BudgetTrackerCard
+        <TransactionTrackerCard
           categories={analytics.monthlyExpensesByCategory}
           currency={analytics.expensesPerPocket[0]?.pocket.currency ?? "USD"}
         />

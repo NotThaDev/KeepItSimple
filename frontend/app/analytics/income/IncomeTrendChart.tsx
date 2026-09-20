@@ -29,8 +29,8 @@ import {
   YAxis,
   type BarShapeProps,
 } from "recharts";
-import { useActiveAnalytics } from "@/stores/analytics";
-import { formatMoney } from "../utils";
+import { useIncomeAnalytics } from "@/stores/analytics";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 const STACK_TOP_RADIUS = 4;
 
@@ -100,7 +100,7 @@ const MONTH_LABELS = [
 ];
 
 export function IncomeTrendChart() {
-  const { analytics, currency } = useActiveAnalytics();
+  const { analytics, currency } = useIncomeAnalytics();
   const activeCategories = useMemo(() => {
     return INCOME_ANALYTICS_CATEGORIES.filter((category) =>
       analytics.twelveMonthIncomeTrend.some(
@@ -192,7 +192,7 @@ export function IncomeTrendChart() {
                           {formatCategoryLabel(category)}
                         </span>
                         <span className="font-mono font-medium text-foreground tabular-nums">
-                          {formatMoney(Number(value), currency)}
+                          {formatAmount(Number(value), currency)}
                         </span>
                       </div>
                     );

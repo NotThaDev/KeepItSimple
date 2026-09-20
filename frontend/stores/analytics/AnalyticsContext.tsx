@@ -6,55 +6,55 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useState,
+  useTransition,
 } from "react";
 import type { AnalyticsContextValue, AnalyticsProviderProps } from "./types";
 import { AnalyticsView } from "./types";
 import { toAnalyticsHref } from "./utils";
-import { FetchWrapperResponse } from "@/lib/fetchWrapper";
-import { getIncomeAnalytics, IncomeAnalytics } from "@/lib/models/Analytics";
 
 const AnalyticsContext = createContext<AnalyticsContextValue | null>(null);
 
 export function AnalyticsProvider({
-  incomeResponse,
-  view: viewFromUrl,
+  analytics,
+  view,
   children,
 }: Readonly<AnalyticsProviderProps>) {
   const router = useRouter();
   const pathname = usePathname();
-  const [view, setViewState] = useState(viewFromUrl);
-  const [expenseResponse, setExpenseResponse] =
-    useState<FetchWrapperResponse<IncomeAnalytics>>(incomeResponse);
+  const [isPending, startTransition] = useTransition();
 
   const setView = useCallback(
-    async (nextView: AnalyticsView) => {
-      setViewState(nextView);
-      if (nextView === AnalyticsView.Expense) {
-        const response = await getIncomeAnalytics();
-        setExpenseResponse(response);
-      }
-      router.replace(toAnalyticsHref(pathname, nextView), { scroll: false });
+    (nextView: AnalyticsView) => {
+      startTransition(() => {
+        router.replace(toAnalyticsHref(pathname, nextView), { scroll: false });
+      });
     },
     [pathname, router],
   );
 
-  const analytics =
-    view === AnalyticsView.Income ? expenseResponse.data : undefined;
-  const currency =
-    analytics?.monthlyIncomePerPocket[0]?.pocket.currency ?? "EUR";
-  const isLoading = view === AnalyticsView.Expense;
+  const value = useMemo((): AnalyticsContextValue => {
+    const base = { setView, isLoading: isPending };
 
-  const value = useMemo(
-    () => ({
-      view,
-      setView,
-      analytics,
-      currency,
-      isLoading,
-    }),
-    [analytics, currency, isLoading, setView, view],
-  );
+    if (view === AnalyticsView.Expense) {
+      return {
+        ...base,
+        view,
+        analytics,
+        currency: analytics?.expensePerPocket[0]?.pocket.currency ?? "EUR",
+      };
+    }
+
+    if (view === AnalyticsView.Income) {
+      return {
+        ...base,
+        view,
+        analytics,
+        currency: analytics?.monthlyIncomePerPocket[0]?.pocket.currency ?? "EUR",
+      };
+    }
+
+    return { ...base, view, analytics: undefined, currency: "EUR" };
+  }, [analytics, isPending, setView, view]);
 
   return (
     <AnalyticsContext.Provider value={value}>
@@ -72,10 +72,19 @@ export function useAnalytics() {
   return context;
 }
 
-export function useActiveAnalytics() {
-  const { analytics, currency } = useAnalytics();
-  if (analytics == undefined) {
-    throw new Error("useActiveAnalytics requires loaded analytics");
+export function useIncomeAnalytics() {
+  const { view, analytics, currency } = useAnalytics();
+  if (view !== AnalyticsView.Income || analytics == undefined) {
+    throw new Error("useIncomeAnalytics requires loaded income analytics");
+  }
+
+  return { analytics, currency };
+}
+
+export function useExpenseAnalytics() {
+  const { view, analytics, currency } = useAnalytics();
+  if (view !== AnalyticsView.Expense || analytics == undefined) {
+    throw new Error("useExpenseAnalytics requires loaded expense analytics");
   }
 
   return { analytics, currency };

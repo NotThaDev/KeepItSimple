@@ -107,7 +107,127 @@ public static class Analytics
         };
     }
 
-    public static async Task GetExpensesAnalyticsAsync(int? pocketId = null) { }
+    public static async Task<ExpenseAnalytics> GetExpensesAnalyticsAsync(int? pocketId = null)
+    {
+        var pockets = await Pocket.GetAllAsync();
+        var transactions = pocketId is null ? await Transaction.GetAllAsync() : await Transaction.GetByPocketIdAsync(pocketId.Value);
+        var now = DateTime.UtcNow;
+        var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
+        var monthlyExpenses = monthlyTransactions.Where(IsExpense).ToList();
+        var monthlyTotalExpenses = Math.Abs(monthlyExpenses.Sum(t => t.Amount));
+
+        var previousMonth = now.AddMonths(-1);
+        var previousMonthExpenseTransactions = transactions
+            .Where(t => IsExpense(t) && t.Date.Year == previousMonth.Year && t.Date.Month == previousMonth.Month)
+            .ToList();
+        var previousMonthExpenses = Math.Abs(previousMonthExpenseTransactions.Sum(t => t.Amount));
+
+        var daysInMonth = DateTime.DaysInMonth(now.Year, now.Month);
+        var dailyBurn = monthlyTotalExpenses / daysInMonth;
+        var monthProjection = dailyBurn * daysInMonth;
+        var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
+        var spendingRate = monthlyIncome == 0 ? 0 : monthlyTotalExpenses / monthlyIncome;
+        var projectedSpendingRate = monthlyIncome == 0 ? 0 : monthProjection / monthlyIncome;
+        var previousMonthIncome = transactions
+            .Where(t => IsIncome(t) && t.Date.Year == previousMonth.Year && t.Date.Month == previousMonth.Month)
+            .Sum(t => t.Amount);
+        var previousMonthSpendingRate = previousMonthIncome == 0 ? 0 : previousMonthExpenses / previousMonthIncome;
+        var expensePerDay = monthlyExpenses.GroupBy(t => t.Date.Day).ToDictionary(group => group.Key, group => Math.Abs(group.Sum(t => t.Amount)));
+
+        var thisMonthByDay = monthlyExpenses
+            .GroupBy(t => t.Date.Day)
+            .ToDictionary(group => group.Key, group => Math.Abs(group.Sum(t => t.Amount)));
+        var lastMonthByDay = previousMonthExpenseTransactions
+            .GroupBy(t => t.Date.Day)
+            .ToDictionary(group => group.Key, group => Math.Abs(group.Sum(t => t.Amount)));
+        var daysInPreviousMonth = DateTime.DaysInMonth(previousMonth.Year, previousMonth.Month);
+        var maxDays = Math.Max(daysInMonth, daysInPreviousMonth);
+        decimal thisMonthCumulative = 0;
+        decimal lastMonthCumulative = 0;
+        var monthlySpendingPace = Enumerable
+            .Range(1, maxDays)
+            .Select(day =>
+            {
+                if (day <= now.Day)
+                {
+                    thisMonthCumulative += thisMonthByDay.GetValueOrDefault(day, 0);
+                }
+
+                if (day <= daysInPreviousMonth)
+                {
+                    lastMonthCumulative += lastMonthByDay.GetValueOrDefault(day, 0);
+                }
+
+                return new ExpenseAnalytics.DailyCumulativeExpense
+                {
+                    Day = day,
+                    ThisMonth = day <= now.Day ? thisMonthCumulative : null,
+                    LastMonth = day <= daysInPreviousMonth ? lastMonthCumulative : null
+                };
+            })
+            .ToList();
+
+
+        var expensesByCategory = monthlyExpenses.GroupBy(t => t.Category).Select(g => new TransactionByCategory
+        {
+            Category = g.Key,
+            Total = g.Sum(t => t.Amount)
+        }).ToList().OrderByDescending(t => t.Total).ToList();
+
+        var fixedExpenses = expensesByCategory.Where(t => FixedExpenseCategories.Contains(t.Category)).Sum(t => t.Total);
+
+        var currentYear = now.Year;
+        var thisYearByMonth = transactions
+            .Where(t => IsExpense(t) && t.Date.Year == currentYear)
+            .GroupBy(t => t.Date.Month)
+            .ToDictionary(group => group.Key, group => Math.Abs(group.Sum(t => t.Amount)));
+        var lastYearByMonth = transactions
+            .Where(t => IsExpense(t) && t.Date.Year == currentYear - 1)
+            .GroupBy(t => t.Date.Month)
+            .ToDictionary(group => group.Key, group => Math.Abs(group.Sum(t => t.Amount)));
+        var monthlySpendComparison = Enumerable
+            .Range(1, 12)
+            .Select(month => new ExpenseAnalytics.MonthlyExpenseComparison
+            {
+                Month = month,
+                ThisYear = month <= now.Month ? thisYearByMonth.GetValueOrDefault(month, 0) : null,
+                LastYear = lastYearByMonth.GetValueOrDefault(month, 0)
+            })
+            .ToList();
+
+
+        var expensePerPocketTotals = monthlyExpenses
+            .GroupBy(t => t.PocketId)
+            .ToDictionary(group => group.Key, group => Math.Abs(group.Sum(t => t.Amount)));
+        var expensePerPocket = pockets.ConvertAll(pocket => new TransactionPerPocket
+        {
+            Pocket = pocket,
+            Total = expensePerPocketTotals.GetValueOrDefault(pocket.Id, 0)
+        });
+
+        var topExpenses = monthlyExpenses
+            .OrderBy(t => t.Amount)
+            .Take(5)
+            .ToList();
+        return new ExpenseAnalytics
+        {
+            TotalMonthlyExpenses = monthlyTotalExpenses,
+            PreviousMonthExpenses = previousMonthExpenses,
+            DailyBurn = dailyBurn,
+            MonthProjection = monthProjection,
+            MonthlyIncome = monthlyIncome,
+            SpendingRate = spendingRate,
+            ProjectedSpendingRate = projectedSpendingRate,
+            PreviousMonthSpendingRate = previousMonthSpendingRate,
+            MonthlySpendingPace = monthlySpendingPace,
+            MonthlySpendComparison = monthlySpendComparison,
+            ExpenseByCategory = expensesByCategory,
+            FixedExpenses = fixedExpenses,
+            ExpensePerDay = expensePerDay,
+            ExpensePerPocket = expensePerPocket,
+            TopExpenses = topExpenses,
+        };
+    }
 
     public static async Task<IncomeAnalytics> GetIncomeAnalyticsAsync(int? pocketId = null)
     {
@@ -252,5 +372,16 @@ public static class Analytics
         TransactionCategory.Bonus,
         TransactionCategory.Freelance,
         TransactionCategory.Business,
+    ];
+
+    private static readonly TransactionCategory[] FixedExpenseCategories =
+    [
+        TransactionCategory.Lease,
+        TransactionCategory.Rent,
+        TransactionCategory.Mortgage,
+        TransactionCategory.Loan,
+        TransactionCategory.Insurance,
+        TransactionCategory.Phone,
+        TransactionCategory.Subscriptions,
     ];
 }

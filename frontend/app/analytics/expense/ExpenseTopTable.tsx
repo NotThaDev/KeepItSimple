@@ -5,13 +5,13 @@ import { CategoryBadge } from "@/components/common/CategoryBadge";
 import { CommonTable } from "@/components/common/table/CommonTable";
 import { format } from "date-fns";
 import { ListOrdered } from "lucide-react";
-import { useIncomeAnalytics } from "@/stores/analytics";
+import { useExpenseAnalytics } from "@/stores/analytics";
 import { formatAmount } from "@/lib/helpers/currencyHelper";
 
-export function IncomeTopTable() {
-  const { analytics, currency } = useIncomeAnalytics();
+export function ExpenseTopTable() {
+  const { analytics, currency } = useExpenseAnalytics();
   const pocketNameById = new Map(
-    analytics.monthlyIncomePerPocket.map((entry) => [
+    analytics.expensePerPocket.map((entry) => [
       entry.pocket.id,
       entry.pocket.name,
     ]),
@@ -19,18 +19,18 @@ export function IncomeTopTable() {
 
   return (
     <DashboardCard
-      title="Top income this month"
+      title="Top expenses this month"
       icon={ListOrdered}
       className="h-auto shrink-0"
     >
-      {analytics.topMonthlyIncome.length === 0 ? (
+      {analytics.topExpenses.length === 0 ? (
         <p className="flex min-h-[120px] items-center justify-center text-sm text-muted-foreground">
-          No income transactions recorded this month.
+          No expense transactions recorded this month.
         </p>
       ) : (
         <CommonTable
           tableClassName="table-fixed"
-          data={analytics.topMonthlyIncome}
+          data={analytics.topExpenses}
           getRowKey={(transaction, index) => String(transaction.id ?? index)}
           columns={[
             {
