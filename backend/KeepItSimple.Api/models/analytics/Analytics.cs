@@ -131,7 +131,7 @@ public static class Analytics
         var previousMonthExpenses = Math.Abs(previousMonthExpenseTransactions.Sum(t => t.Amount));
 
         var daysInMonth = DateTime.DaysInMonth(now.Year, now.Month);
-        var dailyBurn = monthlyTotalExpenses / daysInMonth;
+        var dailyBurn = monthlyTotalExpenses / now.Day;
         var monthProjection = dailyBurn * daysInMonth;
         var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
         var spendingRate = monthlyIncome == 0 ? 0 : monthlyTotalExpenses / monthlyIncome;
