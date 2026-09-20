@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useIncomeAnalytics } from "@/stores/analytics";
 import { formatMoney, formatPercent } from "../utils";
-import { BudgetTrackerCard } from "@/app/dashboard/cards/BudgetTrackerCard";
+import { TransactionTrackerCard } from "@/components/common/transactionTracker/TransactionTrackerCard";
 import { AnalyticsStatRow } from "../AnalyticsStatCard";
 import { PocketList } from "../PocketList";
 import { IncomeCashFlowChart } from "./IncomeCashFlowChart";
@@ -66,7 +66,7 @@ export function IncomeAnalyticsView() {
       <AnalyticsStatRow items={analyticsItems} />
 
       <div className="grid shrink-0 grid-cols-1 gap-4 xl:min-h-[320px] xl:grid-cols-2">
-        <BudgetTrackerCard
+        <TransactionTrackerCard
           title="Income by category"
           listTitle="This month by category"
           centerLabel="Income"

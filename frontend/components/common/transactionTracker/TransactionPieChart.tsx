@@ -22,7 +22,7 @@ import { SquircleDashed } from "lucide-react";
 
 export const description = "A donut chart with text";
 
-interface ExpensesPieChartProps {
+interface TransactionPieChartProps {
   categories: ExpenseByCategory[];
   currency?: string;
   label?: string;
@@ -39,11 +39,11 @@ function formatAmount(amount: number, currency?: string): string {
     : formatted;
 }
 
-export function ExpensesPieChart({
+export function TransactionPieChart({
   categories,
   currency,
   label = "Expenses",
-}: Readonly<ExpensesPieChartProps>) {
+}: Readonly<TransactionPieChartProps>) {
   const chartData = useMemo(() => {
     return categories
       .map((entry) => ({

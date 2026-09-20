@@ -18,10 +18,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { DashboardCard } from "./DashboardCard";
-import { ExpensesPieChart } from "./ExpensesPieChart";
+import { DashboardCard } from "../../../app/dashboard/cards/DashboardCard";
+import { TransactionPieChart } from "./TransactionPieChart";
 
-interface BudgetTrackerCardProps {
+interface TransactionTrackerCardProps {
   categories: ExpenseByCategory[];
   currency: string;
   title?: string;
@@ -35,7 +35,7 @@ interface BudgetTrackerCardProps {
 
 const ITEMS_PER_PAGE = 5;
 
-export function BudgetTrackerCard({
+export function TransactionTrackerCard({
   categories,
   currency,
   title = "Monthly Expenses",
@@ -45,7 +45,7 @@ export function BudgetTrackerCard({
   emptyDescription = "Transactions recorded this month will appear here once you start tracking your expenses.",
   icon: Icon = ReceiptText,
   className,
-}: Readonly<BudgetTrackerCardProps>) {
+}: Readonly<TransactionTrackerCardProps>) {
   const sortedCategories = [...categories].sort(
     (left, right) => Math.abs(right.total) - Math.abs(left.total),
   );
@@ -82,7 +82,7 @@ export function BudgetTrackerCard({
       <div className="flex h-full min-h-0 w-full gap-4">
         {sortedCategories.length > 0 ? (
           <>
-            <ExpensesPieChart
+            <TransactionPieChart
               categories={sortedCategories}
               currency={currency}
               label={centerLabel}
