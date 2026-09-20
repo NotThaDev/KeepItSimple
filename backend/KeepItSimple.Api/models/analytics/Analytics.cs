@@ -322,14 +322,102 @@ public static class Analytics
         };
     }
 
+    public static async Task<SavingAnalytics> GetSavingsAnalyticsAsync()
+    {
+        var transactions = await Transaction.GetAllAsync();
+        return BuildSavingAnalytics(transactions, DateTime.UtcNow);
+    }
+
+    public static SavingAnalytics BuildSavingAnalytics(
+        IReadOnlyCollection<Transaction> transactions,
+        DateTime now)
+    {
+        var monthlyTransactions = transactions
+            .Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month)
+            .ToList();
+        var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
+        var monthlyExpenses = Math.Abs(monthlyTransactions.Where(IsExpense).Sum(t => t.Amount));
+        var monthlySavingsTransactions = monthlyTransactions.Where(IsSavings).ToList();
+        var monthlySavings = Math.Abs(monthlySavingsTransactions.Sum(t => t.Amount));
+        var leftover = monthlyIncome - monthlyExpenses;
+        var captureRate = leftover == 0 ? 0 : monthlySavings / leftover;
+
+        var previousMonth = now.AddMonths(-1);
+        var previousMonthSavings = Math.Abs(
+            transactions
+                .Where(t => IsSavings(t) && t.Date.Year == previousMonth.Year && t.Date.Month == previousMonth.Month)
+                .Sum(t => t.Amount));
+
+        var savingsRate = monthlyIncome == 0 ? 0 : monthlySavings / monthlyIncome;
+
+        var yearTransactions = transactions.Where(t => t.Date.Year == now.Year).ToList();
+        var incomeByMonth = yearTransactions
+            .Where(IsIncome)
+            .GroupBy(t => t.Date.Month)
+            .ToDictionary(group => group.Key, group => group.Sum(t => t.Amount));
+        var leftoverByMonth = yearTransactions
+            .Where(t => IsIncome(t) || IsExpense(t))
+            .GroupBy(t => t.Date.Month)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Where(IsIncome).Sum(t => t.Amount)
+                    - Math.Abs(group.Where(IsExpense).Sum(t => t.Amount)));
+        var savedByMonth = yearTransactions
+            .Where(IsSavings)
+            .GroupBy(t => t.Date.Month)
+            .ToDictionary(group => group.Key, group => Math.Abs(group.Sum(t => t.Amount)));
+
+        var monthlySavingsBreakdown = Enumerable
+            .Range(1, 12)
+            .Select(month =>
+            {
+                var income = incomeByMonth.GetValueOrDefault(month, 0);
+                var saved = savedByMonth.GetValueOrDefault(month, 0);
+                return new SavingAnalytics.MonthlySaving
+                {
+                    Month = month,
+                    Leftover = leftoverByMonth.GetValueOrDefault(month, 0),
+                    Saved = saved,
+                    SavingRate = income == 0 ? 0 : saved / income,
+                };
+            })
+            .ToList();
+
+        var savingsByCategory = monthlySavingsTransactions
+            .GroupBy(t => t.Category)
+            .ToDictionary(group => group.Key, group => Math.Abs(group.Sum(t => t.Amount)));
+
+        var topSavings = savingsByCategory
+            .Select(entry => new TransactionByCategory
+            {
+                Category = entry.Key,
+                Total = entry.Value,
+            })
+            .OrderByDescending(entry => entry.Total)
+            .Take(5)
+            .ToList();
+
+        return new SavingAnalytics
+        {
+            TotalMonthlySavings = monthlySavings,
+            PreviousMonthSavings = previousMonthSavings,
+            SavingsRate = savingsRate,
+            CaptureRate = captureRate,
+            LeftOver = leftover,
+            MonthlySavings = monthlySavingsBreakdown,
+            SavingsByCategory = savingsByCategory,
+            TopSavings = topSavings,
+        };
+    }
+
     private static List<TransactionPerPocket> ToPerPocketTotals(
         IEnumerable<Pocket> pockets,
         IReadOnlyDictionary<int, decimal> totals) =>
-        pockets.Select(pocket => new TransactionPerPocket
+        [.. pockets.Select(pocket => new TransactionPerPocket
         {
             Pocket = pocket,
             Total = totals.GetValueOrDefault(pocket.Id, 0)
-        }).ToList();
+        })];
 
     private static bool IsMovement(Transaction transaction) =>
         transaction.Category is TransactionCategory.Transfer
@@ -345,6 +433,9 @@ public static class Analytics
         transaction.Amount > 0
         && IncomeCategories.Contains(transaction.Category)
         && !IsMovement(transaction);
+
+    private static bool IsSavings(Transaction transaction) =>
+        transaction.Category is TransactionCategory.Savings || transaction.Category is TransactionCategory.Investments;
 
 
     public class TransactionByCategory
