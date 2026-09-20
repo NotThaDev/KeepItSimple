@@ -247,7 +247,6 @@ public static class Analytics
     {
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
         var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
-        var monthlySavings = monthlyTransactions.Where(IsSavings).Sum(t => t.Amount);
 
         var previousMonth = now.AddMonths(-1);
         var previousMonthIncome = transactions.Where(t => IsIncome(t) && t.Date.Year == previousMonth.Year && t.Date.Month == previousMonth.Month).Sum(t => t.Amount);
@@ -263,7 +262,8 @@ public static class Analytics
 
         var monthlyExpenseTotal = Math.Abs(monthlyTransactions.Where(IsExpense).Sum(t => t.Amount));
         var monthlyNetIncome = monthlyIncome - monthlyExpenseTotal;
-        var savingsRate = monthlyIncome == 0 ? 0 : (monthlySavings / monthlyIncome);
+        var monthlySavings = Math.Abs(monthlyTransactions.Where(IsSavings).Sum(t => t.Amount));
+        var savingsRate = monthlyIncome == 0 ? 0 : monthlySavings / monthlyIncome;
 
         var monthlyIncomeTransactions = monthlyTransactions.Where(IsIncome).ToList();
         var monthlyPassiveIncome = monthlyIncomeTransactions

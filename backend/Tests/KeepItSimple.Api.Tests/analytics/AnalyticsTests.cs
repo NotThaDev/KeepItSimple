@@ -108,9 +108,10 @@ public class AnalyticsTests
             [
                 Income(1, 1, TransactionCategory.Salary, 1800, 1),
                 Expense(2, 1, TransactionCategory.Food, 100, 8),
-                TransferOut(3, 1, 500, 8),
-                TransferIn(4, 2, 500, 8),
-                Withdraw(5, 1, 70, 8),
+                Expense(3, 1, TransactionCategory.Savings, 300, 8),
+                TransferOut(4, 1, 500, 8),
+                TransferIn(5, 2, 500, 8),
+                Withdraw(6, 1, 70, 8),
             ],
             TwoPockets(1130, 500),
             Now);
@@ -118,7 +119,7 @@ public class AnalyticsTests
         Assert.Equal(1800m, analytics.TotalMonthlyIncome);
         Assert.Equal(100m, analytics.MonthlyExpenses);
         Assert.Equal(1700m, analytics.NetMonthlyIncome);
-        Assert.Equal(1700m / 1800m, analytics.SavingsRate);
+        Assert.Equal(300m / 1800m, analytics.SavingsRate);
         Assert.Equal(1800m, analytics.MonthlyActiveIncome);
         Assert.DoesNotContain(
             analytics.MonthlyIncomeByCategory,
