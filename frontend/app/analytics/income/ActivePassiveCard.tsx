@@ -1,6 +1,6 @@
 import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
 import { Activity } from "lucide-react";
-import { useActiveAnalytics } from "@/stores/analytics";
+import { useIncomeAnalytics } from "@/stores/analytics";
 import { Progress } from "@/components/ui/progress";
 import {
   ACTIVE_INCOME_CATEGORIES,
@@ -9,7 +9,7 @@ import {
 } from "../utils";
 
 export function ActivePassiveCard() {
-  const { analytics, currency } = useActiveAnalytics();
+  const { analytics, currency } = useIncomeAnalytics();
 
   const activePercentage =
     (analytics?.monthlyActiveIncome / analytics?.totalMonthlyIncome) * 100;

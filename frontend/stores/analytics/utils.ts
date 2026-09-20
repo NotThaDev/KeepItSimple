@@ -1,4 +1,8 @@
-import { AnalyticsView } from "./types";
+import {
+  getExpenseAnalytics,
+  getIncomeAnalytics,
+} from "@/lib/models/Analytics";
+import { AnalyticsPayload, AnalyticsView } from "./types";
 
 export const ANALYTICS_VIEW_ITEMS: {
   value: AnalyticsView;
@@ -20,4 +24,20 @@ export function parseAnalyticsView(paramKeys: Iterable<string>): AnalyticsView {
 
 export function toAnalyticsHref(pathname: string, view: AnalyticsView): string {
   return `${pathname}?${view}`;
+}
+
+export async function loadAnalytics(
+  view: AnalyticsView,
+): Promise<AnalyticsPayload> {
+  if (view === AnalyticsView.Expense) {
+    const { data } = await getExpenseAnalytics();
+    return { view, analytics: data };
+  }
+
+  if (view === AnalyticsView.Income) {
+    const { data } = await getIncomeAnalytics();
+    return { view, analytics: data };
+  }
+
+  return { view, analytics: undefined };
 }

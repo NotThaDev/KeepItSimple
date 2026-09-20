@@ -5,11 +5,11 @@ import { CategoryBadge } from "@/components/common/CategoryBadge";
 import { CommonTable } from "@/components/common/table/CommonTable";
 import { format } from "date-fns";
 import { ListOrdered } from "lucide-react";
-import { useActiveExpenseAnalytics } from "@/stores/analytics";
+import { useExpenseAnalytics } from "@/stores/analytics";
 import { formatMoney } from "../utils";
 
 export function ExpenseTopTable() {
-  const { analytics, currency } = useActiveExpenseAnalytics();
+  const { analytics, currency } = useExpenseAnalytics();
   const pocketNameById = new Map(
     analytics.expensePerPocket.map((entry) => [
       entry.pocket.id,

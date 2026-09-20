@@ -7,7 +7,7 @@ import {
   PieChart as PieChartIcon,
   TrendingUp,
 } from "lucide-react";
-import { useActiveAnalytics } from "@/stores/analytics";
+import { useIncomeAnalytics } from "@/stores/analytics";
 import { formatMoney, formatPercent } from "../utils";
 import { BudgetTrackerCard } from "@/app/dashboard/cards/BudgetTrackerCard";
 import { AnalyticsStatRow } from "../AnalyticsStatCard";
@@ -19,7 +19,7 @@ import { ActivePassiveCard } from "./ActivePassiveCard";
 import { useMemo } from "react";
 
 export function IncomeAnalyticsView() {
-  const { analytics, currency } = useActiveAnalytics();
+  const { analytics, currency } = useIncomeAnalytics();
 
   const analyticsItems = useMemo(() => {
     const delta = analytics.totalMonthlyIncome - analytics.previousMonthIncome;

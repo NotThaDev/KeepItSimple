@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/chart";
 import { ArrowLeftRight } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
-import { useActiveAnalytics } from "@/stores/analytics";
+import { useIncomeAnalytics } from "@/stores/analytics";
 import { formatMoney } from "../utils";
 
 const chartConfig: ChartConfig = {
@@ -37,7 +37,7 @@ const chartConfig: ChartConfig = {
 };
 
 export function IncomeCashFlowChart() {
-  const { analytics, currency } = useActiveAnalytics();
+  const { analytics, currency } = useIncomeAnalytics();
   const chartData = [
     {
       key: "income",

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/chart";
 import { LineChart as LineChartIcon } from "lucide-react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-import { useActiveExpenseAnalytics } from "@/stores/analytics";
+import { useExpenseAnalytics } from "@/stores/analytics";
 import { formatMoney } from "../utils";
 
 function getMaxValue(values: number[]): number {
@@ -46,7 +46,7 @@ function toLinearCumulative(
 }
 
 export function ExpenseSpendingPaceChart() {
-  const { analytics, currency } = useActiveExpenseAnalytics();
+  const { analytics, currency } = useExpenseAnalytics();
   const isSpendingMoreThanLastMonth =
     analytics.totalMonthlyExpenses > analytics.previousMonthExpenses;
 

@@ -56,7 +56,7 @@ export function PocketList({
           {emptyMessage}
         </p>
       ) : (
-        <div className="mt-2 flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="mt-2 flex min-h-0 min-w-0 flex-1 flex-col min-h-[180px]">
           <div className="flex flex-1 flex-col gap-4">
             {pagedPockets.map((entry) => {
               const percentage =

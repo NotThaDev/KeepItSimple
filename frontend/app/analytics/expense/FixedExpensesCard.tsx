@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/chart";
 import { Pin } from "lucide-react";
 import { Cell, Label, Pie, PieChart } from "recharts";
-import { useActiveExpenseAnalytics } from "@/stores/analytics";
+import { useExpenseAnalytics } from "@/stores/analytics";
 import { formatMoney, formatPercent } from "../utils";
 
 const chartConfig: ChartConfig = {
@@ -30,7 +30,7 @@ const chartConfig: ChartConfig = {
 };
 
 export function FixedExpensesCard() {
-  const { analytics, currency } = useActiveExpenseAnalytics();
+  const { analytics, currency } = useExpenseAnalytics();
   const fixed = Math.abs(analytics.fixedExpenses);
   const variable = Math.max(0, analytics.totalMonthlyExpenses - fixed);
   const total = fixed + variable;

@@ -3,11 +3,11 @@
 import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
 import { Progress } from "@/components/ui/progress";
 import { Wallet } from "lucide-react";
-import { useActiveExpenseAnalytics } from "@/stores/analytics";
+import { useExpenseAnalytics } from "@/stores/analytics";
 import { formatMoney, formatPercent } from "../utils";
 
 export function IncomeCoverage() {
-  const { analytics, currency } = useActiveExpenseAnalytics();
+  const { analytics, currency } = useExpenseAnalytics();
   const spentShare = analytics.spendingRate;
   const progressValue = Math.min(spentShare * 100, 100);
   const isOverIncome = spentShare > 1;

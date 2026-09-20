@@ -13,13 +13,13 @@ import {
   PieChart as PieChartIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { useActiveExpenseAnalytics } from "@/stores/analytics";
+import { useExpenseAnalytics } from "@/stores/analytics";
 import { formatMoney, formatPercent } from "../utils";
 
 const ITEMS_PER_PAGE = 4;
 
 export function ExpenseCategoryList() {
-  const { analytics, currency } = useActiveExpenseAnalytics();
+  const { analytics, currency } = useExpenseAnalytics();
   const sortedCategories = [...analytics.expenseByCategory]
     .map((entry) => ({
       ...entry,

@@ -12,7 +12,7 @@ import {
 import { BarChart3 } from "lucide-react";
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { useActiveExpenseAnalytics } from "@/stores/analytics";
+import { useExpenseAnalytics } from "@/stores/analytics";
 import { formatMoney, MONTH_LABELS } from "../utils";
 
 function getMaxValue(values: number[]): number {
@@ -44,7 +44,7 @@ const SERIES_SWATCH: Record<string, string> = {
 };
 
 export function ExpenseMonthlyComparisonChart() {
-  const { analytics, currency } = useActiveExpenseAnalytics();
+  const { analytics, currency } = useExpenseAnalytics();
   const chartData = useMemo(() => {
     return analytics.monthlySpendComparison.map((entry) => ({
       month: MONTH_LABELS[entry.month - 1] ?? String(entry.month),

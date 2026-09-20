@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { LayoutGrid } from "lucide-react";
 import { useMemo } from "react";
-import { useActiveExpenseAnalytics } from "@/stores/analytics";
+import { useExpenseAnalytics } from "@/stores/analytics";
 import { formatMoney } from "../utils";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -82,7 +82,7 @@ function buildMonthWeeks(now: Date): Array<Array<number | null>> {
 }
 
 export function ExpenseDensity() {
-  const { analytics, currency } = useActiveExpenseAnalytics();
+  const { analytics, currency } = useExpenseAnalytics();
   const now = useMemo(() => new Date(), []);
   const weeks = useMemo(() => buildMonthWeeks(now), [now]);
   const today = now.getDate();

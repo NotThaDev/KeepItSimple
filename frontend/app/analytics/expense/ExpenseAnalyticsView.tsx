@@ -1,7 +1,7 @@
 "use client";
 
 import { Banknote, CalendarClock, Flame, Percent } from "lucide-react";
-import { useActiveExpenseAnalytics } from "@/stores/analytics";
+import { useExpenseAnalytics } from "@/stores/analytics";
 import { formatMoney, formatPercent } from "../utils";
 import { AnalyticsStatRow } from "../AnalyticsStatCard";
 import { ExpenseCategoryList } from "./ExpenseCategoryList";
@@ -15,7 +15,7 @@ import { PocketList } from "../PocketList";
 import { useMemo } from "react";
 
 export function ExpenseAnalyticsView() {
-  const { analytics, currency } = useActiveExpenseAnalytics();
+  const { analytics, currency } = useExpenseAnalytics();
 
   const analyticsItems = useMemo(() => {
     const delta =

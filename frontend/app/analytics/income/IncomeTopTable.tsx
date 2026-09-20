@@ -5,11 +5,11 @@ import { CategoryBadge } from "@/components/common/CategoryBadge";
 import { CommonTable } from "@/components/common/table/CommonTable";
 import { format } from "date-fns";
 import { ListOrdered } from "lucide-react";
-import { useActiveAnalytics } from "@/stores/analytics";
+import { useIncomeAnalytics } from "@/stores/analytics";
 import { formatMoney } from "../utils";
 
 export function IncomeTopTable() {
-  const { analytics, currency } = useActiveAnalytics();
+  const { analytics, currency } = useIncomeAnalytics();
   const pocketNameById = new Map(
     analytics.monthlyIncomePerPocket.map((entry) => [
       entry.pocket.id,

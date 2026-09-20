@@ -6,82 +6,55 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useState,
+  useTransition,
 } from "react";
 import type { AnalyticsContextValue, AnalyticsProviderProps } from "./types";
 import { AnalyticsView } from "./types";
 import { toAnalyticsHref } from "./utils";
-import { FetchWrapperResponse } from "@/lib/fetchWrapper";
-import {
-  ExpenseAnalytics,
-  getExpenseAnalytics,
-  getIncomeAnalytics,
-  IncomeAnalytics,
-} from "@/lib/models/Analytics";
 
 const AnalyticsContext = createContext<AnalyticsContextValue | null>(null);
 
 export function AnalyticsProvider({
-  incomeResponse,
-  expenseResponse,
-  view: viewFromUrl,
+  analytics,
+  view,
   children,
 }: Readonly<AnalyticsProviderProps>) {
   const router = useRouter();
   const pathname = usePathname();
-  const [view, setViewState] = useState(viewFromUrl);
-  const [income, setIncome] =
-    useState<FetchWrapperResponse<IncomeAnalytics>>(incomeResponse);
-  const [expense, setExpense] =
-    useState<FetchWrapperResponse<ExpenseAnalytics>>(expenseResponse);
-  const [isFetching, setIsFetching] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const setView = useCallback(
-    async (nextView: AnalyticsView) => {
-      setViewState(nextView);
-      router.replace(toAnalyticsHref(pathname, nextView), { scroll: false });
-
-      if (nextView === AnalyticsView.Income && income.data == undefined) {
-        setIsFetching(true);
-        const response = await getIncomeAnalytics();
-        setIncome(response);
-        setIsFetching(false);
-      }
-
-      if (nextView === AnalyticsView.Expense && expense.data == undefined) {
-        setIsFetching(true);
-        const response = await getExpenseAnalytics();
-        setExpense(response);
-        setIsFetching(false);
-      }
+    (nextView: AnalyticsView) => {
+      startTransition(() => {
+        router.replace(toAnalyticsHref(pathname, nextView), { scroll: false });
+      });
     },
-    [expense.data, income.data, pathname, router],
+    [pathname, router],
   );
 
-  const analytics = view === AnalyticsView.Income ? income.data : undefined;
-  const expenseAnalytics =
-    view === AnalyticsView.Expense ? expense.data : undefined;
-  const currency =
-    (view === AnalyticsView.Expense
-      ? expenseAnalytics?.expensePerPocket[0]?.pocket.currency
-      : analytics?.monthlyIncomePerPocket[0]?.pocket.currency) ?? "EUR";
-  const isLoading =
-    isFetching ||
-    (view === AnalyticsView.Expense &&
-      expense.data == undefined &&
-      expense.error == undefined);
+  const value = useMemo((): AnalyticsContextValue => {
+    const base = { setView, isLoading: isPending };
 
-  const value = useMemo(
-    () => ({
-      view,
-      setView,
-      analytics,
-      expenseAnalytics,
-      currency,
-      isLoading,
-    }),
-    [analytics, currency, expenseAnalytics, isLoading, setView, view],
-  );
+    if (view === AnalyticsView.Expense) {
+      return {
+        ...base,
+        view,
+        analytics,
+        currency: analytics?.expensePerPocket[0]?.pocket.currency ?? "EUR",
+      };
+    }
+
+    if (view === AnalyticsView.Income) {
+      return {
+        ...base,
+        view,
+        analytics,
+        currency: analytics?.monthlyIncomePerPocket[0]?.pocket.currency ?? "EUR",
+      };
+    }
+
+    return { ...base, view, analytics: undefined, currency: "EUR" };
+  }, [analytics, isPending, setView, view]);
 
   return (
     <AnalyticsContext.Provider value={value}>
@@ -99,22 +72,20 @@ export function useAnalytics() {
   return context;
 }
 
-export function useActiveAnalytics() {
-  const { analytics, currency } = useAnalytics();
-  if (analytics == undefined) {
-    throw new Error("useActiveAnalytics requires loaded analytics");
+export function useIncomeAnalytics() {
+  const { view, analytics, currency } = useAnalytics();
+  if (view !== AnalyticsView.Income || analytics == undefined) {
+    throw new Error("useIncomeAnalytics requires loaded income analytics");
   }
 
   return { analytics, currency };
 }
 
-export function useActiveExpenseAnalytics() {
-  const { expenseAnalytics, currency } = useAnalytics();
-  if (expenseAnalytics == undefined) {
-    throw new Error(
-      "useActiveExpenseAnalytics requires loaded expense analytics",
-    );
+export function useExpenseAnalytics() {
+  const { view, analytics, currency } = useAnalytics();
+  if (view !== AnalyticsView.Expense || analytics == undefined) {
+    throw new Error("useExpenseAnalytics requires loaded expense analytics");
   }
 
-  return { analytics: expenseAnalytics, currency };
+  return { analytics, currency };
 }
