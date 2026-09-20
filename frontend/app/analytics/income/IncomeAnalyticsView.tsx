@@ -57,7 +57,7 @@ export function IncomeAnalyticsView() {
         title: "Savings rate",
         icon: Percent,
         value: formatPercent(analytics.savingsRate),
-        description: "Share of this month kept",
+        description: "Share of income put aside this month",
       },
     ];
   }, [analytics, currency]);
