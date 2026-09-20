@@ -12,7 +12,7 @@ import {
 import { LineChart as LineChartIcon } from "lucide-react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { useExpenseAnalytics } from "@/stores/analytics";
-import { formatMoney } from "../utils";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 function getMaxValue(values: number[]): number {
   return values.length > 0
@@ -153,7 +153,7 @@ export function ExpenseSpendingPaceChart() {
                           {label}
                         </span>
                         <span className="font-mono font-medium text-foreground tabular-nums">
-                          {formatMoney(Number(value), currency)}
+                          {formatAmount(Number(value), currency)}
                         </span>
                       </div>
                     );

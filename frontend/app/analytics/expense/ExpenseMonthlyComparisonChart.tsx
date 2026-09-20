@@ -13,7 +13,8 @@ import { BarChart3 } from "lucide-react";
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { useExpenseAnalytics } from "@/stores/analytics";
-import { formatMoney, MONTH_LABELS } from "../utils";
+import { MONTH_LABELS } from "../utils";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 function getMaxValue(values: number[]): number {
   return values.length > 0
@@ -108,7 +109,7 @@ export function ExpenseMonthlyComparisonChart() {
                           {label}
                         </span>
                         <span className="font-mono font-medium text-foreground tabular-nums">
-                          {formatMoney(Number(value), currency)}
+                          {formatAmount(Number(value), currency)}
                         </span>
                       </div>
                     );

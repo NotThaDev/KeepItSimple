@@ -6,7 +6,7 @@ import { CommonTable } from "@/components/common/table/CommonTable";
 import { format } from "date-fns";
 import { ListOrdered } from "lucide-react";
 import { useIncomeAnalytics } from "@/stores/analytics";
-import { formatMoney } from "../utils";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 export function IncomeTopTable() {
   const { analytics, currency } = useIncomeAnalytics();
@@ -47,7 +47,7 @@ export function IncomeTopTable() {
               headerClassName: "w-28",
               cell: (transaction) => (
                 <span className="font-medium">
-                  {formatMoney(transaction.amount, currency)}
+                  {formatAmount(transaction.amount, currency)}
                 </span>
               ),
             },

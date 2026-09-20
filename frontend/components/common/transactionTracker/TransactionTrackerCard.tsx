@@ -5,16 +5,16 @@ import {
   CategoryColorMap,
   DEFAULT_CATEGORY_COLORS,
 } from "@/lib/helpers/colors";
-import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 import { ExpenseByCategory } from "@/lib/models/Analytics";
 import { formatCategoryLabel } from "@/lib/models/Transaction";
 import { cn } from "@/lib/utils";
 import {
+  BanknoteX,
   ChevronLeft,
   ChevronRight,
   ReceiptText,
   SquircleDashed,
-  BanknoteX,
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -111,8 +111,7 @@ export function TransactionTrackerCard({
                       </p>
                     </div>
                     <p className="rounded-md bg-secondary px-2 py-0.5 text-secondary-foreground">
-                      {getCurrencySymbolFromCode(currency)}
-                      {Math.abs(entry.total).toFixed(2)}
+                      {formatAmount(Math.abs(entry.total), currency)}
                     </p>
                   </div>
                 ))}

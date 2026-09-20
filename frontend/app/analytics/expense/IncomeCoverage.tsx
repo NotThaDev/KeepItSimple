@@ -4,7 +4,8 @@ import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
 import { Progress } from "@/components/ui/progress";
 import { Wallet } from "lucide-react";
 import { useExpenseAnalytics } from "@/stores/analytics";
-import { formatMoney, formatPercent } from "../utils";
+import { formatPercent } from "../utils";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 export function IncomeCoverage() {
   const { analytics, currency } = useExpenseAnalytics();
@@ -18,10 +19,10 @@ export function IncomeCoverage() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-semibold">
-              Spent {formatMoney(analytics.totalMonthlyExpenses, currency)}
+              Spent {formatAmount(analytics.totalMonthlyExpenses, currency)}
             </p>
             <p className="text-sm text-muted-foreground">
-              Income {formatMoney(analytics.monthlyIncome, currency)}
+              Income {formatAmount(analytics.monthlyIncome, currency)}
             </p>
           </div>
           <Progress
@@ -33,7 +34,7 @@ export function IncomeCoverage() {
               {Math.ceil(progressValue)}% Spent
             </p>
             <p className="text-sm text-muted-foreground">
-              {formatMoney(
+              {formatAmount(
                 analytics.monthlyIncome - analytics.totalMonthlyExpenses,
                 currency,
               )}{" "}

@@ -10,7 +10,8 @@ import {
 import { Pin } from "lucide-react";
 import { Cell, Label, Pie, PieChart } from "recharts";
 import { useExpenseAnalytics } from "@/stores/analytics";
-import { formatMoney, formatPercent } from "../utils";
+import { formatPercent } from "../utils";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 const chartConfig: ChartConfig = {
   fixed: {
@@ -82,7 +83,7 @@ export function FixedExpensesCard() {
                             {item.payload.name}
                           </span>
                           <span className="font-mono font-medium text-foreground tabular-nums">
-                            {formatMoney(Number(value), currency)}
+                            {formatAmount(Number(value), currency)}
                           </span>
                         </div>
                       )}
@@ -147,7 +148,7 @@ export function FixedExpensesCard() {
                     <p className="font-semibold">{entry.name}</p>
                   </div>
                   <p className="shrink-0 rounded-md bg-secondary px-2 py-0.5 text-secondary-foreground">
-                    {formatMoney(entry.total, currency)}
+                    {formatAmount(entry.total, currency)}
                   </p>
                 </div>
               ))}

@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import { LayoutGrid } from "lucide-react";
 import { useMemo } from "react";
 import { useExpenseAnalytics } from "@/stores/analytics";
-import { formatMoney } from "../utils";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const HEAT_STOPS = ["#fee2e2", "#fecaca", "#f87171", "#dc2626", "#7f1d1d"];
@@ -201,11 +201,11 @@ function WeekRow({
                   height: `${CELL_HEIGHT}px`,
                   width: `${CELL_WIDTH}px`,
                 }}
-                aria-label={`${format(cellDate, "d MMMM")}: ${formatMoney(amount, currency)}`}
+                aria-label={`${format(cellDate, "d MMMM")}: ${formatAmount(amount, currency)}`}
               />
             </TooltipTrigger>
             <TooltipContent side="top">
-              {format(cellDate, "d MMM")} · {formatMoney(amount, currency)}
+              {format(cellDate, "d MMM")} · {formatAmount(amount, currency)}
             </TooltipContent>
           </Tooltip>
         );

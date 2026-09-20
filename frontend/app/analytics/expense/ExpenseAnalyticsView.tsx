@@ -1,9 +1,12 @@
 "use client";
 
-import { Banknote, CalendarClock, Flame, Percent } from "lucide-react";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 import { useExpenseAnalytics } from "@/stores/analytics";
-import { formatMoney, formatPercent } from "../utils";
+import { Banknote, CalendarClock, Flame, Percent } from "lucide-react";
+import { useMemo } from "react";
 import { AnalyticsStatRow } from "../AnalyticsStatCard";
+import { PocketList } from "../PocketList";
+import { formatPercent } from "../utils";
 import { ExpenseCategoryList } from "./ExpenseCategoryList";
 import { ExpenseDensity } from "./ExpenseDensity";
 import { ExpenseMonthlyComparisonChart } from "./ExpenseMonthlyComparisonChart";
@@ -11,8 +14,6 @@ import { ExpenseSpendingPaceChart } from "./ExpenseSpendingPaceChart";
 import { ExpenseTopTable } from "./ExpenseTopTable";
 import { FixedExpensesCard } from "./FixedExpensesCard";
 import { IncomeCoverage } from "./IncomeCoverage";
-import { PocketList } from "../PocketList";
-import { useMemo } from "react";
 
 export function ExpenseAnalyticsView() {
   const { analytics, currency } = useExpenseAnalytics();
@@ -27,10 +28,10 @@ export function ExpenseAnalyticsView() {
       {
         title: "This month",
         icon: Banknote,
-        value: formatMoney(analytics.totalMonthlyExpenses, currency),
+        value: formatAmount(analytics.totalMonthlyExpenses, currency),
         delta: hasDelta
           ? {
-              formatted: formatMoney(Math.abs(delta), currency),
+              formatted: formatAmount(Math.abs(delta), currency),
               isUp: isSpendingMore,
               upIsGood: false,
             }
@@ -40,13 +41,13 @@ export function ExpenseAnalyticsView() {
       {
         title: "Daily burn",
         icon: Flame,
-        value: formatMoney(analytics.dailyBurn, currency),
+        value: formatAmount(analytics.dailyBurn, currency),
         description: "Average spent per day this month",
       },
       {
         title: "Month projection",
         icon: CalendarClock,
-        value: formatMoney(analytics.monthProjection, currency),
+        value: formatAmount(analytics.monthProjection, currency),
         description: "At the current daily pace",
       },
       {

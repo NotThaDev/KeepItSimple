@@ -17,3 +17,18 @@ export function getCurrencySymbolFromCode(currencyCode: string): string {
     return currencyCode; // Fallback to the currency code if there's an error
   }
 }
+
+export function formatAmount(
+  amount: number,
+  currency?: string,
+  digits = 2,
+): string {
+  const formatted = amount.toLocaleString(undefined, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+
+  return currency
+    ? `${getCurrencySymbolFromCode(currency)}${formatted}`
+    : formatted;
+}

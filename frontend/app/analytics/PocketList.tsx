@@ -3,10 +3,10 @@
 import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 import { TransactionPerPocket } from "@/lib/models/Analytics";
 import { ChevronLeft, ChevronRight, Wallet } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { formatMoney } from "./utils";
 
 const ITEMS_PER_PAGE = 3;
 
@@ -67,7 +67,7 @@ export function PocketList({
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-semibold">{entry.pocket.name}</p>
                     <p className="rounded-md bg-secondary px-2 py-0.5 text-secondary-foreground">
-                      {formatMoney(entry.total, entry.pocket.currency)}
+                      {formatAmount(entry.total, entry.pocket.currency)}
                     </p>
                   </div>
                   <Progress value={percentage} />

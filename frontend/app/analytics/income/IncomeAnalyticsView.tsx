@@ -8,7 +8,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useIncomeAnalytics } from "@/stores/analytics";
-import { formatMoney, formatPercent } from "../utils";
+import { formatPercent } from "../utils";
 import { TransactionTrackerCard } from "@/components/common/transactionTracker/TransactionTrackerCard";
 import { AnalyticsStatRow } from "../AnalyticsStatCard";
 import { PocketList } from "../PocketList";
@@ -17,6 +17,7 @@ import { IncomeTopTable } from "./IncomeTopTable";
 import { IncomeTrendChart } from "./IncomeTrendChart";
 import { ActivePassiveCard } from "./ActivePassiveCard";
 import { useMemo } from "react";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 export function IncomeAnalyticsView() {
   const { analytics, currency } = useIncomeAnalytics();
@@ -31,10 +32,10 @@ export function IncomeAnalyticsView() {
       {
         title: "This month",
         icon: Banknote,
-        value: formatMoney(analytics.totalMonthlyIncome, currency),
+        value: formatAmount(analytics.totalMonthlyIncome, currency),
         delta: hasDelta
           ? {
-              formatted: formatMoney(Math.abs(delta), currency),
+              formatted: formatAmount(Math.abs(delta), currency),
               isUp,
             }
           : undefined,
@@ -43,13 +44,13 @@ export function IncomeAnalyticsView() {
       {
         title: "Last month",
         icon: CalendarRange,
-        value: formatMoney(analytics.previousMonthIncome, currency),
+        value: formatAmount(analytics.previousMonthIncome, currency),
         description: "Previous calendar month",
       },
       {
         title: "6-month average",
         icon: TrendingUp,
-        value: formatMoney(analytics.sixMonthAverageIncome, currency),
+        value: formatAmount(analytics.sixMonthAverageIncome, currency),
         description: "Average monthly income",
       },
       {
