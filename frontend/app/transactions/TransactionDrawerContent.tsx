@@ -19,6 +19,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Pocket } from "@/lib/models/Pocket";
 import {
   createTransaction,
+  createTransfer,
   EXPENSE_TRANSACTION_CATEGORIES,
   INCOME_TRANSACTION_CATEGORIES,
   Transaction,
@@ -32,6 +33,8 @@ interface TransactionErrors {
   amount: boolean;
   category: boolean;
   pocketId: boolean;
+  fromPocketId: boolean;
+  toPocketId: boolean;
 }
 
 interface TransactionFormData {
@@ -40,6 +43,8 @@ interface TransactionFormData {
   amount?: number;
   date: Date;
   pocketId: number;
+  fromPocketId: number;
+  toPocketId: number;
   category?: TransactionCategory;
 }
 
@@ -53,27 +58,52 @@ function validateAmount(amount: number | undefined): boolean {
   return amount !== undefined && amount > 0;
 }
 
+function firstOtherPocketId(pockets: Pocket[], pocketId: number): number {
+  return pockets.find((pocket) => pocket.id !== pocketId)?.id ?? 0;
+}
+
 function getInitialTransactionData(
   transaction: Transaction | undefined,
   pockets: Pocket[],
 ): TransactionFormData {
+  const defaultPocketId = pockets[0]?.id ?? 0;
+
   if (!transaction) {
-    return { date: new Date(), pocketId: pockets[0]?.id ?? 0 };
+    return {
+      date: new Date(),
+      pocketId: defaultPocketId,
+      fromPocketId: defaultPocketId,
+      toPocketId: firstOtherPocketId(pockets, defaultPocketId),
+    };
   }
 
-  return { ...transaction, amount: Math.abs(transaction.amount) };
+  return {
+    ...transaction,
+    amount: Math.abs(transaction.amount),
+    fromPocketId: transaction.pocketId,
+    toPocketId: firstOtherPocketId(pockets, transaction.pocketId),
+  };
 }
 
 enum TransactionType {
   Income = "income",
   Expense = "expense",
+  Transfer = "transfer",
 }
+
+const incomeToggleClassName =
+  "flex-1 border border-gray-700 text-gray-700 transition-all hover:bg-emerald-50 hover:text-emerald-700 data-[state=on]:bg-gradient-to-b data-[state=on]:from-emerald-100 data-[state=on]:to-emerald-50 data-[state=on]:text-emerald-800 data-[state=on]:shadow-[inset_0_0_0_1px_rgba(16,185,129,0.35)] dark:border-gray-700 dark:text-gray-200 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-200 dark:data-[state=on]:from-emerald-900/55 dark:data-[state=on]:to-emerald-900/25 dark:data-[state=on]:text-emerald-200";
+const expenseToggleClassName =
+  "flex-1 border border-gray-700 text-gray-700 transition-all hover:bg-rose-50 hover:text-rose-700 data-[state=on]:bg-gradient-to-b data-[state=on]:from-rose-100 data-[state=on]:to-rose-50 data-[state=on]:text-rose-800 data-[state=on]:shadow-[inset_0_0_0_1px_rgba(244,63,94,0.35)] dark:border-gray-700 dark:text-gray-200 dark:hover:bg-rose-900/30 dark:hover:text-rose-200 dark:data-[state=on]:from-rose-900/55 dark:data-[state=on]:to-rose-900/25 dark:data-[state=on]:text-rose-200";
+const transferToggleClassName =
+  "flex-1 border border-gray-700 text-gray-700 transition-all hover:bg-indigo-50 hover:text-indigo-700 data-[state=on]:bg-gradient-to-b data-[state=on]:from-indigo-100 data-[state=on]:to-indigo-50 data-[state=on]:text-indigo-800 data-[state=on]:shadow-[inset_0_0_0_1px_rgba(99,102,241,0.35)] dark:border-gray-700 dark:text-gray-200 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-200 dark:data-[state=on]:from-indigo-900/55 dark:data-[state=on]:to-indigo-900/25 dark:data-[state=on]:text-indigo-200";
 
 export function TransactionDrawerContent({
   transaction,
   pockets,
   onSave,
 }: Readonly<TransactionDrawerContentProps>) {
+  const isEditing = transaction != undefined;
   const [transactionType, setTransactionType] = useState<TransactionType>(
     transaction?.amount && transaction.amount > 0
       ? TransactionType.Income
@@ -86,7 +116,11 @@ export function TransactionDrawerContent({
     amount: false,
     category: false,
     pocketId: false,
+    fromPocketId: false,
+    toPocketId: false,
   });
+
+  const isTransfer = transactionType === TransactionType.Transfer;
 
   const availableCategories = useMemo(
     () =>
@@ -114,8 +148,52 @@ export function TransactionDrawerContent({
     }));
   }, [pockets]);
 
+  const destinationPocketItems = useMemo(() => {
+    return pocketsSelectionItems.map((item) => ({
+      ...item,
+      disabled: Number(item.value) === transactionData.fromPocketId,
+    }));
+  }, [pocketsSelectionItems, transactionData.fromPocketId]);
+
   const handleSave = useCallback(async () => {
     const amountValid = validateAmount(transactionData.amount);
+
+    if (isTransfer) {
+      const fromPocketIdValid = transactionData.fromPocketId > 0;
+      const toPocketIdValid =
+        transactionData.toPocketId > 0 &&
+        transactionData.toPocketId !== transactionData.fromPocketId;
+
+      setErrors({
+        amount: !amountValid,
+        category: false,
+        pocketId: false,
+        fromPocketId: !fromPocketIdValid,
+        toPocketId: !toPocketIdValid,
+      });
+
+      if (!amountValid || !fromPocketIdValid || !toPocketIdValid) {
+        return;
+      }
+
+      const transferResponse = await createTransfer({
+        amount: transactionData.amount!,
+        date: transactionData.date,
+        description: transactionData.description,
+        fromPocketId: transactionData.fromPocketId,
+        toPocketId: transactionData.toPocketId,
+      });
+
+      if (transferResponse.error) {
+        toast.error("Failed to save transfer. Please try again.");
+        return;
+      }
+
+      toast.success("Transfer created successfully");
+      onSave?.();
+      return;
+    }
+
     const categoryValid = selectedCategory !== undefined;
     const pocketIdValid = transactionData.pocketId !== undefined;
 
@@ -123,6 +201,8 @@ export function TransactionDrawerContent({
       amount: !amountValid,
       category: !categoryValid,
       pocketId: !pocketIdValid,
+      fromPocketId: false,
+      toPocketId: false,
     });
 
     if (!amountValid || !categoryValid || !pocketIdValid) {
@@ -166,7 +246,7 @@ export function TransactionDrawerContent({
       `Transaction ${transactionData.id ? "updated" : "created"} successfully`,
     );
     onSave?.();
-  }, [transactionData, transactionType, selectedCategory, onSave]);
+  }, [transactionData, transactionType, selectedCategory, isTransfer, onSave]);
 
   const title = transactionData.id ? "Edit Transaction" : "New Transaction";
   return (
@@ -176,7 +256,9 @@ export function TransactionDrawerContent({
         <DrawerDescription>
           {transactionData.id
             ? "Modify the details of your transaction below."
-            : "Fill in the details of your new transaction below."}
+            : isTransfer
+              ? "Move money from one pocket to another. This is not an expense."
+              : "Fill in the details of your new transaction below."}
         </DrawerDescription>
       </DrawerHeader>
 
@@ -212,43 +294,100 @@ export function TransactionDrawerContent({
           />
         </Field>
 
-        <Field className="sm:col-span-5" data-invalid={errors.pocketId}>
-          <FieldLabel>Pocket</FieldLabel>
-          <Selection
-            items={pocketsSelectionItems}
-            defaultValue={
-              transactionData.pocketId?.toString() ??
-              pocketsSelectionItems[0]?.value
-            }
-            placeholder="Select a Pocket"
-            onChange={(value) => {
-              const pocketId = Number(value);
-              setTransactionData((prev) => ({ ...prev, pocketId }));
-              setErrors((prev) => ({
-                ...prev,
-                pocketId: pocketId === undefined,
-              }));
-            }}
-          />
-        </Field>
+        {isTransfer ? (
+          <>
+            <Field className="sm:col-span-5" data-invalid={errors.fromPocketId}>
+              <FieldLabel>From pocket</FieldLabel>
+              <Selection
+                items={pocketsSelectionItems}
+                value={
+                  transactionData.fromPocketId?.toString() ??
+                  pocketsSelectionItems[0]?.value
+                }
+                placeholder="Select source pocket"
+                isInvalid={errors.fromPocketId}
+                onChange={(value) => {
+                  const fromPocketId = Number(value);
+                  setTransactionData((prev) => ({
+                    ...prev,
+                    fromPocketId,
+                    toPocketId:
+                      prev.toPocketId === fromPocketId
+                        ? firstOtherPocketId(pockets, fromPocketId)
+                        : prev.toPocketId,
+                  }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    fromPocketId: fromPocketId <= 0,
+                    toPocketId: false,
+                  }));
+                }}
+              />
+            </Field>
+            <Field className="sm:col-span-5" data-invalid={errors.toPocketId}>
+              <FieldLabel>To pocket</FieldLabel>
+              <Selection
+                items={destinationPocketItems}
+                value={
+                  transactionData.toPocketId?.toString() ??
+                  destinationPocketItems.find((item) => !item.disabled)?.value
+                }
+                placeholder="Select destination pocket"
+                isInvalid={errors.toPocketId}
+                onChange={(value) => {
+                  const toPocketId = Number(value);
+                  setTransactionData((prev) => ({ ...prev, toPocketId }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    toPocketId:
+                      toPocketId <= 0 ||
+                      toPocketId === transactionData.fromPocketId,
+                  }));
+                }}
+              />
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field className="sm:col-span-5" data-invalid={errors.pocketId}>
+              <FieldLabel>Pocket</FieldLabel>
+              <Selection
+                items={pocketsSelectionItems}
+                defaultValue={
+                  transactionData.pocketId?.toString() ??
+                  pocketsSelectionItems[0]?.value
+                }
+                placeholder="Select a Pocket"
+                onChange={(value) => {
+                  const pocketId = Number(value);
+                  setTransactionData((prev) => ({ ...prev, pocketId }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    pocketId: pocketId === undefined,
+                  }));
+                }}
+              />
+            </Field>
 
-        <Field className="sm:col-span-5" data-invalid={errors.category}>
-          <FieldLabel>Category</FieldLabel>
-          <TransactionCategorySelector
-            key={transactionType}
-            value={selectedCategory}
-            isIncome={transactionType === TransactionType.Income}
-            placeholder="Select a Category"
-            isInvalid={errors.category}
-            onChange={(category) => {
-              setTransactionData((prev) => ({ ...prev, category }));
-              setErrors((prev) => ({
-                ...prev,
-                category: category === undefined,
-              }));
-            }}
-          />
-        </Field>
+            <Field className="sm:col-span-5" data-invalid={errors.category}>
+              <FieldLabel>Category</FieldLabel>
+              <TransactionCategorySelector
+                key={transactionType}
+                value={selectedCategory}
+                isIncome={transactionType === TransactionType.Income}
+                placeholder="Select a Category"
+                isInvalid={errors.category}
+                onChange={(category) => {
+                  setTransactionData((prev) => ({ ...prev, category }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    category: category === undefined,
+                  }));
+                }}
+              />
+            </Field>
+          </>
+        )}
 
         <Field className="sm:col-span-5">
           <FieldLabel>Description</FieldLabel>
@@ -276,16 +415,24 @@ export function TransactionDrawerContent({
         >
           <ToggleGroupItem
             value={TransactionType.Income}
-            className="flex-1 border border-gray-700 border-r-0 text-gray-700 transition-all hover:bg-emerald-50 hover:text-emerald-700 data-[state=on]:bg-gradient-to-b data-[state=on]:from-emerald-100 data-[state=on]:to-emerald-50 data-[state=on]:text-emerald-800 data-[state=on]:shadow-[inset_0_0_0_1px_rgba(16,185,129,0.35)] dark:border-gray-700 dark:text-gray-200 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-200 dark:data-[state=on]:from-emerald-900/55 dark:data-[state=on]:to-emerald-900/25 dark:data-[state=on]:text-emerald-200"
+            className={incomeToggleClassName}
           >
             Income
           </ToggleGroupItem>
           <ToggleGroupItem
             value={TransactionType.Expense}
-            className="flex-1 border border-gray-700 text-gray-700 transition-all hover:bg-rose-50 hover:text-rose-700 data-[state=on]:bg-gradient-to-b data-[state=on]:from-rose-100 data-[state=on]:to-rose-50 data-[state=on]:text-rose-800 data-[state=on]:shadow-[inset_0_0_0_1px_rgba(244,63,94,0.35)] dark:border-gray-700 dark:text-gray-200 dark:hover:bg-rose-900/30 dark:hover:text-rose-200 dark:data-[state=on]:from-rose-900/55 dark:data-[state=on]:to-rose-900/25 dark:data-[state=on]:text-rose-200"
+            className={expenseToggleClassName}
           >
             Expense
           </ToggleGroupItem>
+          {!isEditing && (
+            <ToggleGroupItem
+              value={TransactionType.Transfer}
+              className={transferToggleClassName}
+            >
+              Transfer
+            </ToggleGroupItem>
+          )}
         </ToggleGroup>
       </FieldGroup>
       <DrawerFooter className="flex-row justify-end">

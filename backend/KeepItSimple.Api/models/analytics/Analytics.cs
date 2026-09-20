@@ -12,15 +12,20 @@ public static class Analytics
         var pocketsTask = Pocket.GetAllAsync();
         await Task.WhenAll(transactionsTask, pocketsTask);
 
-        var transactions = transactionsTask.Result;
-        var pockets = pocketsTask.Result;
-        var now = DateTime.UtcNow;
+        return BuildOverview(transactionsTask.Result, pocketsTask.Result, DateTime.UtcNow);
+    }
+
+    public static OverviewAnalytics BuildOverview(
+        IReadOnlyCollection<Transaction> transactions,
+        IReadOnlyCollection<Pocket> pockets,
+        DateTime now)
+    {
         var previousMonth = now.AddMonths(-1);
         var currentMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
         var currentMonthBalance = pockets.Sum(p => p.Balance);
         var totalExpenses = transactions.Where(IsExpense).Sum(t => t.Amount);
-        var totalIncome = transactions.Where(t => t.Amount > 0).Sum(t => t.Amount);
+        var totalIncome = transactions.Where(IsIncome).Sum(t => t.Amount);
 
         var monthlyTransactions = transactions
             .Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month)
@@ -30,10 +35,10 @@ public static class Analytics
             .ToList();
 
         var monthlyExpenses = monthlyTransactions.Where(IsExpense).ToList();
-        var monthlyIncome = monthlyTransactions.Where(t => t.Amount > 0).ToList();
+        var monthlyIncome = monthlyTransactions.Where(IsIncome).ToList();
         var monthlyTotalExpenses = monthlyExpenses.Sum(t => t.Amount);
         var monthlyTotalIncome = monthlyIncome.Sum(t => t.Amount);
-        var previousMonthlyTotalIncome = previousMonthTransactions.Where(t => t.Amount > 0).Sum(t => t.Amount);
+        var previousMonthlyTotalIncome = previousMonthTransactions.Where(IsIncome).Sum(t => t.Amount);
         var previousMonthlyTotalExpenses = previousMonthTransactions.Where(IsExpense).Sum(t => t.Amount);
 
         var currentMonthNetByPocket = monthlyTransactions
@@ -48,10 +53,11 @@ public static class Analytics
             .Where(pocket => pocketsWithHistoryBeforeCurrentMonth.Contains(pocket.Id))
             .Sum(pocket => pocket.Balance - currentMonthNetByPocket.GetValueOrDefault(pocket.Id, 0));
 
-        var thisMonthByDay = monthlyTransactions
+        var thisMonthByDay = monthlyExpenses
             .GroupBy(t => t.Date.Day)
             .ToDictionary(group => group.Key, group => group.Sum(t => t.Amount));
         var lastMonthByDay = previousMonthTransactions
+            .Where(IsExpense)
             .GroupBy(t => t.Date.Day)
             .ToDictionary(group => group.Key, group => group.Sum(t => t.Amount));
         var maxDays = Math.Max(
@@ -83,12 +89,7 @@ public static class Analytics
             .GroupBy(t => t.PocketId)
             .ToDictionary(g => g.Key, g => g.Sum(t => t.Amount));
 
-        var expensesPerPocket = pockets
-            .ConvertAll(pocket => new TransactionPerPocket
-            {
-                Pocket = pocket,
-                Total = expensesPerPocketTotals.GetValueOrDefault(pocket.Id, 0)
-            });
+        var expensesPerPocket = ToPerPocketTotals(pockets, expensesPerPocketTotals);
 
         return new OverviewAnalytics
         {
@@ -111,7 +112,14 @@ public static class Analytics
     {
         var pockets = await Pocket.GetAllAsync();
         var transactions = pocketId is null ? await Transaction.GetAllAsync() : await Transaction.GetByPocketIdAsync(pocketId.Value);
-        var now = DateTime.UtcNow;
+        return BuildExpenseAnalytics(transactions, pockets, DateTime.UtcNow);
+    }
+
+    public static ExpenseAnalytics BuildExpenseAnalytics(
+        IReadOnlyCollection<Transaction> transactions,
+        IReadOnlyCollection<Pocket> pockets,
+        DateTime now)
+    {
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
         var monthlyExpenses = monthlyTransactions.Where(IsExpense).ToList();
         var monthlyTotalExpenses = Math.Abs(monthlyExpenses.Sum(t => t.Amount));
@@ -123,7 +131,7 @@ public static class Analytics
         var previousMonthExpenses = Math.Abs(previousMonthExpenseTransactions.Sum(t => t.Amount));
 
         var daysInMonth = DateTime.DaysInMonth(now.Year, now.Month);
-        var dailyBurn = monthlyTotalExpenses / daysInMonth;
+        var dailyBurn = monthlyTotalExpenses / now.Day;
         var monthProjection = dailyBurn * daysInMonth;
         var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
         var spendingRate = monthlyIncome == 0 ? 0 : monthlyTotalExpenses / monthlyIncome;
@@ -199,11 +207,7 @@ public static class Analytics
         var expensePerPocketTotals = monthlyExpenses
             .GroupBy(t => t.PocketId)
             .ToDictionary(group => group.Key, group => Math.Abs(group.Sum(t => t.Amount)));
-        var expensePerPocket = pockets.ConvertAll(pocket => new TransactionPerPocket
-        {
-            Pocket = pocket,
-            Total = expensePerPocketTotals.GetValueOrDefault(pocket.Id, 0)
-        });
+        var expensePerPocket = ToPerPocketTotals(pockets, expensePerPocketTotals);
 
         var topExpenses = monthlyExpenses
             .OrderBy(t => t.Amount)
@@ -233,7 +237,14 @@ public static class Analytics
     {
         var pockets = await Pocket.GetAllAsync();
         var transactions = pocketId is null ? await Transaction.GetAllAsync() : await Transaction.GetByPocketIdAsync(pocketId.Value);
-        var now = DateTime.UtcNow;
+        return BuildIncomeAnalytics(transactions, pockets, DateTime.UtcNow);
+    }
+
+    public static IncomeAnalytics BuildIncomeAnalytics(
+        IReadOnlyCollection<Transaction> transactions,
+        IReadOnlyCollection<Pocket> pockets,
+        DateTime now)
+    {
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
         var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
 
@@ -287,11 +298,7 @@ public static class Analytics
         var monthlyIncomePerPocketTotals = monthlyIncomeTransactions
             .GroupBy(t => t.PocketId)
             .ToDictionary(group => group.Key, group => group.Sum(t => t.Amount));
-        var monthlyIncomePerPocket = pockets.ConvertAll(pocket => new TransactionPerPocket
-        {
-            Pocket = pocket,
-            Total = monthlyIncomePerPocketTotals.GetValueOrDefault(pocket.Id, 0)
-        });
+        var monthlyIncomePerPocket = ToPerPocketTotals(pockets, monthlyIncomePerPocketTotals);
 
         var topMonthlyIncome = monthlyIncomeTransactions
             .OrderByDescending(t => t.Amount)
@@ -313,16 +320,31 @@ public static class Analytics
             MonthlyExpenses = monthlyExpenseTotal,
             NetMonthlyIncome = monthlyNetIncome,
         };
-
     }
+
+    private static List<TransactionPerPocket> ToPerPocketTotals(
+        IEnumerable<Pocket> pockets,
+        IReadOnlyDictionary<int, decimal> totals) =>
+        pockets.Select(pocket => new TransactionPerPocket
+        {
+            Pocket = pocket,
+            Total = totals.GetValueOrDefault(pocket.Id, 0)
+        }).ToList();
+
+    private static bool IsMovement(Transaction transaction) =>
+        transaction.Category is TransactionCategory.Transfer
+            or TransactionCategory.Withdraw;
 
     private static bool IsExpense(Transaction transaction) =>
         transaction.Amount < 0
         && transaction.Category is not TransactionCategory.Savings
-        && transaction.Category is not TransactionCategory.Investments;
+        && transaction.Category is not TransactionCategory.Investments
+        && !IsMovement(transaction);
 
     private static bool IsIncome(Transaction transaction) =>
-        transaction.Amount > 0 && IncomeCategories.Contains(transaction.Category);
+        transaction.Amount > 0
+        && IncomeCategories.Contains(transaction.Category)
+        && !IsMovement(transaction);
 
 
     public class TransactionByCategory

@@ -159,6 +159,58 @@ public class Transaction
         });
     }
 
+    public static Task<(Transaction Outgoing, Transaction Incoming)?> CreateTransfer(
+        int fromPocketId,
+        int toPocketId,
+        decimal amount,
+        DateTime date,
+        string? description)
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
+        {
+            var transferAmount = Math.Abs(amount);
+            if (fromPocketId == toPocketId || transferAmount <= 0)
+            {
+                return ((Transaction, Transaction)?)null;
+            }
+
+            var fromPocket = await dbContext.Pockets.FindAsync(fromPocketId);
+            var toPocket = await dbContext.Pockets.FindAsync(toPocketId);
+            if (fromPocket == null || toPocket == null)
+            {
+                return null;
+            }
+
+            var outgoing = new Transaction
+            {
+                Amount = -transferAmount,
+                Category = TransactionCategory.Transfer,
+                Date = date,
+                Description = description,
+                PocketId = fromPocket.Id,
+                Pocket = fromPocket,
+            };
+            var incoming = new Transaction
+            {
+                Amount = transferAmount,
+                Category = TransactionCategory.Transfer,
+                Date = date,
+                Description = description,
+                PocketId = toPocket.Id,
+                Pocket = toPocket,
+            };
+
+            fromPocket.Balance += outgoing.Amount;
+            toPocket.Balance += incoming.Amount;
+
+            dbContext.Transactions.Add(outgoing);
+            dbContext.Transactions.Add(incoming);
+            await dbContext.SaveChangesAsync();
+
+            return (outgoing, incoming);
+        });
+    }
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum TransactionCategory
     {
@@ -218,5 +270,7 @@ public class Transaction
         Rent,
         Mortgage,
         Loan,
+        Transfer,
+        Withdraw,
     }
 }
