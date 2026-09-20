@@ -116,6 +116,33 @@ export interface ExpenseAnalytics {
   expensePerPocket: TransactionPerPocket[];
 }
 
+export interface MonthlySaving {
+  month: number;
+  leftover: number | null;
+  saved: number | null;
+  savingRate: number | null;
+}
+
+export interface SavingAnalytics {
+  totalMonthlySavings: number;
+  previousMonthSavings: number;
+  savingsRate: number;
+  captureRate: number;
+  leftOver: number;
+  monthlySavings: MonthlySaving[];
+  savingsByCategory: TransactionByCategory[];
+  topSavings: TransactionByCategory[];
+  monthlyExpenses: number;
+  monthlyIncome: number;
+  currency: string;
+}
+
+export async function getSavingAnalytics(): Promise<
+  FetchWrapperResponse<SavingAnalytics>
+> {
+  return await get<SavingAnalytics>("/api/analytics/saving");
+}
+
 export async function getExpenseAnalytics(): Promise<
   FetchWrapperResponse<ExpenseAnalytics>
 > {

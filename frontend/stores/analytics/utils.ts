@@ -1,6 +1,7 @@
 import {
   getExpenseAnalytics,
   getIncomeAnalytics,
+  getSavingAnalytics,
 } from "@/lib/models/Analytics";
 import { AnalyticsPayload, AnalyticsView } from "./types";
 
@@ -11,7 +12,7 @@ export const ANALYTICS_VIEW_ITEMS: {
 }[] = [
   { value: AnalyticsView.Income, label: "Income Analytics" },
   { value: AnalyticsView.Expense, label: "Expense Analytics" },
-  { value: AnalyticsView.Saving, label: "Saving Analytics", disabled: true },
+  { value: AnalyticsView.Saving, label: "Saving Analytics" },
 ];
 
 export function parseAnalyticsView(paramKeys: Iterable<string>): AnalyticsView {
@@ -39,5 +40,10 @@ export async function loadAnalytics(
     return { view, analytics: data };
   }
 
-  return { view, analytics: undefined };
+  if (view === AnalyticsView.Saving) {
+    const { data } = await getSavingAnalytics();
+    return { view, analytics: data };
+  }
+
+  return { view: AnalyticsView.Income, analytics: undefined };
 }

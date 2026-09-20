@@ -2,27 +2,14 @@
 
 import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
 import { AnalyticsView, useAnalytics } from "@/stores/analytics";
-import { ChartNoAxesCombined, WalletCards } from "lucide-react";
+import { WalletCards } from "lucide-react";
 import { AnalyticsLoadingSkeleton } from "./AnalyticsSkeleton";
 import { ExpenseAnalyticsView } from "./expense/ExpenseAnalyticsView";
 import { IncomeAnalyticsView } from "./income/IncomeAnalyticsView";
+import { SavingAnalyticsView } from "./saving/SavingAnalyticsView";
 
 export function AnalyticsPageContent() {
-  const { view, analytics, isLoading, setView } = useAnalytics();
-
-  if (view === AnalyticsView.Saving) {
-    return (
-      <div className="flex min-h-0 flex-1 flex-col gap-4">
-        <EmptyStateCard
-          title="Saving analytics coming soon"
-          description="Saving analytics will load here when this view is enabled."
-          actionText="Back to income"
-          onAction={() => setView(AnalyticsView.Income)}
-          icon={ChartNoAxesCombined}
-        />
-      </div>
-    );
-  }
+  const { view, analytics, isLoading } = useAnalytics();
 
   if (isLoading) {
     return <AnalyticsLoadingSkeleton />;
@@ -46,8 +33,10 @@ export function AnalyticsPageContent() {
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       {view === AnalyticsView.Income ? (
         <IncomeAnalyticsView />
-      ) : (
+      ) : view === AnalyticsView.Expense ? (
         <ExpenseAnalyticsView />
+      ) : (
+        <SavingAnalyticsView />
       )}
     </div>
   );

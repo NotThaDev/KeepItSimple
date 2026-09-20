@@ -3,6 +3,7 @@ export {
   useAnalytics,
   useExpenseAnalytics,
   useIncomeAnalytics,
+  useSavingAnalytics,
 } from "./AnalyticsContext";
 export { AnalyticsView } from "./types";
 export {

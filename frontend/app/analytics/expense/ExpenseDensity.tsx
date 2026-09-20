@@ -13,6 +13,7 @@ import { LayoutGrid } from "lucide-react";
 import { useMemo } from "react";
 import { useExpenseAnalytics } from "@/stores/analytics";
 import { formatAmount } from "@/lib/helpers/currencyHelper";
+import { getHeatStyle } from "../utils";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const HEAT_STOPS = ["#fee2e2", "#fecaca", "#f87171", "#dc2626", "#7f1d1d"];
@@ -24,39 +25,6 @@ function getDayAmount(
   day: number,
 ): number {
   return Math.abs(expensePerDay[String(day)] ?? 0);
-}
-
-function getHeatIntensity(amount: number, maxAmount: number): number {
-  if (amount <= 0 || maxAmount <= 0) {
-    return 0;
-  }
-
-  return Math.log1p(amount) / Math.log1p(maxAmount);
-}
-
-function mixHeatColor(intensity: number): string {
-  const stops = HEAT_STOPS.length - 1;
-  const scaled = intensity * stops;
-  const index = Math.min(stops - 1, Math.floor(scaled));
-  const t = scaled - index;
-  const from = hexToRgb(HEAT_STOPS[index]);
-  const to = hexToRgb(HEAT_STOPS[index + 1]);
-
-  return `rgb(${Math.round(from[0] + (to[0] - from[0]) * t)} ${Math.round(from[1] + (to[1] - from[1]) * t)} ${Math.round(from[2] + (to[2] - from[2]) * t)})`;
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  return [
-    parseInt(hex.slice(1, 3), 16),
-    parseInt(hex.slice(3, 5), 16),
-    parseInt(hex.slice(5, 7), 16),
-  ];
-}
-
-function getHeatStyle(amount: number, maxAmount: number) {
-  const intensity = getHeatIntensity(amount, maxAmount);
-
-  return { backgroundColor: mixHeatColor(intensity) };
 }
 
 function buildMonthWeeks(now: Date): Array<Array<number | null>> {
@@ -197,7 +165,7 @@ function WeekRow({
                     "ring-2 ring-foreground ring-offset-1 ring-offset-background",
                 )}
                 style={{
-                  ...getHeatStyle(amount, maxAmount),
+                  ...getHeatStyle(amount, maxAmount, HEAT_STOPS),
                   height: `${CELL_HEIGHT}px`,
                   width: `${CELL_WIDTH}px`,
                 }}

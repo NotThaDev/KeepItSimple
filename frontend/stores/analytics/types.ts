@@ -1,4 +1,8 @@
-import type { ExpenseAnalytics, IncomeAnalytics } from "@/lib/models/Analytics";
+import type {
+  ExpenseAnalytics,
+  IncomeAnalytics,
+  SavingAnalytics,
+} from "@/lib/models/Analytics";
 import type { ReactNode } from "react";
 
 export enum AnalyticsView {
@@ -18,7 +22,7 @@ export type AnalyticsPayload =
     }
   | {
       view: AnalyticsView.Saving;
-      analytics: undefined;
+      analytics: SavingAnalytics | undefined;
     };
 
 type AnalyticsContextBase = {
