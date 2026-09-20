@@ -262,7 +262,8 @@ public static class Analytics
 
         var monthlyExpenseTotal = Math.Abs(monthlyTransactions.Where(IsExpense).Sum(t => t.Amount));
         var monthlyNetIncome = monthlyIncome - monthlyExpenseTotal;
-        var savingsRate = monthlyIncome == 0 ? 0 : (monthlyNetIncome / monthlyIncome);
+        var monthlySavings = Math.Abs(monthlyTransactions.Where(IsSavings).Sum(t => t.Amount));
+        var savingsRate = monthlyIncome == 0 ? 0 : monthlySavings / monthlyIncome;
 
         var monthlyIncomeTransactions = monthlyTransactions.Where(IsIncome).ToList();
         var monthlyPassiveIncome = monthlyIncomeTransactions
@@ -322,14 +323,106 @@ public static class Analytics
         };
     }
 
+    public static async Task<SavingAnalytics> GetSavingsAnalyticsAsync()
+    {
+        var transactions = await Transaction.GetAllAsync();
+        var pockets = await Pocket.GetAllAsync();
+        var currency = pockets.FirstOrDefault()?.Currency;
+        return BuildSavingAnalytics(transactions, DateTime.UtcNow, currency);
+    }
+
+    public static SavingAnalytics BuildSavingAnalytics(
+        IReadOnlyCollection<Transaction> transactions,
+        DateTime now,
+        string currency = "EUR")
+    {
+        var monthlyTransactions = transactions
+            .Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month)
+            .ToList();
+        var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
+        var monthlyExpenses = Math.Abs(monthlyTransactions.Where(IsExpense).Sum(t => t.Amount));
+        var monthlySavingsTransactions = monthlyTransactions.Where(IsSavings).ToList();
+        var monthlySavings = Math.Abs(monthlySavingsTransactions.Sum(t => t.Amount));
+        var leftover = monthlyIncome - monthlyExpenses;
+        var captureRate = leftover == 0 ? 0 : monthlySavings / leftover;
+
+        var previousMonth = now.AddMonths(-1);
+        var previousMonthSavings = Math.Abs(
+            transactions
+                .Where(t => IsSavings(t) && t.Date.Year == previousMonth.Year && t.Date.Month == previousMonth.Month)
+                .Sum(t => t.Amount));
+
+        var savingsRate = monthlyIncome == 0 ? 0 : monthlySavings / monthlyIncome;
+
+        var yearTransactions = transactions.Where(t => t.Date.Year == now.Year).ToList();
+        var incomeByMonth = yearTransactions
+            .Where(IsIncome)
+            .GroupBy(t => t.Date.Month)
+            .ToDictionary(group => group.Key, group => group.Sum(t => t.Amount));
+        var leftoverByMonth = yearTransactions
+            .Where(t => IsIncome(t) || IsExpense(t))
+            .GroupBy(t => t.Date.Month)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Where(IsIncome).Sum(t => t.Amount)
+                    - Math.Abs(group.Where(IsExpense).Sum(t => t.Amount)));
+        var savedByMonth = yearTransactions
+            .Where(IsSavings)
+            .GroupBy(t => t.Date.Month)
+            .ToDictionary(group => group.Key, group => Math.Abs(group.Sum(t => t.Amount)));
+
+        var monthlySavingsBreakdown = Enumerable
+            .Range(1, 12)
+            .Select(month =>
+            {
+                var income = incomeByMonth.GetValueOrDefault(month, 0);
+                var saved = savedByMonth.GetValueOrDefault(month, 0);
+                return new SavingAnalytics.MonthlySaving
+                {
+                    Month = month,
+                    Leftover = leftoverByMonth.GetValueOrDefault(month, 0),
+                    Saved = saved,
+                    SavingRate = income == 0 ? 0 : saved / income,
+                };
+            })
+            .ToList();
+
+        var savingsByCategory = monthlySavingsTransactions
+            .GroupBy(t => t.Category)
+            .Select(group => new TransactionByCategory
+            {
+                Category = group.Key,
+                Total = Math.Abs(group.Sum(t => t.Amount)),
+            })
+            .OrderByDescending(entry => entry.Total)
+            .ToList();
+
+        var topSavings = savingsByCategory.Take(5).ToList();
+
+        return new SavingAnalytics
+        {
+            TotalMonthlySavings = monthlySavings,
+            PreviousMonthSavings = previousMonthSavings,
+            SavingsRate = savingsRate,
+            CaptureRate = captureRate,
+            LeftOver = leftover,
+            MonthlySavings = monthlySavingsBreakdown,
+            SavingsByCategory = savingsByCategory,
+            TopSavings = topSavings,
+            MonthlyExpenses = monthlyExpenses,
+            MonthlyIncome = monthlyIncome,
+            Currency = currency,
+        };
+    }
+
     private static List<TransactionPerPocket> ToPerPocketTotals(
         IEnumerable<Pocket> pockets,
         IReadOnlyDictionary<int, decimal> totals) =>
-        pockets.Select(pocket => new TransactionPerPocket
+        [.. pockets.Select(pocket => new TransactionPerPocket
         {
             Pocket = pocket,
             Total = totals.GetValueOrDefault(pocket.Id, 0)
-        }).ToList();
+        })];
 
     private static bool IsMovement(Transaction transaction) =>
         transaction.Category is TransactionCategory.Transfer
@@ -345,6 +438,9 @@ public static class Analytics
         transaction.Amount > 0
         && IncomeCategories.Contains(transaction.Category)
         && !IsMovement(transaction);
+
+    private static bool IsSavings(Transaction transaction) =>
+        transaction.Category is TransactionCategory.Savings || transaction.Category is TransactionCategory.Investments;
 
 
     public class TransactionByCategory

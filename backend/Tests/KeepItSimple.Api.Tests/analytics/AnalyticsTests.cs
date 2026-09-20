@@ -108,9 +108,10 @@ public class AnalyticsTests
             [
                 Income(1, 1, TransactionCategory.Salary, 1800, 1),
                 Expense(2, 1, TransactionCategory.Food, 100, 8),
-                TransferOut(3, 1, 500, 8),
-                TransferIn(4, 2, 500, 8),
-                Withdraw(5, 1, 70, 8),
+                Expense(3, 1, TransactionCategory.Savings, 300, 8),
+                TransferOut(4, 1, 500, 8),
+                TransferIn(5, 2, 500, 8),
+                Withdraw(6, 1, 70, 8),
             ],
             TwoPockets(1130, 500),
             Now);
@@ -118,7 +119,7 @@ public class AnalyticsTests
         Assert.Equal(1800m, analytics.TotalMonthlyIncome);
         Assert.Equal(100m, analytics.MonthlyExpenses);
         Assert.Equal(1700m, analytics.NetMonthlyIncome);
-        Assert.Equal(1700m / 1800m, analytics.SavingsRate);
+        Assert.Equal(300m / 1800m, analytics.SavingsRate);
         Assert.Equal(1800m, analytics.MonthlyActiveIncome);
         Assert.DoesNotContain(
             analytics.MonthlyIncomeByCategory,
@@ -155,6 +156,94 @@ public class AnalyticsTests
         Assert.Equal(200m, expenses.PreviousMonthExpenses);
         Assert.Equal(1500m, income.PreviousMonthIncome);
         Assert.Equal(200m / 1500m, expenses.PreviousMonthSpendingRate);
+    }
+
+    [Fact]
+    public void Saving_analytics_ignore_transfers_and_count_investments_as_saved()
+    {
+        var analytics = BuildSavingAnalytics(
+            [
+                Income(1, 1, TransactionCategory.Salary, 2000, 1),
+                Expense(2, 1, TransactionCategory.Food, 500, 10),
+                Expense(3, 1, TransactionCategory.Savings, 300, 15),
+                Expense(4, 1, TransactionCategory.Investments, 100, 16),
+                TransferOut(5, 1, 250, 16),
+                TransferIn(6, 2, 250, 16),
+                Withdraw(7, 1, 80, 16),
+            ],
+            Now);
+
+        Assert.Equal(400m, analytics.TotalMonthlySavings);
+        Assert.Equal(1500m, analytics.LeftOver);
+        Assert.Equal(400m / 2000m, analytics.SavingsRate);
+        Assert.Equal(400m / 1500m, analytics.CaptureRate);
+        Assert.Equal(300m, analytics.SavingsByCategory.Single(entry => entry.Category == TransactionCategory.Savings).Total);
+        Assert.Equal(100m, analytics.SavingsByCategory.Single(entry => entry.Category == TransactionCategory.Investments).Total);
+        Assert.Equal(
+            [TransactionCategory.Savings, TransactionCategory.Investments],
+            analytics.TopSavings.Select(entry => entry.Category));
+        Assert.DoesNotContain(
+            analytics.SavingsByCategory,
+            entry => entry.Category is TransactionCategory.Transfer or TransactionCategory.Withdraw);
+    }
+
+    [Fact]
+    public void Saving_analytics_track_leftover_saved_and_rate_per_month()
+    {
+        var analytics = BuildSavingAnalytics(
+            [
+                Income(1, 1, TransactionCategory.Salary, 1800, 1, month: 8),
+                Expense(2, 1, TransactionCategory.Food, 800, 10, month: 8),
+                Expense(3, 1, TransactionCategory.Savings, 200, 15, month: 8),
+                Income(4, 1, TransactionCategory.Salary, 2000, 1),
+                Expense(5, 1, TransactionCategory.Food, 500, 10),
+                Expense(6, 1, TransactionCategory.Savings, 300, 15),
+                TransferOut(7, 1, 100, 16),
+                TransferIn(8, 2, 100, 16),
+            ],
+            Now);
+
+        var august = analytics.MonthlySavings.Single(entry => entry.Month == 8);
+        var september = analytics.MonthlySavings.Single(entry => entry.Month == 9);
+        var october = analytics.MonthlySavings.Single(entry => entry.Month == 10);
+
+        Assert.Equal(1000m, august.Leftover);
+        Assert.Equal(200m, august.Saved);
+        Assert.Equal(200m / 1800m, august.SavingRate);
+        Assert.Equal(1500m, september.Leftover);
+        Assert.Equal(300m, september.Saved);
+        Assert.Equal(300m / 2000m, september.SavingRate);
+        Assert.Equal(0m, october.Leftover);
+        Assert.Equal(0m, october.Saved);
+        Assert.Equal(0m, october.SavingRate);
+        Assert.Equal(12, analytics.MonthlySavings.Count);
+        Assert.Equal(300m, analytics.TotalMonthlySavings);
+        Assert.Equal(200m, analytics.PreviousMonthSavings);
+        Assert.Equal(1500m, analytics.LeftOver);
+        Assert.Equal(300m / 2000m, analytics.SavingsRate);
+        Assert.Equal(300m / 1500m, analytics.CaptureRate);
+    }
+
+    [Fact]
+    public void Saving_analytics_use_zero_rates_when_there_is_no_income_or_leftover()
+    {
+        var analytics = BuildSavingAnalytics(
+            [
+                Expense(1, 1, TransactionCategory.Food, 50, 10),
+            ],
+            Now);
+
+        var september = analytics.MonthlySavings.Single(entry => entry.Month == 9);
+
+        Assert.Equal(0m, analytics.TotalMonthlySavings);
+        Assert.Equal(-50m, analytics.LeftOver);
+        Assert.Equal(0m, analytics.SavingsRate);
+        Assert.Equal(0m, analytics.CaptureRate);
+        Assert.Equal(-50m, september.Leftover);
+        Assert.Equal(0m, september.Saved);
+        Assert.Equal(0m, september.SavingRate);
+        Assert.Empty(analytics.SavingsByCategory);
+        Assert.Empty(analytics.TopSavings);
     }
 
     private static List<Pocket> TwoPockets(decimal checkingBalance, decimal savingsBalance) =>
