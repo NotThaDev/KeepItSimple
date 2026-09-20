@@ -1,14 +1,22 @@
+import { AnalyticsProvider, parseAnalyticsView } from "@/stores/analytics";
 import { PageWrapper } from "@/components/common/pageContainer/PageWrapper";
+import { getIncomeAnalytics } from "@/lib/models/Analytics";
+import { AnalyticsPageContent } from "./AnalyticsPageContent";
+import { AnalyticsViewSelector } from "./AnalyticsViewSelector";
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const incomeResponse = await getIncomeAnalytics();
+  const view = parseAnalyticsView(Object.keys(await searchParams));
+
   return (
-    <PageWrapper title="Analytics" maximizeContent>
-      <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-bold">Analytics</h1>
-        <p className="text-sm text-muted-foreground">
-          View your analytics here.
-        </p>
-      </div>
-    </PageWrapper>
+    <AnalyticsProvider incomeResponse={incomeResponse} view={view}>
+      <PageWrapper title="Analytics" extraContent={<AnalyticsViewSelector />}>
+        <AnalyticsPageContent />
+      </PageWrapper>
+    </AnalyticsProvider>
   );
 }
