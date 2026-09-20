@@ -247,6 +247,7 @@ public static class Analytics
     {
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
         var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
+        var monthlySavings = monthlyTransactions.Where(IsSavings).Sum(t => t.Amount);
 
         var previousMonth = now.AddMonths(-1);
         var previousMonthIncome = transactions.Where(t => IsIncome(t) && t.Date.Year == previousMonth.Year && t.Date.Month == previousMonth.Month).Sum(t => t.Amount);
@@ -262,7 +263,7 @@ public static class Analytics
 
         var monthlyExpenseTotal = Math.Abs(monthlyTransactions.Where(IsExpense).Sum(t => t.Amount));
         var monthlyNetIncome = monthlyIncome - monthlyExpenseTotal;
-        var savingsRate = monthlyIncome == 0 ? 0 : (monthlyNetIncome / monthlyIncome);
+        var savingsRate = monthlyIncome == 0 ? 0 : (monthlySavings / monthlyIncome);
 
         var monthlyIncomeTransactions = monthlyTransactions.Where(IsIncome).ToList();
         var monthlyPassiveIncome = monthlyIncomeTransactions
@@ -325,12 +326,15 @@ public static class Analytics
     public static async Task<SavingAnalytics> GetSavingsAnalyticsAsync()
     {
         var transactions = await Transaction.GetAllAsync();
-        return BuildSavingAnalytics(transactions, DateTime.UtcNow);
+        var pockets = await Pocket.GetAllAsync();
+        var currency = pockets.FirstOrDefault()?.Currency;
+        return BuildSavingAnalytics(transactions, DateTime.UtcNow, currency);
     }
 
     public static SavingAnalytics BuildSavingAnalytics(
         IReadOnlyCollection<Transaction> transactions,
-        DateTime now)
+        DateTime now,
+        string currency = "EUR")
     {
         var monthlyTransactions = transactions
             .Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month)
@@ -385,17 +389,15 @@ public static class Analytics
 
         var savingsByCategory = monthlySavingsTransactions
             .GroupBy(t => t.Category)
-            .ToDictionary(group => group.Key, group => Math.Abs(group.Sum(t => t.Amount)));
-
-        var topSavings = savingsByCategory
-            .Select(entry => new TransactionByCategory
+            .Select(group => new TransactionByCategory
             {
-                Category = entry.Key,
-                Total = entry.Value,
+                Category = group.Key,
+                Total = Math.Abs(group.Sum(t => t.Amount)),
             })
             .OrderByDescending(entry => entry.Total)
-            .Take(5)
             .ToList();
+
+        var topSavings = savingsByCategory.Take(5).ToList();
 
         return new SavingAnalytics
         {
@@ -407,6 +409,9 @@ public static class Analytics
             MonthlySavings = monthlySavingsBreakdown,
             SavingsByCategory = savingsByCategory,
             TopSavings = topSavings,
+            MonthlyExpenses = monthlyExpenses,
+            MonthlyIncome = monthlyIncome,
+            Currency = currency,
         };
     }
 

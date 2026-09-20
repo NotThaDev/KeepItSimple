@@ -1,5 +1,4 @@
 using static KeepItSimple.Api.Models.Analytics.Analytics;
-using static KeepItSimple.Api.Models.Transaction;
 
 namespace KeepItSimple.Api.Models.Analytics;
 
@@ -10,9 +9,13 @@ public class SavingAnalytics
     public decimal SavingsRate { get; set; }
     public decimal CaptureRate { get; set; }
     public decimal LeftOver { get; set; }
+    public decimal MonthlyExpenses { get; set; }
+    public decimal MonthlyIncome { get; set; }
+    public string Currency { get; set; } = "EUR";
     public List<MonthlySaving> MonthlySavings { get; set; } = [];
-    public Dictionary<TransactionCategory, decimal> SavingsByCategory { get; set; } = [];
+    public List<TransactionByCategory> SavingsByCategory { get; set; } = [];
     public List<TransactionByCategory> TopSavings { get; set; } = [];
+
     public class MonthlySaving
     {
         public int Month { get; set; }

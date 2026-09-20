@@ -176,14 +176,14 @@ public class AnalyticsTests
         Assert.Equal(1500m, analytics.LeftOver);
         Assert.Equal(400m / 2000m, analytics.SavingsRate);
         Assert.Equal(400m / 1500m, analytics.CaptureRate);
-        Assert.Equal(300m, analytics.SavingsByCategory[TransactionCategory.Savings]);
-        Assert.Equal(100m, analytics.SavingsByCategory[TransactionCategory.Investments]);
+        Assert.Equal(300m, analytics.SavingsByCategory.Single(entry => entry.Category == TransactionCategory.Savings).Total);
+        Assert.Equal(100m, analytics.SavingsByCategory.Single(entry => entry.Category == TransactionCategory.Investments).Total);
         Assert.Equal(
             [TransactionCategory.Savings, TransactionCategory.Investments],
             analytics.TopSavings.Select(entry => entry.Category));
         Assert.DoesNotContain(
-            analytics.SavingsByCategory.Keys,
-            category => category is TransactionCategory.Transfer or TransactionCategory.Withdraw);
+            analytics.SavingsByCategory,
+            entry => entry.Category is TransactionCategory.Transfer or TransactionCategory.Withdraw);
     }
 
     [Fact]
