@@ -155,12 +155,13 @@ public class TransactionController : ControllerBase
     }
 
     [HttpPost("import/preview")]
-    public ActionResult<PreviewResponse> PreviewImport(
+    public async Task<ActionResult<PreviewResponse>> PreviewImport(
         [FromBody] PreviewRequest request)
     {
         try
         {
-            var result = TransactionImporter.Preview(request);
+            var rules = await CategoryRule.GetEnabledOrderedAsync();
+            var result = TransactionImporter.Preview(request, rules);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)
