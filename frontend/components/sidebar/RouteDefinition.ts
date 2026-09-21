@@ -2,6 +2,8 @@ import {
   ArrowDownUp,
   ChartNoAxesCombined,
   LayoutDashboard,
+  List,
+  ListFilter,
   LucideIcon,
   Wallet,
 } from "lucide-react";
@@ -9,8 +11,9 @@ import {
 export interface RouteDefinition {
   label: string;
   title: string;
-  href: string;
+  href?: string;
   icon: LucideIcon;
+  children?: RouteDefinition[];
 }
 
 export const routes: RouteDefinition[] = [
@@ -29,8 +32,21 @@ export const routes: RouteDefinition[] = [
   {
     label: "Transactions",
     title: "Transactions",
-    href: "/transactions",
     icon: ArrowDownUp,
+    children: [
+      {
+        label: "Transaction List",
+        title: "Transactions",
+        href: "/transactions",
+        icon: List,
+      },
+      {
+        label: "Category Rules",
+        title: "Category Rules",
+        href: "/transactions/rules",
+        icon: ListFilter,
+      },
+    ],
   },
   {
     label: "Pockets",
@@ -40,10 +56,22 @@ export const routes: RouteDefinition[] = [
   },
 ];
 
-export function getRouteForPath(pathname: string) {
-  return routes.find(
-    (route) => pathname === route.href || pathname.startsWith(`${route.href}/`),
+function flattenRoutes(items: RouteDefinition[]): RouteDefinition[] {
+  return items.flatMap((route) =>
+    route.children?.length ? flattenRoutes(route.children) : [route],
   );
+}
+
+export function getRouteForPath(pathname: string) {
+  const all = flattenRoutes(routes).filter((route) => route.href);
+  const exact = all.find((route) => pathname === route.href);
+  if (exact) {
+    return exact;
+  }
+
+  return all
+    .filter((route) => pathname.startsWith(`${route.href}/`))
+    .sort((a, b) => (b.href?.length ?? 0) - (a.href?.length ?? 0))[0];
 }
 
 export function setTitle(title: string) {
