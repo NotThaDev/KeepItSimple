@@ -98,7 +98,7 @@ export function RuleDrawerContent({
           Groups are parentheses. Pick AND or OR inside a group when it has two
           or more conditions, and how groups combine with each other. Without a
           category condition, the rule only matches transactions in Other.
-          Description "contains" matches a whole word, not a substring.
+          Description contains matches a whole word, not a substring.
         </DrawerDescription>
       </DrawerHeader>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -137,7 +137,11 @@ export function RuleDrawerContent({
             />
           </Field>
 
-          <RuleBuilder rule={ruleData} pockets={pockets} onChange={setRuleData} />
+          <RuleBuilder
+            rule={ruleData}
+            pockets={pockets}
+            onChange={setRuleData}
+          />
         </FieldGroup>
       </div>
       <DrawerFooter className="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t">
