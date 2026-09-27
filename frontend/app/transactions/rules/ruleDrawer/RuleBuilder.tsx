@@ -2,52 +2,17 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   CategoryRuleGroup,
   CategoryRulePayload,
   createEmptyCondition,
   createEmptyGroup,
-  RuleLogic,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
 import { Plus, Trash2 } from "lucide-react";
 import { ConditionRow } from "./ConditionRow";
-import { LOGIC_LABELS } from "./ruleLabels";
-
-interface RuleBuilderProps {
-  rule: CategoryRulePayload;
-  pockets: Pocket[];
-  onChange: (rule: CategoryRulePayload) => void;
-}
-
-function LogicToggle({
-  value,
-  onChange,
-  ariaLabel,
-}: {
-  value: RuleLogic;
-  onChange: (logic: RuleLogic) => void;
-  ariaLabel: string;
-}) {
-  return (
-    <ToggleGroup
-      type="single"
-      variant="outline"
-      size="sm"
-      value={value}
-      onValueChange={(next) => {
-        if (next === "And" || next === "Or") {
-          onChange(next);
-        }
-      }}
-      aria-label={ariaLabel}
-    >
-      <ToggleGroupItem value="And">{LOGIC_LABELS.And}</ToggleGroupItem>
-      <ToggleGroupItem value="Or">{LOGIC_LABELS.Or}</ToggleGroupItem>
-    </ToggleGroup>
-  );
-}
+import { LOGIC_LABELS } from "../ruleLabels";
+import { LogicToggle } from "./LogicToggle";
 
 function updateGroup(
   groups: CategoryRuleGroup[],
@@ -57,6 +22,12 @@ function updateGroup(
   return groups.map((group, groupIndex) =>
     groupIndex === index ? { ...group, ...patch } : group,
   );
+}
+
+interface RuleBuilderProps {
+  rule: CategoryRulePayload;
+  pockets: Pocket[];
+  onChange: (rule: CategoryRulePayload) => void;
 }
 
 export function RuleBuilder({

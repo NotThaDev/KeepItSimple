@@ -1,5 +1,6 @@
 "use client";
 
+import { TransactionCategorySelector } from "@/app/transactions/TransactionCategorySelector";
 import { Button } from "@/components/ui/button";
 import {
   DrawerClose,
@@ -13,6 +14,12 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   CategoryRule,
   CategoryRulePayload,
   cloneRulePayload,
@@ -22,10 +29,13 @@ import {
   updateCategoryRule,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
+import { Info } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { TargetCategorySelect } from "./ConditionRow";
 import { RuleBuilder } from "./RuleBuilder";
+
+const RULE_DRAWER_HELP =
+  "Groups are parentheses. Pick AND or OR inside a group when it has two or more conditions, and how groups combine with each other. Without a category condition, the rule only matches transactions in Other. Description contains matches a whole word, not a substring.";
 
 interface RuleDrawerContentProps {
   rule?: CategoryRule;
@@ -91,40 +101,58 @@ export function RuleDrawerContent({
   return (
     <DrawerContent className="h-full overflow-hidden data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-2xl">
       <DrawerHeader>
-        <DrawerTitle>
-          {rule ? "Edit rule" : isDuplicate ? "Duplicate rule" : "Create rule"}
-        </DrawerTitle>
-        <DrawerDescription>
-          Groups are parentheses. Pick AND or OR inside a group when it has two
-          or more conditions, and how groups combine with each other. Without a
-          category condition, the rule only matches transactions in Other.
-          Description contains matches a whole word, not a substring.
+        <div className="flex items-center gap-2">
+          <DrawerTitle>
+            {rule ? "Edit rule" : isDuplicate ? "Duplicate rule" : "Create rule"}
+          </DrawerTitle>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="How rules work"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Info className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="z-[60] max-w-sm text-pretty">
+                {RULE_DRAWER_HELP}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <DrawerDescription className="sr-only">
+          {RULE_DRAWER_HELP}
         </DrawerDescription>
       </DrawerHeader>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <FieldGroup className="space-y-4 p-5">
-          <Field>
-            <FieldLabel htmlFor="rule-name">Name</FieldLabel>
-            <Input
-              id="rule-name"
-              placeholder="Amazon shopping"
-              value={ruleData.name}
-              onChange={(event) =>
-                setRuleData({ ...ruleData, name: event.target.value })
-              }
-              aria-invalid={nameInvalid}
-            />
-          </Field>
+          <div className="flex gap-3">
+            <Field>
+              <FieldLabel htmlFor="rule-name">Name</FieldLabel>
+              <Input
+                id="rule-name"
+                placeholder="Amazon shopping"
+                value={ruleData.name}
+                onChange={(event) =>
+                  setRuleData({ ...ruleData, name: event.target.value })
+                }
+                aria-invalid={nameInvalid}
+              />
+            </Field>
 
-          <Field>
-            <FieldLabel htmlFor="target-category">Set category to</FieldLabel>
-            <TargetCategorySelect
-              value={ruleData.targetCategory}
-              onChange={(targetCategory) =>
-                setRuleData({ ...ruleData, targetCategory })
-              }
-            />
-          </Field>
+            <Field className="w-[220px]">
+              <FieldLabel htmlFor="target-category">Set category to</FieldLabel>
+              <TransactionCategorySelector
+                showAll
+                value={ruleData.targetCategory}
+                onChange={(targetCategory) =>
+                  setRuleData({ ...ruleData, targetCategory })
+                }
+              />
+            </Field>
+          </div>
 
           <Field orientation="horizontal">
             <FieldLabel htmlFor="rule-enabled">Enabled</FieldLabel>

@@ -133,7 +133,7 @@ export function ApplyRulesDialog({ pockets }: Readonly<ApplyRulesDialogProps>) {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline">Apply to existing</Button>
+        <Button variant="outline" size="lg">Apply to existing</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
