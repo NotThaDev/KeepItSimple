@@ -1,6 +1,7 @@
 import {
   CategoryRuleCondition,
   CategoryRuleGroup,
+  connectorLogic,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
 import { conditionLead, conditionValue } from "./utils";
@@ -19,8 +20,8 @@ export function GroupPreview({
     <div className="flex min-w-0 flex-col gap-3">
       {group.conditions.map((condition, index) => (
         <div key={index} className="flex min-w-0 flex-col gap-3">
-          {index > 0 && group.logic ? (
-            <LogicDivider logic={group.logic} />
+          {index > 0 ? (
+            <LogicDivider logic={connectorLogic(group, index) ?? "And"} />
           ) : null}
           <ConditionPreview condition={condition} pockets={pockets} />
         </div>

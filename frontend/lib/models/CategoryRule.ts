@@ -17,13 +17,13 @@ export type RuleOperator =
   | "NotEquals";
 
 export interface CategoryRuleCondition {
+  logic?: RuleLogic;
   field: RuleField;
   operator: RuleOperator;
   value: string;
 }
 
 export interface CategoryRuleGroup {
-  logic?: RuleLogic;
   conditions: CategoryRuleCondition[];
 }
 
@@ -92,10 +92,7 @@ export function cloneRulePayload(
     enabled: rule.enabled,
     targetCategory: rule.targetCategory,
     groupLogic: rule.groupLogic,
-    groups: rule.groups.map((group) => ({
-      logic: group.logic,
-      conditions: group.conditions.map((condition) => ({ ...condition })),
-    })),
+    groups: normalizeRuleGroups(rule.groups),
   };
 }
 
@@ -103,12 +100,32 @@ export function duplicateRulePayload(rule: CategoryRule): CategoryRulePayload {
   return cloneRulePayload(rule, `${rule.name} (copy)`);
 }
 
+export function connectorLogic(
+  group: CategoryRuleGroup,
+  index: number,
+): RuleLogic | undefined {
+  if (index <= 0) {
+    return undefined;
+  }
+
+  return group.conditions[index]?.logic ?? "And";
+}
+
 export function normalizeRuleGroups(
   groups: CategoryRuleGroup[],
 ): CategoryRuleGroup[] {
   return groups.map((group) => ({
-    logic: group.conditions.length >= 2 ? (group.logic ?? "And") : undefined,
-    conditions: group.conditions,
+    conditions: group.conditions.map((condition, index) => {
+      const next: CategoryRuleCondition = {
+        field: condition.field,
+        operator: condition.operator,
+        value: condition.value,
+      };
+      if (index > 0) {
+        next.logic = condition.logic ?? "And";
+      }
+      return next;
+    }),
   }));
 }
 

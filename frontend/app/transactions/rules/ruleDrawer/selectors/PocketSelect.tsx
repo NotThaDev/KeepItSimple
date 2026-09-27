@@ -13,16 +13,18 @@ interface PocketValueSelectProps {
   value: string;
   pockets: Pocket[];
   onChange: (value: string) => void;
+  invalid?: boolean;
 }
 
 export function PocketSelect({
   value,
   pockets,
   onChange,
+  invalid,
 }: Readonly<PocketValueSelectProps>) {
   return (
     <Select value={value || undefined} onValueChange={onChange}>
-      <SelectTrigger className="min-w-0 flex-1">
+      <SelectTrigger aria-invalid={invalid} className="min-w-0 flex-1">
         <SelectValue placeholder="Pocket" />
       </SelectTrigger>
       <SelectContent>

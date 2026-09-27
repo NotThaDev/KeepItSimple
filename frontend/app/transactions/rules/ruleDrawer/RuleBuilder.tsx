@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  CategoryRuleCondition,
   CategoryRuleGroup,
   CategoryRulePayload,
   createEmptyCondition,
@@ -13,6 +14,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { ConditionRow } from "./ConditionRow";
 import { LOGIC_LABELS } from "../ruleLabels";
 import { LogicToggle } from "./LogicToggle";
+import { hasConditionError, RuleConditionError } from "./utils";
 
 function updateGroup(
   groups: CategoryRuleGroup[],
@@ -27,24 +29,40 @@ function updateGroup(
 interface RuleBuilderProps {
   rule: CategoryRulePayload;
   pockets: Pocket[];
+  errors?: RuleConditionError[];
   onChange: (rule: CategoryRulePayload) => void;
 }
 
 export function RuleBuilder({
   rule,
   pockets,
+  errors,
   onChange,
 }: Readonly<RuleBuilderProps>) {
   const setGroups = (groups: CategoryRuleGroup[]) =>
     onChange({ ...rule, groups });
 
+  const setCondition = (
+    groupIndex: number,
+    conditionIndex: number,
+    next: CategoryRuleCondition,
+  ) => {
+    const group = rule.groups[groupIndex];
+    const conditions = group.conditions.map((item, index) =>
+      index === conditionIndex ? next : item,
+    );
+    setGroups(updateGroup(rule.groups, groupIndex, { conditions }));
+  };
+
   const addCondition = (groupIndex: number) => {
     const group = rule.groups[groupIndex];
-    const conditions = [...group.conditions, createEmptyCondition()];
+    const next = createEmptyCondition();
+    if (group.conditions.length > 0) {
+      next.logic = "And";
+    }
     setGroups(
       updateGroup(rule.groups, groupIndex, {
-        conditions,
-        logic: conditions.length >= 2 ? (group.logic ?? "And") : undefined,
+        conditions: [...group.conditions, next],
       }),
     );
   };
@@ -58,10 +76,10 @@ export function RuleBuilder({
       return;
     }
 
+    const [first, ...rest] = conditions;
     setGroups(
       updateGroup(rule.groups, groupIndex, {
-        conditions,
-        logic: conditions.length >= 2 ? (group.logic ?? "And") : undefined,
+        conditions: [{ ...first, logic: undefined }, ...rest],
       }),
     );
   };
@@ -107,40 +125,35 @@ export function RuleBuilder({
               ) : null}
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
-              {group.conditions.length >= 2 ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-xs text-muted-foreground">
-                    Conditions in this group
-                  </p>
-                  <LogicToggle
-                    value={group.logic ?? "And"}
-                    onChange={(logic) =>
-                      setGroups(updateGroup(rule.groups, groupIndex, { logic }))
-                    }
-                    ariaLabel={`How conditions combine in group ${groupIndex + 1}`}
-                  />
-                </div>
-              ) : null}
-
               {group.conditions.map((condition, conditionIndex) => (
                 <div key={conditionIndex} className="flex flex-col gap-2">
-                  {conditionIndex > 0 && group.logic ? (
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {LOGIC_LABELS[group.logic]}
-                    </p>
+                  {conditionIndex > 0 ? (
+                    <LogicToggle
+                      value={condition.logic ?? "And"}
+                      onChange={(logic) =>
+                        setCondition(groupIndex, conditionIndex, {
+                          ...condition,
+                          logic,
+                        })
+                      }
+                      ariaLabel={`How condition ${conditionIndex + 1} combines in group ${groupIndex + 1}`}
+                    />
                   ) : null}
                   <ConditionRow
                     condition={condition}
                     canRemove={group.conditions.length > 1}
                     pockets={pockets}
-                    onChange={(next) => {
-                      const conditions = group.conditions.map((item, index) =>
-                        index === conditionIndex ? next : item,
-                      );
-                      setGroups(
-                        updateGroup(rule.groups, groupIndex, { conditions }),
-                      );
-                    }}
+                    invalidValue={hasConditionError(
+                      errors,
+                      groupIndex,
+                      conditionIndex,
+                    )}
+                    onChange={(next) =>
+                      setCondition(groupIndex, conditionIndex, {
+                        ...next,
+                        logic: condition.logic,
+                      })
+                    }
                     onRemove={() => removeCondition(groupIndex, conditionIndex)}
                   />
                 </div>

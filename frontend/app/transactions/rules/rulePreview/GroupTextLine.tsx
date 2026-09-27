@@ -6,6 +6,7 @@ import {
 import {
   CategoryRuleCondition,
   CategoryRuleGroup,
+  connectorLogic,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
 import { cn } from "cn";
@@ -33,8 +34,11 @@ export function GroupTextLine({
       ) : null}
       {group.conditions.map((condition, index) => (
         <span key={index} className="inline-flex min-w-0 items-center gap-1">
-          {index > 0 && group.logic ? (
-            <LogicBadge logic={group.logic} compact={compact} />
+          {index > 0 ? (
+            <LogicBadge
+              logic={connectorLogic(group, index) ?? "And"}
+              compact={compact}
+            />
           ) : null}
           <ConditionBadges
             condition={condition}

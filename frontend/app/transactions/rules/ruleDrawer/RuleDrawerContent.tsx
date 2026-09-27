@@ -33,6 +33,7 @@ import { Info } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { RuleBuilder } from "./RuleBuilder";
+import { RuleValidation, validateRule } from "./utils";
 
 const RULE_DRAWER_HELP =
   "Groups are parentheses. Pick AND or OR inside a group when it has two or more conditions, and how groups combine with each other. Without a category condition, the rule only matches transactions in Other. Description contains matches a whole word, not a substring.";
@@ -68,14 +69,19 @@ export function RuleDrawerContent({
   const [ruleData, setRuleData] = useState<CategoryRulePayload>(() =>
     toPayload(rule, copyFrom),
   );
-  const [nameInvalid, setNameInvalid] = useState(false);
+  const [validation, setValidation] = useState<RuleValidation | null>(null);
   const [saving, setSaving] = useState(false);
   const isDuplicate = Boolean(copyFrom);
 
+  const updateRule = useCallback((next: CategoryRulePayload) => {
+    setRuleData(next);
+    setValidation((current) => (current ? validateRule(next) : null));
+  }, []);
+
   const handleSave = useCallback(async () => {
-    const nameValid = ruleData.name.trim().length > 0;
-    setNameInvalid(!nameValid);
-    if (!nameValid) {
+    const nextValidation = validateRule(ruleData);
+    setValidation(nextValidation);
+    if (nextValidation) {
       return;
     }
 
@@ -103,7 +109,11 @@ export function RuleDrawerContent({
       <DrawerHeader>
         <div className="flex items-center gap-2">
           <DrawerTitle>
-            {rule ? "Edit rule" : isDuplicate ? "Duplicate rule" : "Create rule"}
+            {rule
+              ? "Edit rule"
+              : isDuplicate
+                ? "Duplicate rule"
+                : "Create rule"}
           </DrawerTitle>
           <TooltipProvider>
             <Tooltip>
@@ -116,7 +126,10 @@ export function RuleDrawerContent({
                   <Info className="size-4" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="z-[60] max-w-sm text-pretty">
+              <TooltipContent
+                side="bottom"
+                className="z-[60] max-w-sm text-pretty"
+              >
                 {RULE_DRAWER_HELP}
               </TooltipContent>
             </Tooltip>
@@ -136,9 +149,9 @@ export function RuleDrawerContent({
                 placeholder="Amazon shopping"
                 value={ruleData.name}
                 onChange={(event) =>
-                  setRuleData({ ...ruleData, name: event.target.value })
+                  updateRule({ ...ruleData, name: event.target.value })
                 }
-                aria-invalid={nameInvalid}
+                aria-invalid={validation?.nameInvalid}
               />
             </Field>
 
@@ -148,31 +161,29 @@ export function RuleDrawerContent({
                 showAll
                 value={ruleData.targetCategory}
                 onChange={(targetCategory) =>
-                  setRuleData({ ...ruleData, targetCategory })
+                  updateRule({ ...ruleData, targetCategory })
                 }
               />
             </Field>
           </div>
 
-          <Field orientation="horizontal">
-            <FieldLabel htmlFor="rule-enabled">Enabled</FieldLabel>
-            <Switch
-              id="rule-enabled"
-              checked={ruleData.enabled}
-              onCheckedChange={(enabled) =>
-                setRuleData({ ...ruleData, enabled })
-              }
-            />
-          </Field>
-
           <RuleBuilder
             rule={ruleData}
             pockets={pockets}
-            onChange={setRuleData}
+            errors={validation?.conditions}
+            onChange={updateRule}
           />
         </FieldGroup>
       </div>
       <DrawerFooter className="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t">
+        <Field orientation="horizontal">
+          <Switch
+            id="rule-enabled"
+            checked={ruleData.enabled}
+            onCheckedChange={(enabled) => updateRule({ ...ruleData, enabled })}
+          />
+        </Field>
+
         <DrawerClose asChild>
           <Button variant="outline">Cancel</Button>
         </DrawerClose>

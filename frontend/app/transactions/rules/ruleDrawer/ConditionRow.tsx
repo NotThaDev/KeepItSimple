@@ -22,6 +22,7 @@ interface ConditionRowProps {
   condition: CategoryRuleCondition;
   canRemove: boolean;
   pockets: Pocket[];
+  invalidValue?: boolean;
   onChange: (condition: CategoryRuleCondition) => void;
   onRemove: () => void;
 }
@@ -30,6 +31,7 @@ export function ConditionRow({
   condition,
   canRemove,
   pockets,
+  invalidValue,
   onChange,
   onRemove,
 }: Readonly<ConditionRowProps>) {
@@ -58,6 +60,7 @@ export function ConditionRow({
               : TransactionCategory.Other
           }
           onChange={(value) => onChange({ ...condition, value })}
+          isInvalid={invalidValue}
           className="min-w-0 flex-1"
         />
       ) : condition.field === "Pocket" ? (
@@ -65,6 +68,7 @@ export function ConditionRow({
           value={condition.value}
           pockets={pockets}
           onChange={(value) => onChange({ ...condition, value })}
+          invalid={invalidValue}
         />
       ) : (
         <Input
@@ -75,6 +79,7 @@ export function ConditionRow({
             condition.field === "Amount" ? "0.00" : "string to compare"
           }
           value={condition.value}
+          aria-invalid={invalidValue}
           onChange={(event) =>
             onChange({ ...condition, value: event.target.value })
           }
