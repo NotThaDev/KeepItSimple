@@ -80,15 +80,16 @@ public static class CategoryRuleMatcher
             return false;
         }
 
-        if (group.Conditions.Count == 1)
+        var matched = MatchesCondition(description, amount, category, pocketId, group.Conditions[0]);
+        for (var index = 1; index < group.Conditions.Count; index++)
         {
-            return MatchesCondition(description, amount, category, pocketId, group.Conditions[0]);
+            var condition = group.Conditions[index];
+            var next = MatchesCondition(description, amount, category, pocketId, condition);
+            var logic = condition.Logic ?? RuleLogic.And;
+            matched = logic == RuleLogic.Or ? matched || next : matched && next;
         }
 
-        var logic = group.Logic ?? RuleLogic.And;
-        return logic == RuleLogic.And
-            ? group.Conditions.All(condition => MatchesCondition(description, amount, category, pocketId, condition))
-            : group.Conditions.Any(condition => MatchesCondition(description, amount, category, pocketId, condition));
+        return matched;
     }
 
     private static bool MatchesCondition(

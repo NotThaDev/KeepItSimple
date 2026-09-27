@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using KeepItSimple.Api.dtos.CategoryRule;
 using KeepItSimple.Api.dtos.Transaction;
@@ -183,27 +184,117 @@ public class CategoryRule
         });
     }
 
+    public static Task<int> BackfillConditionLogicAsync()
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
+        {
+            var rows = await dbContext.Database
+                .SqlQueryRaw<CategoryRuleGroupsRow>(
+                    "SELECT \"Id\", \"Groups\"::text AS \"GroupsJson\" FROM \"CategoryRules\"")
+                .ToListAsync();
+
+            var updated = 0;
+            foreach (var row in rows)
+            {
+                if (!TryMigrateGroupsJson(row.GroupsJson, out var migrated))
+                {
+                    continue;
+                }
+
+                await dbContext.Database.ExecuteSqlInterpolatedAsync(
+                    $"UPDATE \"CategoryRules\" SET \"Groups\" = CAST({migrated} AS jsonb) WHERE \"Id\" = {row.Id}");
+                updated++;
+            }
+
+            return updated;
+        });
+    }
+
+    public static bool TryMigrateGroupsJson(string json, out string migrated)
+    {
+        var legacyGroups = JsonSerializer.Deserialize<List<LegacyCategoryRuleGroup>>(json, CategoryRuleJson.Options)
+            ?? [];
+        var changed = false;
+        var groups = new List<CategoryRuleGroup>();
+        foreach (var legacy in legacyGroups)
+        {
+            var conditions = legacy.Conditions ?? [];
+            var fallback = legacy.Logic ?? RuleLogic.And;
+            if (legacy.Logic is not null)
+            {
+                changed = true;
+            }
+
+            for (var index = 0; index < conditions.Count; index++)
+            {
+                if (index == 0)
+                {
+                    if (conditions[index].Logic is not null)
+                    {
+                        conditions[index].Logic = null;
+                        changed = true;
+                    }
+
+                    continue;
+                }
+
+                if (conditions[index].Logic is null)
+                {
+                    conditions[index].Logic = fallback;
+                    changed = true;
+                }
+            }
+
+            groups.Add(new CategoryRuleGroup { Conditions = conditions });
+        }
+
+        migrated = JsonSerializer.Serialize(groups, CategoryRuleJson.Options);
+        return changed;
+    }
+
     public void Normalize()
     {
         Name = Name.Trim();
-        Groups ??= [];
+        MigrateConditionLogic();
         foreach (var group in Groups)
         {
-            group.Conditions ??= [];
             foreach (var condition in group.Conditions)
             {
                 condition.Value = condition.Value?.Trim() ?? string.Empty;
             }
+        }
+    }
 
-            if (group.Conditions.Count < 2)
+    public bool MigrateConditionLogic()
+    {
+        Groups ??= [];
+        var changed = false;
+        foreach (var group in Groups)
+        {
+            group.Conditions ??= [];
+            for (var index = 0; index < group.Conditions.Count; index++)
             {
-                group.Logic = null;
-            }
-            else
-            {
-                group.Logic ??= RuleLogic.And;
+                var condition = group.Conditions[index];
+                if (index == 0)
+                {
+                    if (condition.Logic is not null)
+                    {
+                        condition.Logic = null;
+                        changed = true;
+                    }
+
+                    continue;
+                }
+
+                if (condition.Logic is null)
+                {
+                    condition.Logic = RuleLogic.And;
+                    changed = true;
+                }
             }
         }
+
+        return changed;
     }
 
     public void Validate()
@@ -226,14 +317,16 @@ public class CategoryRule
                 throw new ArgumentException($"Group {groupIndex + 1} must have at least one condition.");
             }
 
-            if (group.Conditions.Count >= 2 && group.Logic is null)
-            {
-                throw new ArgumentException($"Group {groupIndex + 1} needs And or Or because it has more than one condition.");
-            }
-
             for (var conditionIndex = 0; conditionIndex < group.Conditions.Count; conditionIndex++)
             {
-                ValidateCondition(group.Conditions[conditionIndex], groupIndex, conditionIndex);
+                var condition = group.Conditions[conditionIndex];
+                if (conditionIndex > 0 && condition.Logic is null)
+                {
+                    throw new ArgumentException(
+                        $"Group {groupIndex + 1}, condition {conditionIndex + 1} needs And or Or to combine with the previous condition.");
+                }
+
+                ValidateCondition(condition, groupIndex, conditionIndex);
             }
         }
     }
@@ -313,14 +406,32 @@ public class CategoryRule
 
 public class CategoryRuleGroup
 {
-    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public List<CategoryRuleCondition> Conditions { get; set; } = [];
+}
+
+file class LegacyCategoryRuleGroup
+{
     public RuleLogic? Logic { get; set; }
 
     public List<CategoryRuleCondition> Conditions { get; set; } = [];
 }
 
+file class CategoryRuleGroupsRow
+{
+    public int Id { get; set; }
+
+    public string GroupsJson { get; set; } = string.Empty;
+}
+
 public class CategoryRuleCondition
 {
+    /// <summary>
+    /// How this condition combines with the previous one. Null on the first condition.
+    /// Conditions in a group are evaluated left to right.
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public RuleLogic? Logic { get; set; }
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public RuleField Field { get; set; }
 

@@ -13,7 +13,7 @@ End-to-end conversation between UI and API: **define groups → match transactio
 Users configure simple categorization rules. No expression language. **Groups replace parentheses.**
 
 - Each group is a parenthesized set of conditions.
-- Inside a group, AND or OR is chosen only when there are **two or more** conditions. A single condition has no inner operator.
+- Each condition after the first has its own `logic` (`And` or `Or`). The group is evaluated left to right, so `A OR B AND C` means `(A OR B) AND C`.
 - Between groups, one `groupLogic` (`And` or `Or`) applies to the whole rule.
 
 The action of a matching rule is always: **set `TargetCategory`**.
@@ -73,9 +73,9 @@ UI: `/transactions/rules`. Drawer builder, not a textarea.
 | Sort order | List position. Top rule is tried first; first match wins |
 | Target category | Category to assign when the rule matches |
 | `groupLogic` | AND or OR **between groups** |
-| Groups | Parentheses. Inner `logic` only if the group has 2+ conditions. Fields: description, amount, category, pocket |
+| Groups | Parentheses. Each condition after the first carries its own `logic`. Fields: description, amount, category, pocket |
 
-Example: `Amount > 0 AND [description equals "stringa" OR description contains "stringa"]`. Pocket conditions compare the transaction pocket id (`Equals` / `NotEquals`).
+Example: `Amount > 0 AND (description equals "stringa" OR description contains "stringa")`. Pocket conditions compare the transaction pocket id (`Equals` / `NotEquals`).
 
 ```json
 {
@@ -91,17 +91,16 @@ Example: `Amount > 0 AND [description equals "stringa" OR description contains "
       ]
     },
     {
-      "logic": "Or",
       "conditions": [
         { "field": "Description", "operator": "Equals", "value": "stringa" },
-        { "field": "Description", "operator": "Contains", "value": "stringa" }
+        { "logic": "Or", "field": "Description", "operator": "Contains", "value": "stringa" }
       ]
     }
   ]
 }
 ```
 
-The first group has one condition, so it has no `logic`. Combining it with the second group uses `groupLogic: And`.
+The first condition in a group has no `logic`. Each later condition says how it combines with the result so far. Combining groups still uses `groupLogic`. `POST /api/category-rules/backfill-condition-logic` rewrites stored groups that still have a `logic` next to `conditions`, copying that operator onto each following condition.
 
 ### 2. Import preview
 
