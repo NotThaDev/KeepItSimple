@@ -3,6 +3,7 @@
 End-to-end conversation between UI and API: **file → columns → map → save**.
 
 **Importer details:** [TransactionImportUtil.md](./TransactionImportUtil.md)  
+**Category rules (applied at preview):** [CategoryRules.md](./CategoryRules.md)  
 **Backend overview:** [../README.md](../README.md)
 
 ---
@@ -97,7 +98,7 @@ flowchart TD
   RE --> RES
 ```
 
-**UI responsibility:** show the draft table, surface row errors, allow edits (amount sign, category, drop a line) before confirm.
+**UI responsibility:** show the draft table, surface row errors, allow edits (amount sign, category, drop a line) before confirm. Draft categories already include user **category rules** (after column aliases).
 
 Nothing is written to the database yet.
 

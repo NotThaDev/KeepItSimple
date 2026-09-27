@@ -47,9 +47,8 @@ public static class TransactionImporter
         Category,
     }
 
-    // #TODO On a second step we should be able to have a list of rules that the user can configure to map the categories.
-    // #TODO We can also add other rules that looks at the description to map the category.
-    // e.g if the description contains "Amazon" then the category should be "Shopping".
+    // Italian labels for the optional Category column (stipendio → Salary). User-defined
+    // description/amount/category rules run after this, in CategoryRuleMatcher.
     private static readonly Dictionary<string, Transaction.TransactionCategory> CategoryAliases =
         new(StringComparer.OrdinalIgnoreCase)
         {
@@ -333,11 +332,13 @@ public static class TransactionImporter
     /// <summary>
     /// Applies the user's column mapping to the session opened by <see cref="Analyze"/>
     /// and builds draft <see cref="Transaction"/> records. Amount and Date must be mapped;
-    /// Description and Category are optional. Rows that fail to parse are collected in
+    /// Description and Category are optional. After column parsing, enabled
+    /// <see cref="CategoryRule"/>s (first match by sort order) can override the category.
+    /// Rows that fail to parse are collected in
     /// <see cref="PreviewResponse.Errors"/> instead of aborting the whole preview.
     /// Nothing is written to the database.
     /// </summary>
-    public static PreviewResponse Preview(PreviewRequest request)
+    public static PreviewResponse Preview(PreviewRequest request, IReadOnlyList<CategoryRule>? rules = null)
     {
         if (!Sessions.TryGetValue(request.SessionId, out var session))
         {
@@ -348,6 +349,7 @@ public static class TransactionImporter
 
         var drafts = new List<Transaction>();
         var errors = new List<string>();
+        var appliedRules = rules ?? [];
 
         for (var i = 0; i < session.Rows.Count; i++)
         {
@@ -356,7 +358,12 @@ public static class TransactionImporter
 
             try
             {
-                drafts.Add(BuildTransaction(row, request.Mapping, request.PocketId, request.DefaultCategory));
+                drafts.Add(BuildTransaction(
+                    row,
+                    request.Mapping,
+                    request.PocketId,
+                    request.DefaultCategory,
+                    appliedRules));
             }
             catch (Exception ex)
             {
@@ -440,7 +447,8 @@ public static class TransactionImporter
         Dictionary<int, string> row,
         List<ColumnMapping> mapping,
         int pocketId,
-        Transaction.TransactionCategory defaultCategory)
+        Transaction.TransactionCategory defaultCategory,
+        IReadOnlyList<CategoryRule> rules)
     {
         string? description = null;
         decimal? amount = null;
@@ -492,6 +500,12 @@ public static class TransactionImporter
             throw new InvalidOperationException("Missing or invalid Date.");
         }
 
+        var matchedRule = CategoryRuleMatcher.FindMatch(description, amount.Value, category, rules, pocketId);
+        if (matchedRule is not null)
+        {
+            category = matchedRule.TargetCategory;
+        }
+
         return new Transaction
         {
             Description = description,
@@ -507,7 +521,6 @@ public static class TransactionImporter
     /// If the category is not found in the <see cref="Transaction.TransactionCategory"/> enum, 
     /// it tries to parse it using the <see cref="CategoryAliases"/> dictionary.
     /// </summary>
-    // #TODO On a second step we should be able to have a list of rules that the user can configure to map the categories.
     private static bool TryParseCategory(string raw, out Transaction.TransactionCategory category)
     {
         var key = NormalizeCategoryLabel(raw);

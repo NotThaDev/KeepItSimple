@@ -250,6 +250,46 @@ public class PreviewTests
             });
     }
 
+    [Fact]
+    public void Preview_applies_the_first_matching_category_rule()
+    {
+        var rules = new List<CategoryRule>
+        {
+            new()
+            {
+                Name = "Salary from description",
+                Enabled = true,
+                TargetCategory = Transaction.TransactionCategory.Salary,
+                GroupLogic = RuleLogic.And,
+                Groups =
+                [
+                    new CategoryRuleGroup
+                    {
+                        Conditions =
+                        [
+                            new CategoryRuleCondition
+                            {
+                                Field = RuleField.Description,
+                                Operator = RuleOperator.Equals,
+                                Value = "Salary",
+                            },
+                        ],
+                    },
+                ],
+            },
+        };
+
+        var response = Preview(
+            ImportFixtures.Analyze(StandardStatement),
+            ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Description, MappableField.Amount, MappableField.Ignore),
+            rules: rules);
+
+        Assert.Equal(Transaction.TransactionCategory.Salary, response.Transactions[0].Category);
+        Assert.All(
+            response.Transactions.Skip(1),
+            transaction => Assert.Equal(Transaction.TransactionCategory.Other, transaction.Category));
+    }
+
     private static PreviewResponse PreviewStatement(
         string fileName,
         Transaction.TransactionCategory defaultCategory = Transaction.TransactionCategory.Other)
@@ -277,7 +317,8 @@ public class PreviewTests
     private static PreviewResponse Preview(
         AnalyzeResponse analyzed,
         List<ColumnMapping> mapping,
-        Transaction.TransactionCategory defaultCategory = Transaction.TransactionCategory.Other)
+        Transaction.TransactionCategory defaultCategory = Transaction.TransactionCategory.Other,
+        IReadOnlyList<CategoryRule>? rules = null)
     {
         return TransactionImporter.Preview(new PreviewRequest
         {
@@ -285,6 +326,6 @@ public class PreviewTests
             PocketId = PocketId,
             Mapping = mapping,
             DefaultCategory = defaultCategory,
-        });
+        }, rules);
     }
 }
