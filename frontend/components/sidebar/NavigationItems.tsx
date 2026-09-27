@@ -7,11 +7,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { getRouteForPath, routes, setTitle } from "./RouteDefinition";
 
 export function NavigationItems() {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   useEffect(() => {
     const route = getRouteForPath(pathname);
@@ -37,7 +39,15 @@ export function NavigationItems() {
       {routes.map((route) => (
         <SidebarMenuItem key={route.href}>
           <SidebarMenuButton asChild isActive={pathname === route.href}>
-            <Link href={route.href} onClick={() => setTitle(route.title)}>
+            <Link
+              href={route.href}
+              onClick={() => {
+                setTitle(route.title);
+                if (isMobile) {
+                  setOpenMobile(false);
+                }
+              }}
+            >
               <route.icon />
               <span>{route.label}</span>
             </Link>

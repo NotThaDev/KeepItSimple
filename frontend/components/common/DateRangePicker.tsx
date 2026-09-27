@@ -14,12 +14,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 interface DateRangePickerProps {
   from?: Date;
   to?: Date;
   onDateRangeChange?: (from: Date | undefined, to: Date) => void;
+  className?: string;
 }
 
 interface DateRangePreset {
@@ -55,7 +57,9 @@ export function DateRangePicker({
   from,
   to,
   onDateRangeChange,
+  className,
 }: DateRangePickerProps) {
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [draftRange, setDraftRange] = useState<DateRange | undefined>();
   const presets = useMemo(() => getDateRangePresets(), []);
@@ -114,15 +118,18 @@ export function DateRangePicker({
           id="date"
           variant="outline"
           data-empty={!range.from && !range.to}
-          className="w-[280px] shrink-0 justify-start text-left font-normal data-[empty=true]:text-muted-foreground"
+          className={cn(
+            "w-full shrink-0 justify-start text-left font-normal data-[empty=true]:text-muted-foreground sm:w-[280px]",
+            className,
+          )}
         >
           <CalendarIcon />
           <span className="truncate">{label}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto overflow-hidden p-0" align="end">
-        <div className="flex">
-          <div className="flex flex-col gap-1 border-r p-2">
+        <div className="flex flex-col sm:flex-row">
+          <div className="flex flex-row flex-wrap gap-1 border-b p-2 sm:flex-col sm:border-r sm:border-b-0">
             {presets.map((preset) => {
               const isActive =
                 isSameDateOnly(preset.from, range.from) &&
@@ -151,7 +158,7 @@ export function DateRangePicker({
             selected={range}
             onSelect={handleRangeChange}
             defaultMonth={range.from ?? range.to ?? from ?? to}
-            numberOfMonths={2}
+            numberOfMonths={isMobile ? 1 : 2}
           />
         </div>
       </PopoverContent>

@@ -77,8 +77,8 @@ export function TransactionFilters({
   );
 
   return (
-    <div className="flex w-full items-center gap-2 overflow-x-auto">
-      <div className="relative min-w-[180px] flex-1">
+    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:overflow-x-auto">
+      <div className="relative w-full min-w-0 flex-1 sm:min-w-[180px]">
         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={search}
@@ -89,7 +89,7 @@ export function TransactionFilters({
         />
       </div>
       <Selection
-        className="w-[180px] shrink-0"
+        className="w-full shrink-0 sm:w-[180px]"
         items={pocketItems}
         value={filters.pocketId?.toString() ?? ALL_VALUE}
         placeholder="All pockets"
@@ -100,7 +100,7 @@ export function TransactionFilters({
         }
       />
       <Selection
-        className="w-[180px] shrink-0"
+        className="w-full shrink-0 sm:w-[180px]"
         items={categoryItems}
         value={filters.category ?? ALL_VALUE}
         placeholder="All categories"

@@ -11,9 +11,9 @@ export function AnalyticsViewSelector() {
   const { view, setView } = useAnalytics();
 
   return (
-    <div className="flex shrink-0 items-center justify-end">
+    <div className="flex w-full shrink-0 items-center justify-end md:w-auto">
       <Selection
-        className="w-[220px]"
+        className="w-full md:w-[220px]"
         items={ANALYTICS_VIEW_ITEMS}
         value={view}
         onChange={(value) => setView(value as AnalyticsView)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -19,12 +20,83 @@ import {
 import { CircleUserRound, EllipsisVertical, LogOut } from "lucide-react";
 import { ThemeButton } from "../common/themeSelector/ThemeButton";
 
-export function NavUser() {
+const user = {
+  name: "Tha",
+  email: "tha@example.com",
+};
+
+function UserMenuContent() {
+  return (
+    <>
+      <DropdownMenuLabel className="p-0 font-normal">
+        <div className="flex items-center justify-between gap-2 px-1 py-1.5">
+          <div className="flex items-center gap-2 text-left text-sm">
+            <Avatar className="h-8 w-8 rounded-lg">
+              <AvatarFallback className="rounded-lg">
+                {user.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">{user.name}</span>
+              <span className="truncate text-xs text-muted-foreground">
+                {user.email}
+              </span>
+            </div>
+          </div>
+          <ThemeButton />
+        </div>
+      </DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      <DropdownMenuGroup>
+        <DropdownMenuItem>
+          <CircleUserRound />
+          Account
+        </DropdownMenuItem>
+      </DropdownMenuGroup>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem>
+        <LogOut />
+        Log out
+      </DropdownMenuItem>
+    </>
+  );
+}
+
+interface NavUserProps {
+  compact?: boolean;
+}
+
+export function NavUser({ compact = false }: Readonly<NavUserProps>) {
   const { isMobile } = useSidebar();
-  const user = {
-    name: "Tha",
-    email: "tha@example.com",
-  };
+
+  if (compact) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            className="rounded-lg"
+            aria-label="Open user menu"
+          >
+            <Avatar className="h-8 w-8 rounded-lg grayscale">
+              <AvatarFallback className="rounded-lg">
+                {user.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          className="min-w-56 rounded-lg"
+          side="bottom"
+          align="end"
+          sideOffset={4}
+        >
+          <UserMenuContent />
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
 
   return (
     <SidebarMenu>
@@ -52,37 +124,7 @@ export function NavUser() {
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 justify-between">
-                <div className="flex items-center gap-2 text-left text-sm">
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg">
-                      {user.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{user.name}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {user.email}
-                    </span>
-                  </div>
-                </div>
-
-                <ThemeButton />
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <CircleUserRound />
-                Account
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut />
-              Log out
-            </DropdownMenuItem>
+            <UserMenuContent />
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
