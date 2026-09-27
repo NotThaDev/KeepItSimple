@@ -1,12 +1,16 @@
 "use client";
 
 import { DescriptionCell } from "@/app/transactions/import/DescriptionCell";
+import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
 import { formatDraftDate } from "@/app/transactions/import/utils";
 import { CategoryBadge } from "@/components/common/CategoryBadge";
 import { DateRangePicker } from "@/components/common/DateRangePicker";
 import { formatDateOnly } from "@/components/common/DateUtils";
 import { Selection } from "@/components/common/selector/Selection";
-import { CommonTable } from "@/components/common/table/CommonTable";
+import {
+  CommonTable,
+  CommonTableColumn,
+} from "@/components/common/table/CommonTable";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,6 +29,7 @@ import {
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
 import { startOfDay, subMonths } from "date-fns";
+import { Loader2, SearchX } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -38,6 +43,46 @@ function defaultToDate(): Date {
 function defaultFromDate(): Date {
   return subMonths(defaultToDate(), 3);
 }
+
+const previewColumns: CommonTableColumn<CategoryRuleApplyPreviewItem>[] = [
+  {
+    id: "date",
+    header: "Date",
+    headerClassName: "w-44",
+    cell: (item) => formatDraftDate(item.date),
+  },
+  {
+    id: "description",
+    header: "Description",
+    cellClassName: "max-w-0 overflow-hidden",
+    cell: (item) => <DescriptionCell value={item.description} />,
+  },
+  {
+    id: "amount",
+    header: "Amount",
+    headerClassName: "w-28",
+    cell: (item) => `€${item.amount.toFixed(2)}`,
+  },
+  {
+    id: "from",
+    header: "Current",
+    headerClassName: "w-28",
+    cell: (item) => <CategoryBadge category={item.oldCategory} />,
+  },
+  {
+    id: "to",
+    header: "New",
+    headerClassName: "w-28",
+    cell: (item) => <CategoryBadge category={item.newCategory} />,
+  },
+  {
+    id: "rule",
+    header: "Rule",
+    headerClassName: "w-40",
+    cellClassName: "overflow-hidden",
+    cell: (item) => <DescriptionCell value={item.matchedRuleName} />,
+  },
+];
 
 interface ApplyRulesDialogProps {
   pockets: Pocket[];
@@ -133,7 +178,9 @@ export function ApplyRulesDialog({ pockets }: Readonly<ApplyRulesDialogProps>) {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" size="lg">Apply to existing</Button>
+        <Button variant="outline" size="lg">
+          Apply to existing
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
@@ -145,112 +192,86 @@ export function ApplyRulesDialog({ pockets }: Readonly<ApplyRulesDialogProps>) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex min-w-48 flex-col gap-2">
-            <p className="text-sm font-medium">Pocket</p>
-            <Selection
-              className="w-[200px]"
-              items={pocketItems}
-              value={pocketId}
-              placeholder="All pockets"
-              onChange={(value) => {
-                setPocketId(value);
-                setPreview(null);
-              }}
-            />
-          </div>
-          <div className="flex min-w-48 flex-col gap-2">
-            <p className="text-sm font-medium">Date range</p>
-            <DateRangePicker
-              from={from}
-              to={to}
-              onDateRangeChange={(nextFrom, nextTo) => {
-                setFrom(nextFrom);
-                setTo(nextTo);
-                setPreview(null);
-              }}
-            />
-          </div>
-          <Button onClick={handlePreview} disabled={loading}>
-            {loading ? "Previewing..." : "Preview"}
-          </Button>
-        </div>
-
-        {preview ? (
-          preview.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No saved transactions in this pocket and date range would change.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <p className="text-sm text-muted-foreground">
-                {preview.length} transaction
-                {preview.length === 1 ? "" : "s"} would change.
-              </p>
-              <CommonTable
-                tableClassName="table-fixed"
-                getRowKey={(item) => String(item.transactionId)}
-                data={pageItems.map(({ item }) => item)}
-                pagination={{
-                  pageIndex,
-                  pageCount,
-                  onPageChange: setPageIndex,
-                  className: "justify-end",
+        <div className="flex flex-col mt-2 gap-3 min-h-[520px] ">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex min-w-48 flex-col gap-2">
+              <p className="text-sm font-medium">Pocket</p>
+              <Selection
+                className="w-[200px]"
+                items={pocketItems}
+                value={pocketId}
+                placeholder="All pockets"
+                onChange={(value) => {
+                  setPocketId(value);
+                  setPreview(null);
                 }}
-                columns={[
-                  {
-                    id: "date",
-                    header: "Date",
-                    headerClassName: "w-44",
-                    cell: (item) => formatDraftDate(item.date),
-                  },
-                  {
-                    id: "description",
-                    header: "Description",
-                    cellClassName: "max-w-0 overflow-hidden",
-                    cell: (item) => (
-                      <DescriptionCell value={item.description} />
-                    ),
-                  },
-                  {
-                    id: "amount",
-                    header: "Amount",
-                    headerClassName: "w-28",
-                    cell: (item) => `€${item.amount.toFixed(2)}`,
-                  },
-                  {
-                    id: "from",
-                    header: "Current",
-                    headerClassName: "w-28",
-                    cell: (item) => (
-                      <CategoryBadge category={item.oldCategory} />
-                    ),
-                  },
-                  {
-                    id: "to",
-                    header: "New",
-                    headerClassName: "w-28",
-                    cell: (item) => (
-                      <CategoryBadge category={item.newCategory} />
-                    ),
-                  },
-                  {
-                    id: "rule",
-                    header: "Rule",
-                    headerClassName: "w-40",
-                    cellClassName: "overflow-hidden",
-                    cell: (item) => (
-                      <DescriptionCell value={item.matchedRuleName} />
-                    ),
-                  },
-                ]}
               />
             </div>
-          )
-        ) : null}
+            <div className="flex min-w-48 flex-col gap-2">
+              <p className="text-sm font-medium">Date range</p>
+              <DateRangePicker
+                from={from}
+                to={to}
+                onDateRangeChange={(nextFrom, nextTo) => {
+                  setFrom(nextFrom);
+                  setTo(nextTo);
+                  setPreview(null);
+                }}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={handlePreview} disabled={loading}>
+                Preview
+              </Button>
+              {loading ? (
+                <span role="status" aria-label="Loading preview">
+                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          {preview ? (
+            preview.length === 0 ? (
+              <div className="flex flex-1 items-center justify-center">
+                <EmptyStateCard
+                  title="Nothing to update"
+                  description="No saved transactions in this pocket and date range would change."
+                  icon={SearchX}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <p className="text-sm text-muted-foreground">
+                  {preview.length} transaction
+                  {preview.length === 1 ? "" : "s"} would change.
+                </p>
+                <CommonTable
+                  tableClassName="table-fixed"
+                  getRowKey={(item) => String(item.transactionId)}
+                  data={pageItems.map(({ item }) => item)}
+                  pagination={{
+                    pageIndex,
+                    pageCount,
+                    onPageChange: setPageIndex,
+                    className: "justify-end",
+                  }}
+                  columns={previewColumns}
+                />
+              </div>
+            )
+          ) : null}
+        </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setOpen(false);
+              setPreview(null);
+              resetFilters();
+            }}
+          >
             Cancel
           </Button>
           <Button

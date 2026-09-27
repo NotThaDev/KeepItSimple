@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { RuleCompactView } from "../rulePreview/RuleCompactView";
 import { CategoryBadge } from "@/components/common/CategoryBadge";
 import { RuleActionsMenu } from "./RuleActionsMenu";
+import { useState } from "react";
 
 interface RuleColumnsProps {
   rules: CategoryRule[];
@@ -27,7 +28,10 @@ function RuleStatusSwitch({
   rule: CategoryRule;
   onChanged: () => void;
 }>) {
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleEnabledChange = async (enabled: boolean) => {
+    setIsLoading(true);
     const response = await updateCategoryRule(rule.id, {
       name: rule.name,
       enabled,
@@ -41,6 +45,8 @@ function RuleStatusSwitch({
       return;
     }
 
+    toast.success(`Rule ${rule.name} ${enabled ? "enabled" : "disabled"}`);
+    setIsLoading(false);
     onChanged();
   };
 
@@ -49,6 +55,7 @@ function RuleStatusSwitch({
       checked={rule.enabled}
       onCheckedChange={handleEnabledChange}
       aria-label={rule.enabled ? "Disable rule" : "Enable rule"}
+      disabled={isLoading}
     />
   );
 }
