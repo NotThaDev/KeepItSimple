@@ -1,8 +1,5 @@
 import { del, FetchWrapperResponse, get, post, put } from "../fetchWrapper";
-import {
-  ALL_TRANSACTION_CATEGORIES,
-  TransactionCategory,
-} from "./Transaction";
+import { ALL_TRANSACTION_CATEGORIES, TransactionCategory } from "./Transaction";
 
 export type RuleLogic = "And" | "Or";
 export type RuleField = "Description" | "Amount" | "Category" | "Pocket";
@@ -39,7 +36,7 @@ export interface CategoryRule {
 
 export type CategoryRulePayload = Omit<CategoryRule, "id" | "sortOrder">;
 
-export interface CategoryRuleApplyPreviewItem {
+export interface CategoryRulePreviewItem {
   transactionId: number;
   description?: string;
   amount: number;
@@ -166,23 +163,20 @@ export async function reorderCategoryRules(
   return await put("/api/category-rules/reorder", { ids });
 }
 
-export interface PreviewApplyFilters {
+export interface PreviewFilters {
   pocketId?: number;
   from?: string;
   to?: string;
 }
 
-export async function previewApplyCategoryRules(
-  filters: PreviewApplyFilters = {},
-): Promise<FetchWrapperResponse<CategoryRuleApplyPreviewItem[]>> {
-  return await post<CategoryRuleApplyPreviewItem[]>(
-    "/api/category-rules/preview-apply",
-    {
-      pocketId: filters.pocketId ?? null,
-      from: filters.from ?? null,
-      to: filters.to ?? null,
-    },
-  );
+export async function previewCategoryRules(
+  filters: PreviewFilters = {},
+): Promise<FetchWrapperResponse<CategoryRulePreviewItem[]>> {
+  return await post<CategoryRulePreviewItem[]>("/api/category-rules/preview", {
+    pocketId: filters.pocketId ?? null,
+    from: filters.from ?? null,
+    to: filters.to ?? null,
+  });
 }
 
 export async function applyCategoryRules(

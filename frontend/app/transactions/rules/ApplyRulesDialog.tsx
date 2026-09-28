@@ -24,8 +24,8 @@ import {
 import { usePagedItems } from "@/hooks/usePagedItems";
 import {
   applyCategoryRules,
-  CategoryRuleApplyPreviewItem,
-  previewApplyCategoryRules,
+  CategoryRulePreviewItem,
+  previewCategoryRules,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
 import { startOfDay, subMonths } from "date-fns";
@@ -44,7 +44,7 @@ function defaultFromDate(): Date {
   return subMonths(defaultToDate(), 3);
 }
 
-const previewColumns: CommonTableColumn<CategoryRuleApplyPreviewItem>[] = [
+const previewColumns: CommonTableColumn<CategoryRulePreviewItem>[] = [
   {
     id: "date",
     header: "Date",
@@ -93,7 +93,7 @@ export function ApplyRulesDialog({ pockets }: Readonly<ApplyRulesDialogProps>) {
   const [pocketId, setPocketId] = useState<string>(ALL_POCKETS);
   const [from, setFrom] = useState<Date | undefined>(defaultFromDate);
   const [to, setTo] = useState<Date>(defaultToDate);
-  const [preview, setPreview] = useState<CategoryRuleApplyPreviewItem[] | null>(
+  const [preview, setPreview] = useState<CategoryRulePreviewItem[] | null>(
     null,
   );
   const [loading, setLoading] = useState(false);
@@ -126,7 +126,7 @@ export function ApplyRulesDialog({ pockets }: Readonly<ApplyRulesDialogProps>) {
     setLoading(true);
     const parsedPocketId =
       pocketId === ALL_POCKETS ? undefined : Number.parseInt(pocketId, 10);
-    const response = await previewApplyCategoryRules({
+    const response = await previewCategoryRules({
       pocketId: parsedPocketId,
       from: from ? formatDateOnly(from) : undefined,
       to: formatDateOnly(to),
