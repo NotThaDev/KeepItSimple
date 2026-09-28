@@ -75,7 +75,7 @@ UI: `/transactions/rules`. Drawer builder, not a textarea.
 | `groupLogic` | AND or OR **between groups** |
 | Groups | Parentheses. Each condition after the first carries its own `logic`. Fields: description, amount, category, pocket |
 
-Example: `Amount > 0 AND (description equals "stringa" OR description contains "stringa")`. Pocket conditions compare the transaction pocket id (`Equals` / `NotEquals`).
+Example: `Amount > 0 AND (description equals "stipendio" OR description contains "accredito" AND amount >= 1000)`. Inside the second group that is left to right: `(equals OR contains) AND amount >= 1000`. Pocket conditions compare the transaction pocket id (`Equals` / `NotEquals`).
 
 ```json
 {
@@ -92,15 +92,16 @@ Example: `Amount > 0 AND (description equals "stringa" OR description contains "
     },
     {
       "conditions": [
-        { "field": "Description", "operator": "Equals", "value": "stringa" },
-        { "logic": "Or", "field": "Description", "operator": "Contains", "value": "stringa" }
+        { "field": "Description", "operator": "Equals", "value": "stipendio" },
+        { "logic": "Or", "field": "Description", "operator": "Contains", "value": "accredito" },
+        { "logic": "And", "field": "Amount", "operator": "Gte", "value": "1000" }
       ]
     }
   ]
 }
 ```
 
-The first condition in a group has no `logic`. Each later condition says how it combines with the result so far. Combining groups still uses `groupLogic`. `POST /api/category-rules/backfill-condition-logic` rewrites stored groups that still have a `logic` next to `conditions`, copying that operator onto each following condition.
+A group has no `logic` of its own. The first condition has none either. Each later condition carries the operator that joins it to the result so far. `groupLogic` only combines groups.
 
 ### 2. Import preview
 

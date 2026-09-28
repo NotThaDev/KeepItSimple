@@ -5,6 +5,7 @@ using KeepItSimple.Api.dtos.CategoryRule;
 using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Helpers;
 using Microsoft.EntityFrameworkCore;
+using PreviewRequest = KeepItSimple.Api.dtos.CategoryRule.PreviewRequest;
 
 namespace KeepItSimple.Api.Models;
 
@@ -121,7 +122,7 @@ public class CategoryRule
         });
     }
 
-    public static Task<List<CategoryRuleApplyPreviewItem>> PreviewApplyAsync(PreviewApplyRequest? request)
+    public static Task<List<CategoryRuleApplyPreviewItem>> PreviewAsync(PreviewRequest? request)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
@@ -143,7 +144,7 @@ public class CategoryRule
                 .ThenByDescending(transaction => transaction.Id)
                 .ToListAsync();
 
-            return BuildApplyPreview(transactions, rules);
+            return BuildPreview(transactions, rules);
         });
     }
 
@@ -184,117 +185,18 @@ public class CategoryRule
         });
     }
 
-    public static Task<int> BackfillConditionLogicAsync()
-    {
-        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
-        {
-            var rows = await dbContext.Database
-                .SqlQueryRaw<CategoryRuleGroupsRow>(
-                    "SELECT \"Id\", \"Groups\"::text AS \"GroupsJson\" FROM \"CategoryRules\"")
-                .ToListAsync();
-
-            var updated = 0;
-            foreach (var row in rows)
-            {
-                if (!TryMigrateGroupsJson(row.GroupsJson, out var migrated))
-                {
-                    continue;
-                }
-
-                await dbContext.Database.ExecuteSqlInterpolatedAsync(
-                    $"UPDATE \"CategoryRules\" SET \"Groups\" = CAST({migrated} AS jsonb) WHERE \"Id\" = {row.Id}");
-                updated++;
-            }
-
-            return updated;
-        });
-    }
-
-    public static bool TryMigrateGroupsJson(string json, out string migrated)
-    {
-        var legacyGroups = JsonSerializer.Deserialize<List<LegacyCategoryRuleGroup>>(json, CategoryRuleJson.Options)
-            ?? [];
-        var changed = false;
-        var groups = new List<CategoryRuleGroup>();
-        foreach (var legacy in legacyGroups)
-        {
-            var conditions = legacy.Conditions ?? [];
-            var fallback = legacy.Logic ?? RuleLogic.And;
-            if (legacy.Logic is not null)
-            {
-                changed = true;
-            }
-
-            for (var index = 0; index < conditions.Count; index++)
-            {
-                if (index == 0)
-                {
-                    if (conditions[index].Logic is not null)
-                    {
-                        conditions[index].Logic = null;
-                        changed = true;
-                    }
-
-                    continue;
-                }
-
-                if (conditions[index].Logic is null)
-                {
-                    conditions[index].Logic = fallback;
-                    changed = true;
-                }
-            }
-
-            groups.Add(new CategoryRuleGroup { Conditions = conditions });
-        }
-
-        migrated = JsonSerializer.Serialize(groups, CategoryRuleJson.Options);
-        return changed;
-    }
-
     public void Normalize()
     {
         Name = Name.Trim();
-        MigrateConditionLogic();
+        Groups ??= [];
         foreach (var group in Groups)
         {
+            group.Conditions ??= [];
             foreach (var condition in group.Conditions)
             {
                 condition.Value = condition.Value?.Trim() ?? string.Empty;
             }
         }
-    }
-
-    public bool MigrateConditionLogic()
-    {
-        Groups ??= [];
-        var changed = false;
-        foreach (var group in Groups)
-        {
-            group.Conditions ??= [];
-            for (var index = 0; index < group.Conditions.Count; index++)
-            {
-                var condition = group.Conditions[index];
-                if (index == 0)
-                {
-                    if (condition.Logic is not null)
-                    {
-                        condition.Logic = null;
-                        changed = true;
-                    }
-
-                    continue;
-                }
-
-                if (condition.Logic is null)
-                {
-                    condition.Logic = RuleLogic.And;
-                    changed = true;
-                }
-            }
-        }
-
-        return changed;
     }
 
     public void Validate()
@@ -364,7 +266,7 @@ public class CategoryRule
         }
     }
 
-    private static List<CategoryRuleApplyPreviewItem> BuildApplyPreview(
+    private static List<CategoryRuleApplyPreviewItem> BuildPreview(
         List<Transaction> transactions,
         IReadOnlyList<CategoryRule> rules)
     {
@@ -407,20 +309,6 @@ public class CategoryRule
 public class CategoryRuleGroup
 {
     public List<CategoryRuleCondition> Conditions { get; set; } = [];
-}
-
-file class LegacyCategoryRuleGroup
-{
-    public RuleLogic? Logic { get; set; }
-
-    public List<CategoryRuleCondition> Conditions { get; set; } = [];
-}
-
-file class CategoryRuleGroupsRow
-{
-    public int Id { get; set; }
-
-    public string GroupsJson { get; set; } = string.Empty;
 }
 
 public class CategoryRuleCondition

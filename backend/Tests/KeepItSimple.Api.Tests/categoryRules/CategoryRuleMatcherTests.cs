@@ -93,46 +93,6 @@ public class CategoryRuleMatcherTests
     }
 
     [Fact]
-    public void TryMigrateGroupsJson_copies_group_logic_onto_each_following_condition()
-    {
-        const string stored = """
-            [{"logic":"Or","conditions":[{"field":"Description","operator":"Equals","value":"a"},{"field":"Description","operator":"Equals","value":"b"},{"field":"Description","operator":"Equals","value":"c"}]}]
-            """;
-
-        var changed = CategoryRule.TryMigrateGroupsJson(stored, out var migrated);
-
-        Assert.True(changed);
-        Assert.DoesNotContain("\"logic\":\"Or\",\"conditions\"", migrated);
-        var groups = System.Text.Json.JsonSerializer.Deserialize<List<CategoryRuleGroup>>(migrated, KeepItSimple.Api.Helpers.CategoryRuleJson.Options);
-        Assert.NotNull(groups);
-        Assert.Null(groups[0].Conditions[0].Logic);
-        Assert.Equal(RuleLogic.Or, groups[0].Conditions[1].Logic);
-        Assert.Equal(RuleLogic.Or, groups[0].Conditions[2].Logic);
-        Assert.False(CategoryRule.TryMigrateGroupsJson(migrated, out _));
-    }
-
-    [Fact]
-    public void MigrateConditionLogic_defaults_a_missing_connector_to_and()
-    {
-        var rule = Rule("Missing connector", Transaction.TransactionCategory.Shopping, groups:
-        [
-            new CategoryRuleGroup
-            {
-                Conditions =
-                [
-                    DescriptionEquals("a"),
-                    DescriptionEquals("b"),
-                ],
-            },
-        ]);
-
-        Assert.True(rule.MigrateConditionLogic());
-        Assert.Null(rule.Groups[0].Conditions[0].Logic);
-        Assert.Equal(RuleLogic.And, rule.Groups[0].Conditions[1].Logic);
-        Assert.False(rule.MigrateConditionLogic());
-    }
-
-    [Fact]
     public void FindMatch_ignores_logic_on_a_single_condition_group()
     {
         var rules = new[]

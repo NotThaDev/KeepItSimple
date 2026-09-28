@@ -89,11 +89,11 @@ public class CategoryRuleController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("preview-apply")]
-    public async Task<ActionResult<IEnumerable<CategoryRuleApplyPreviewItem>>> PreviewApply(
-        [FromBody] PreviewApplyRequest? request)
+    [HttpPost("preview")]
+    public async Task<ActionResult<IEnumerable<CategoryRuleApplyPreviewItem>>> Preview(
+        [FromBody] PreviewRequest? request)
     {
-        var changes = await CategoryRule.PreviewApplyAsync(request);
+        var changes = await CategoryRule.PreviewAsync(request);
         return Ok(changes);
     }
 
