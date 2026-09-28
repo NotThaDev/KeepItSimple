@@ -5,6 +5,7 @@ Implementation reference for [`helpers/TransactionImporter.cs`](./helpers/Transa
 **Controller:** [`controllers/TransactionController.cs`](./controllers/TransactionController.cs) (`POST /api/transactions/import/...`)  
 **DTOs:** [`dtos/Transaction/`](./dtos/Transaction/)  
 **Product flow (UI conversation):** [TransactionImportFlow.md](./TransactionImportFlow.md)  
+**Category rules (preview):** [CategoryRules.md](./CategoryRules.md)  
 **Backend overview:** [../README.md](../README.md)
 
 ---
@@ -85,6 +86,7 @@ If no header row is found → `InvalidOperationException` → HTTP 400.
    - `ParseAmount` – strips `€`/spaces; handles `1.234,56` and `1,234.56`
    - `ParseDate` – common EU/US formats, `it-IT` (month names, dotted dates), invariant, Excel OA date serial
    - `Category` – `Transaction.TransactionCategory` enum name (case-insensitive), else Italian aliases after accent stripping (`stipendio` → `Salary`), else `defaultCategory` (default `Other`)
+   - Enabled **category rules** (`CategoryRuleMatcher.FindMatch`) can then override the category. First match by `sortOrder` wins. See [CategoryRuleMatcher.md](./CategoryRuleMatcher.md).
 4. Successful rows → `transactions`; failures → `errors` like `"Row N: …"` (drafts are still returned). `N` is 1-based from the header row (header = 1).
 
 Nothing is written to the DB here. The UI may edit drafts before confirm.
