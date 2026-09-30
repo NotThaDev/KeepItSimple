@@ -128,7 +128,7 @@ export function RuleDrawerContent({
               />
             </Field>
 
-            <Field className="w-[220px]">
+            <Field className="w-[fit-content]">
               <FieldLabel htmlFor="target-category">Set category to</FieldLabel>
               <TransactionCategorySelector
                 showAll
