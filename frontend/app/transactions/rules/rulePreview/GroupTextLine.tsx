@@ -6,48 +6,47 @@ import {
 import {
   CategoryRuleCondition,
   CategoryRuleGroup,
-  connectorLogic,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
 import { cn } from "cn";
 import { FIELD_SHORT_LABELS, OPERATOR_SHORT_LABELS } from "../ruleLabels";
 import { LogicBadge, TokenBadge } from "./LogicBadge";
-import { conditionValue, formatDisplayValue } from "./utils";
+import {
+  BadgeKind,
+  conditionValue,
+  connectorLogic,
+  formatDisplayValue,
+} from "./utils";
+
+interface GroupTextLineProps {
+  group: CategoryRuleGroup;
+  pockets: Pocket[];
+  parenthesize?: boolean;
+}
 
 export function GroupTextLine({
   group,
   pockets,
-  compact,
   parenthesize,
-}: Readonly<{
-  group: CategoryRuleGroup;
-  pockets: Pocket[];
-  compact?: boolean;
-  parenthesize?: boolean;
-}>) {
-  const wrapped = parenthesize ?? group.conditions.length >= 2;
-
+}: Readonly<GroupTextLineProps>) {
   return (
     <span className="inline-flex min-w-0 items-center gap-1">
-      {wrapped ? (
+      {parenthesize ? (
         <span className="shrink-0 text-[11px] text-muted-foreground/70">(</span>
       ) : null}
       {group.conditions.map((condition, index) => (
         <span key={index} className="inline-flex min-w-0 items-center gap-1">
           {index > 0 ? (
-            <LogicBadge
-              logic={connectorLogic(group, index) ?? "And"}
-              compact={compact}
-            />
+            <LogicBadge logic={connectorLogic(group, index)} compact={true} />
           ) : null}
           <ConditionBadges
             condition={condition}
             pockets={pockets}
-            compact={compact}
+            compact={true}
           />
         </span>
       ))}
-      {wrapped ? (
+      {parenthesize ? (
         <span className="shrink-0 text-[11px] text-muted-foreground/70">)</span>
       ) : null}
     </span>
@@ -69,7 +68,7 @@ function ValueBadge({
   if (!compact) {
     return (
       <TokenBadge
-        kind="token"
+        kind={BadgeKind.Token}
         className="h-auto max-w-full min-w-0 whitespace-normal py-0.5 text-left"
       >
         <span className="break-words">{display}</span>
@@ -82,7 +81,7 @@ function ValueBadge({
       <TooltipTrigger asChild>
         <span className="inline-flex min-w-0 max-w-[7rem]">
           <TokenBadge
-            kind="token"
+            kind={BadgeKind.Token}
             compact
             className="min-w-0 max-w-full shrink-0 justify-start"
           >
@@ -113,10 +112,10 @@ function ConditionBadges({
         !compact && "w-full flex-wrap",
       )}
     >
-      <TokenBadge kind="token" compact={compact}>
+      <TokenBadge kind={BadgeKind.Token} compact={compact}>
         {FIELD_SHORT_LABELS[condition.field]}
       </TokenBadge>
-      <TokenBadge kind="op" compact={compact}>
+      <TokenBadge kind={BadgeKind.Operator} compact={compact}>
         {OPERATOR_SHORT_LABELS[condition.operator]}
       </TokenBadge>
       <ValueBadge condition={condition} pockets={pockets} compact={compact} />

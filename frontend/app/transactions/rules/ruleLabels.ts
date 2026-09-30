@@ -1,42 +1,46 @@
-import type { RuleField, RuleLogic, RuleOperator } from "@/lib/models/CategoryRule";
+import {
+  RuleField,
+  RuleLogic,
+  RuleOperator,
+} from "@/lib/models/CategoryRule";
 
 export const FIELD_LABELS: Record<RuleField, string> = {
-  Description: "Description",
-  Amount: "Amount",
-  Category: "Category",
-  Pocket: "Pocket",
+  [RuleField.Description]: "Description",
+  [RuleField.Amount]: "Amount",
+  [RuleField.Category]: "Category",
+  [RuleField.Pocket]: "Pocket",
 };
 
 export const OPERATOR_LABELS: Record<RuleOperator, string> = {
-  Contains: "contains",
-  Equals: "equals",
-  Gt: "greater than",
-  Gte: "greater or equal",
-  Lt: "less than",
-  Lte: "less or equal",
-  Eq: "equals",
-  NotEquals: "is not",
+  [RuleOperator.Contains]: "contains",
+  [RuleOperator.Equals]: "equals",
+  [RuleOperator.Gt]: "greater than",
+  [RuleOperator.Gte]: "greater or equal",
+  [RuleOperator.Lt]: "less than",
+  [RuleOperator.Lte]: "less or equal",
+  [RuleOperator.Eq]: "equals",
+  [RuleOperator.NotEquals]: "is not",
 };
 
 export const FIELD_SHORT_LABELS: Record<RuleField, string> = {
-  Description: "description",
-  Amount: "amount",
-  Category: "category",
-  Pocket: "pocket",
+  [RuleField.Description]: "description",
+  [RuleField.Amount]: "amount",
+  [RuleField.Category]: "category",
+  [RuleField.Pocket]: "pocket",
 };
 
 export const OPERATOR_SHORT_LABELS: Record<RuleOperator, string> = {
-  Contains: "contains",
-  Equals: "=",
-  Eq: "=",
-  NotEquals: "≠",
-  Gt: ">",
-  Gte: "≥",
-  Lt: "<",
-  Lte: "≤",
+  [RuleOperator.Contains]: "contains",
+  [RuleOperator.Equals]: "=",
+  [RuleOperator.Eq]: "=",
+  [RuleOperator.NotEquals]: "≠",
+  [RuleOperator.Gt]: ">",
+  [RuleOperator.Gte]: "≥",
+  [RuleOperator.Lt]: "<",
+  [RuleOperator.Lte]: "≤",
 };
 
 export const LOGIC_LABELS: Record<RuleLogic, string> = {
-  And: "AND",
-  Or: "OR",
+  [RuleLogic.And]: "AND",
+  [RuleLogic.Or]: "OR",
 };

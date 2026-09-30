@@ -20,14 +20,18 @@ export function LogicToggle({
       size="sm"
       value={value}
       onValueChange={(next) => {
-        if (next === "And" || next === "Or") {
+        if (next === RuleLogic.And || next === RuleLogic.Or) {
           onChange(next);
         }
       }}
       aria-label={ariaLabel}
     >
-      <ToggleGroupItem value="And">{LOGIC_LABELS.And}</ToggleGroupItem>
-      <ToggleGroupItem value="Or">{LOGIC_LABELS.Or}</ToggleGroupItem>
+      <ToggleGroupItem value={RuleLogic.And}>
+        {LOGIC_LABELS[RuleLogic.And]}
+      </ToggleGroupItem>
+      <ToggleGroupItem value={RuleLogic.Or}>
+        {LOGIC_LABELS[RuleLogic.Or]}
+      </ToggleGroupItem>
     </ToggleGroup>
   );
 }

@@ -5,32 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CategoryRuleCondition,
   CategoryRuleGroup,
-  CategoryRulePayload,
-  createEmptyCondition,
-  createEmptyGroup,
+  CategoryRule,
+  RuleLogic,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
 import { Plus, Trash2 } from "lucide-react";
 import { ConditionRow } from "./ConditionRow";
 import { LOGIC_LABELS } from "../ruleLabels";
 import { LogicToggle } from "./LogicToggle";
-import { hasConditionError, RuleConditionError } from "./utils";
-
-function updateGroup(
-  groups: CategoryRuleGroup[],
-  index: number,
-  patch: Partial<CategoryRuleGroup>,
-): CategoryRuleGroup[] {
-  return groups.map((group, groupIndex) =>
-    groupIndex === index ? { ...group, ...patch } : group,
-  );
-}
+import { hasConditionError, RuleConditionError, updateGroup } from "./utils";
+import { createEmptyCondition, createEmptyGroup } from "../utils";
+import { useCallback } from "react";
 
 interface RuleBuilderProps {
-  rule: CategoryRulePayload;
+  rule: CategoryRule;
   pockets: Pocket[];
   errors?: RuleConditionError[];
-  onChange: (rule: CategoryRulePayload) => void;
+  onChange: (rule: CategoryRule) => void;
 }
 
 export function RuleBuilder({
@@ -39,50 +30,61 @@ export function RuleBuilder({
   errors,
   onChange,
 }: Readonly<RuleBuilderProps>) {
-  const setGroups = (groups: CategoryRuleGroup[]) =>
-    onChange({ ...rule, groups });
+  const setGroups = useCallback(
+    (groups: CategoryRuleGroup[]) => onChange({ ...rule, groups }),
+    [onChange, rule],
+  );
 
-  const setCondition = (
-    groupIndex: number,
-    conditionIndex: number,
-    next: CategoryRuleCondition,
-  ) => {
-    const group = rule.groups[groupIndex];
-    const conditions = group.conditions.map((item, index) =>
-      index === conditionIndex ? next : item,
-    );
-    setGroups(updateGroup(rule.groups, groupIndex, { conditions }));
-  };
+  const setCondition = useCallback(
+    (
+      groupIndex: number,
+      conditionIndex: number,
+      updatedCondition: CategoryRuleCondition,
+    ) => {
+      const group = rule.groups[groupIndex];
+      const conditions = group.conditions.map((condition, index) =>
+        index === conditionIndex ? updatedCondition : condition,
+      );
+      setGroups(updateGroup(rule.groups, groupIndex, { conditions }));
+    },
+    [rule.groups, setGroups],
+  );
 
-  const addCondition = (groupIndex: number) => {
-    const group = rule.groups[groupIndex];
-    const next = createEmptyCondition();
-    if (group.conditions.length > 0) {
-      next.logic = "And";
-    }
-    setGroups(
-      updateGroup(rule.groups, groupIndex, {
-        conditions: [...group.conditions, next],
-      }),
-    );
-  };
+  const addCondition = useCallback(
+    (groupIndex: number) => {
+      const group = rule.groups[groupIndex];
+      const next = createEmptyCondition();
+      if (group.conditions.length > 0) {
+        next.logic = RuleLogic.And;
+      }
+      setGroups(
+        updateGroup(rule.groups, groupIndex, {
+          conditions: [...group.conditions, next],
+        }),
+      );
+    },
+    [rule.groups, setGroups],
+  );
 
-  const removeCondition = (groupIndex: number, conditionIndex: number) => {
-    const group = rule.groups[groupIndex];
-    const conditions = group.conditions.filter(
-      (_, index) => index !== conditionIndex,
-    );
-    if (conditions.length === 0) {
-      return;
-    }
+  const removeCondition = useCallback(
+    (groupIndex: number, conditionIndex: number) => {
+      const group = rule.groups[groupIndex];
+      const conditions = group.conditions.filter(
+        (_, index) => index !== conditionIndex,
+      );
+      if (conditions.length === 0) {
+        return;
+      }
 
-    const [first, ...rest] = conditions;
-    setGroups(
-      updateGroup(rule.groups, groupIndex, {
-        conditions: [{ ...first, logic: undefined }, ...rest],
-      }),
-    );
-  };
+      const [first, ...rest] = conditions;
+      setGroups(
+        updateGroup(rule.groups, groupIndex, {
+          conditions: [{ ...first, logic: undefined }, ...rest],
+        }),
+      );
+    },
+    [rule.groups, setGroups],
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -129,7 +131,7 @@ export function RuleBuilder({
                 <div key={conditionIndex} className="flex flex-col gap-2">
                   {conditionIndex > 0 ? (
                     <LogicToggle
-                      value={condition.logic ?? "And"}
+                      value={condition.logic ?? RuleLogic.And}
                       onChange={(logic) =>
                         setCondition(groupIndex, conditionIndex, {
                           ...condition,

@@ -31,14 +31,12 @@ function RuleStatusSwitch({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleEnabledChange = async (enabled: boolean) => {
+    if (rule.id == null) {
+      return;
+    }
+
     setIsLoading(true);
-    const response = await updateCategoryRule(rule.id, {
-      name: rule.name,
-      enabled,
-      targetCategory: rule.targetCategory,
-      groupLogic: rule.groupLogic,
-      groups: rule.groups,
-    });
+    const response = await updateCategoryRule(rule.id, { ...rule, enabled });
 
     if (response.error) {
       toast.error(`Failed to update rule: ${response.error}`);

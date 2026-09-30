@@ -21,11 +21,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   CategoryRule,
-  CategoryRulePayload,
-  cloneRulePayload,
   createCategoryRule,
-  createEmptyRule,
-  duplicateRulePayload,
   updateCategoryRule,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
@@ -33,7 +29,7 @@ import { Info } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { RuleBuilder } from "./RuleBuilder";
-import { RuleValidation, validateRule } from "./utils";
+import { draftFrom, RuleValidation, validateRule } from "./utils";
 
 const RULE_DRAWER_HELP =
   "Groups are parentheses. Pick AND or OR inside a group when it has two or more conditions, and how groups combine with each other. Without a category condition, the rule only matches transactions in Other. Description contains matches a whole word, not a substring.";
@@ -45,35 +41,20 @@ interface RuleDrawerContentProps {
   onSave?: () => void;
 }
 
-function toPayload(
-  rule?: CategoryRule,
-  copyFrom?: CategoryRule,
-): CategoryRulePayload {
-  if (rule) {
-    return cloneRulePayload(rule);
-  }
-
-  if (copyFrom) {
-    return duplicateRulePayload(copyFrom);
-  }
-
-  return createEmptyRule();
-}
-
 export function RuleDrawerContent({
   rule,
   copyFrom,
   pockets,
   onSave,
 }: Readonly<RuleDrawerContentProps>) {
-  const [ruleData, setRuleData] = useState<CategoryRulePayload>(() =>
-    toPayload(rule, copyFrom),
+  const [ruleData, setRuleData] = useState<CategoryRule>(() =>
+    draftFrom(rule, copyFrom),
   );
   const [validation, setValidation] = useState<RuleValidation | null>(null);
   const [saving, setSaving] = useState(false);
   const isDuplicate = Boolean(copyFrom);
 
-  const updateRule = useCallback((next: CategoryRulePayload) => {
+  const updateRule = useCallback((next: CategoryRule) => {
     setRuleData(next);
     setValidation((current) => (current ? validateRule(next) : null));
   }, []);
@@ -86,9 +67,10 @@ export function RuleDrawerContent({
     }
 
     setSaving(true);
-    const response = rule
-      ? await updateCategoryRule(rule.id, ruleData)
-      : await createCategoryRule(ruleData);
+    const response =
+      rule?.id != null
+        ? await updateCategoryRule(rule.id, ruleData)
+        : await createCategoryRule(ruleData);
     setSaving(false);
 
     if (response.error) {
@@ -108,13 +90,7 @@ export function RuleDrawerContent({
     <DrawerContent className="h-full overflow-hidden data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-2xl">
       <DrawerHeader>
         <div className="flex items-center gap-2">
-          <DrawerTitle>
-            {rule
-              ? "Edit rule"
-              : isDuplicate
-                ? "Duplicate rule"
-                : "Create rule"}
-          </DrawerTitle>
+          <DrawerTitle>{rule ? "Edit rule" : "Create rule"}</DrawerTitle>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -126,10 +102,7 @@ export function RuleDrawerContent({
                   <Info className="size-4" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                className="z-[60] max-w-sm text-pretty"
-              >
+              <TooltipContent side="bottom" className="max-w-sm text-pretty">
                 {RULE_DRAWER_HELP}
               </TooltipContent>
             </Tooltip>
@@ -188,7 +161,7 @@ export function RuleDrawerContent({
           <Button variant="outline">Cancel</Button>
         </DrawerClose>
         <Button onClick={handleSave} disabled={saving}>
-          {rule ? "Update" : isDuplicate ? "Duplicate" : "Save"}
+          {rule ? "Update" : "Save"}
         </Button>
       </DrawerFooter>
     </DrawerContent>

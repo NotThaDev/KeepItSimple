@@ -32,13 +32,8 @@ export function RulesPageContent({
     toast.error("Failed to load rules. Please try again later.");
   }
 
-  const rules = useMemo(
-    () =>
-      [...(rulesResponse.data ?? [])].sort(
-        (left, right) => left.sortOrder - right.sortOrder,
-      ),
-    [rulesResponse.data],
-  );
+  const rules = useMemo(() => rulesResponse.data ?? [], [rulesResponse.data]);
+
   const pockets = useMemo(
     () => pocketsResponse.data ?? [],
     [pocketsResponse.data],
@@ -46,7 +41,7 @@ export function RulesPageContent({
 
   const refresh = useCallback(() => router.refresh(), [router]);
 
-  const handleMove = useCallback(
+  const onMove = useCallback(
     async (index: number, direction: -1 | 1) => {
       const nextIndex = index + direction;
       if (nextIndex < 0 || nextIndex >= rules.length) {
@@ -57,11 +52,13 @@ export function RulesPageContent({
       const [moved] = reordered.splice(index, 1);
       reordered.splice(nextIndex, 0, moved);
       const response = await reorderCategoryRules(
-        reordered.map((rule) => rule.id),
+        reordered.flatMap((rule) => (rule.id == null ? [] : [rule.id])),
       );
       if (response.error) {
         toast.error(`Failed to reorder rules: ${response.error}`);
         return;
+      } else {
+        toast.success("Rules reordered successfully");
       }
 
       refresh();
@@ -69,7 +66,7 @@ export function RulesPageContent({
     [refresh, rules],
   );
 
-  const handleDuplicate = useCallback((source: CategoryRule) => {
+  const onDuplicate = useCallback((source: CategoryRule) => {
     setCopyFrom(source);
     setCreateOpen(true);
   }, []);
@@ -79,11 +76,11 @@ export function RulesPageContent({
       getRuleColumns({
         rules,
         pockets,
-        onMove: handleMove,
+        onMove,
+        onDuplicate,
         onChanged: refresh,
-        onDuplicate: handleDuplicate,
       }),
-    [handleDuplicate, handleMove, pockets, refresh, rules],
+    [onDuplicate, onMove, pockets, refresh, rules],
   );
 
   return (

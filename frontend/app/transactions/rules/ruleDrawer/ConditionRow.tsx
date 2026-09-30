@@ -51,7 +51,7 @@ export function ConditionRow({
         value={condition.operator}
         onChange={(operator) => onChange({ ...condition, operator })}
       />
-      {condition.field === "Category" ? (
+      {condition.field === RuleField.Category ? (
         <TransactionCategorySelector
           showAll
           value={
@@ -63,7 +63,7 @@ export function ConditionRow({
           isInvalid={invalidValue}
           className="min-w-0 flex-1"
         />
-      ) : condition.field === "Pocket" ? (
+      ) : condition.field === RuleField.Pocket ? (
         <PocketSelect
           value={condition.value}
           pockets={pockets}
@@ -73,10 +73,10 @@ export function ConditionRow({
       ) : (
         <Input
           className="min-w-0 flex-1"
-          type={condition.field === "Amount" ? "number" : "text"}
-          step={condition.field === "Amount" ? "0.01" : undefined}
+          type={condition.field === RuleField.Amount ? "number" : "text"}
+          step={condition.field === RuleField.Amount ? "0.01" : undefined}
           placeholder={
-            condition.field === "Amount" ? "0.00" : "string to compare"
+            condition.field === RuleField.Amount ? "0.00" : "string to compare"
           }
           value={condition.value}
           aria-invalid={invalidValue}

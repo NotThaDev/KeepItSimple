@@ -18,13 +18,15 @@ import { GroupTextLine } from "./GroupTextLine";
 import { LogicBadge } from "./LogicBadge";
 import { RulePreview } from "./RulePreview";
 
+interface RuleCompactViewProps {
+  rule: CategoryRule;
+  pockets: Pocket[];
+}
+
 export function RuleCompactView({
   rule,
   pockets,
-}: Readonly<{
-  rule: CategoryRule;
-  pockets: Pocket[];
-}>) {
+}: Readonly<RuleCompactViewProps>) {
   const showParens = rule.groups.length > 1;
 
   return (
@@ -33,7 +35,7 @@ export function RuleCompactView({
         <DialogTrigger asChild>
           <button
             type="button"
-            className="flex w-full min-w-0 items-center rounded-md py-0.5 text-left transition-colors hover:bg-muted/60"
+            className="flex w-full min-w-0 items-center rounded-md py-0.5 text-left transition-colors hover:bg-muted/20 cursor-pointer"
           >
             <span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden whitespace-nowrap">
               {rule.groups.map((group, index) => (
@@ -47,7 +49,6 @@ export function RuleCompactView({
                   <GroupTextLine
                     group={group}
                     pockets={pockets}
-                    compact
                     parenthesize={showParens || group.conditions.length >= 2}
                   />
                 </span>

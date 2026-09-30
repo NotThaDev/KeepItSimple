@@ -48,6 +48,10 @@ export function RuleActionsMenu({
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const handleDelete = async () => {
+    if (rule.id == null) {
+      return;
+    }
+
     const response = await deleteCategoryRule(rule.id);
     if (response.error) {
       toast.error(`Failed to delete rule: ${response.error}`);

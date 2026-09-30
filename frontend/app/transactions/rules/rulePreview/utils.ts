@@ -1,4 +1,10 @@
-import { CategoryRuleCondition } from "@/lib/models/CategoryRule";
+import {
+  CategoryRuleCondition,
+  CategoryRuleGroup,
+  RuleField,
+  RuleLogic,
+  RuleOperator,
+} from "@/lib/models/CategoryRule";
 import { FIELD_LABELS } from "../ruleLabels";
 import { Pocket } from "@/lib/models/Pocket";
 import {
@@ -6,25 +12,34 @@ import {
   formatCategoryLabel,
 } from "@/lib/models/Transaction";
 
+export enum BadgeKind {
+  Token = "token",
+  Operator = "op",
+  And = "and",
+  Or = "or",
+}
+
 export function conditionLead(condition: CategoryRuleCondition) {
   const field = FIELD_LABELS[condition.field];
 
   switch (condition.operator) {
-    case "Contains":
+    case RuleOperator.Contains:
       return `${field} contains`;
-    case "Equals":
-      return condition.field === "Amount" ? `${field} equals` : `${field} is`;
-    case "Eq":
+    case RuleOperator.Equals:
+      return condition.field === RuleField.Amount
+        ? `${field} equals`
+        : `${field} is`;
+    case RuleOperator.Eq:
       return `${field} equals`;
-    case "NotEquals":
+    case RuleOperator.NotEquals:
       return `${field} is not`;
-    case "Gt":
+    case RuleOperator.Gt:
       return `${field} is greater than`;
-    case "Gte":
+    case RuleOperator.Gte:
       return `${field} is at least`;
-    case "Lt":
+    case RuleOperator.Lt:
       return `${field} is less than`;
-    case "Lte":
+    case RuleOperator.Lte:
       return `${field} is at most`;
     default:
       return field;
@@ -36,13 +51,13 @@ export function conditionValue(
   pockets: Pocket[],
 ) {
   if (
-    condition.field === "Category" &&
+    condition.field === RuleField.Category &&
     isTransactionCategory(condition.value)
   ) {
     return formatCategoryLabel(condition.value);
   }
 
-  if (condition.field === "Pocket") {
+  if (condition.field === RuleField.Pocket) {
     return (
       pockets.find((pocket) => String(pocket.id) === condition.value)?.name ??
       condition.value
@@ -57,9 +72,16 @@ export function formatDisplayValue(
   pockets: Pocket[],
 ) {
   const value = conditionValue(condition, pockets);
-  if (condition.field === "Description") {
+  if (condition.field === RuleField.Description) {
     return `"${value}"`;
   }
 
   return value || "—";
+}
+
+export function connectorLogic(
+  group: CategoryRuleGroup,
+  index: number,
+): RuleLogic {
+  return group.conditions[index]?.logic ?? RuleLogic.And;
 }

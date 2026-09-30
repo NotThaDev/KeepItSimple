@@ -16,18 +16,12 @@ export function RulePreview({
     return <p className="text-sm text-muted-foreground">No conditions</p>;
   }
 
-  const framed = rule.groups.length > 1;
-
   return (
     <div className="flex min-w-0 flex-col gap-3">
       {rule.groups.map((group, index) => (
         <div key={index} className="flex min-w-0 flex-col gap-3">
           {index > 0 ? <LogicDivider logic={rule.groupLogic} /> : null}
-          <GroupPreview
-            group={group}
-            pockets={pockets}
-            framed={framed || group.conditions.length > 1}
-          />
+          <GroupPreview group={group} pockets={pockets} />
         </div>
       ))}
     </div>

@@ -1,17 +1,28 @@
 import { del, FetchWrapperResponse, get, post, put } from "../fetchWrapper";
 import { ALL_TRANSACTION_CATEGORIES, TransactionCategory } from "./Transaction";
 
-export type RuleLogic = "And" | "Or";
-export type RuleField = "Description" | "Amount" | "Category" | "Pocket";
-export type RuleOperator =
-  | "Contains"
-  | "Equals"
-  | "Gt"
-  | "Gte"
-  | "Lt"
-  | "Lte"
-  | "Eq"
-  | "NotEquals";
+export enum RuleLogic {
+  And = "And",
+  Or = "Or",
+}
+
+export enum RuleField {
+  Description = "Description",
+  Amount = "Amount",
+  Category = "Category",
+  Pocket = "Pocket",
+}
+
+export enum RuleOperator {
+  Contains = "Contains",
+  Equals = "Equals",
+  Gt = "Gt",
+  Gte = "Gte",
+  Lt = "Lt",
+  Lte = "Lte",
+  Eq = "Eq",
+  NotEquals = "NotEquals",
+}
 
 export interface CategoryRuleCondition {
   logic?: RuleLogic;
@@ -25,16 +36,14 @@ export interface CategoryRuleGroup {
 }
 
 export interface CategoryRule {
-  id: number;
+  id?: number;
   name: string;
   enabled: boolean;
-  sortOrder: number;
+  sortOrder?: number;
   targetCategory: TransactionCategory;
   groupLogic: RuleLogic;
   groups: CategoryRuleGroup[];
 }
-
-export type CategoryRulePayload = Omit<CategoryRule, "id" | "sortOrder">;
 
 export interface CategoryRulePreviewItem {
   transactionId: number;
@@ -50,63 +59,17 @@ export interface CategoryRulePreviewItem {
 export const RULE_CATEGORIES = ALL_TRANSACTION_CATEGORIES;
 
 export const OPERATORS_BY_FIELD: Record<RuleField, RuleOperator[]> = {
-  Description: ["Contains", "Equals"],
-  Amount: ["Gt", "Gte", "Lt", "Lte", "Eq"],
-  Category: ["Equals", "NotEquals"],
-  Pocket: ["Equals", "NotEquals"],
+  [RuleField.Description]: [RuleOperator.Contains, RuleOperator.Equals],
+  [RuleField.Amount]: [
+    RuleOperator.Gt,
+    RuleOperator.Gte,
+    RuleOperator.Lt,
+    RuleOperator.Lte,
+    RuleOperator.Eq,
+  ],
+  [RuleField.Category]: [RuleOperator.Equals, RuleOperator.NotEquals],
+  [RuleField.Pocket]: [RuleOperator.Equals, RuleOperator.NotEquals],
 };
-
-export function createEmptyCondition(
-  field: RuleField = "Description",
-): CategoryRuleCondition {
-  return {
-    field,
-    operator: OPERATORS_BY_FIELD[field][0],
-    value: "",
-  };
-}
-
-export function createEmptyGroup(): CategoryRuleGroup {
-  return { conditions: [createEmptyCondition()] };
-}
-
-export function createEmptyRule(): CategoryRulePayload {
-  return {
-    name: "",
-    enabled: true,
-    targetCategory: TransactionCategory.Other,
-    groupLogic: "Or",
-    groups: [createEmptyGroup()],
-  };
-}
-
-export function cloneRulePayload(
-  rule: CategoryRule | CategoryRulePayload,
-  name = rule.name,
-): CategoryRulePayload {
-  return {
-    name,
-    enabled: rule.enabled,
-    targetCategory: rule.targetCategory,
-    groupLogic: rule.groupLogic,
-    groups: normalizeRuleGroups(rule.groups),
-  };
-}
-
-export function duplicateRulePayload(rule: CategoryRule): CategoryRulePayload {
-  return cloneRulePayload(rule, `${rule.name} (copy)`);
-}
-
-export function connectorLogic(
-  group: CategoryRuleGroup,
-  index: number,
-): RuleLogic | undefined {
-  if (index <= 0) {
-    return undefined;
-  }
-
-  return group.conditions[index]?.logic ?? "And";
-}
 
 export function normalizeRuleGroups(
   groups: CategoryRuleGroup[],
@@ -119,7 +82,7 @@ export function normalizeRuleGroups(
         value: condition.value,
       };
       if (index > 0) {
-        next.logic = condition.logic ?? "And";
+        next.logic = condition.logic ?? RuleLogic.And;
       }
       return next;
     }),
@@ -132,23 +95,32 @@ export async function getCategoryRules(): Promise<
   return await get<CategoryRule[]>("/api/category-rules");
 }
 
-export async function createCategoryRule(
-  rule: CategoryRulePayload,
-): Promise<FetchWrapperResponse<CategoryRule>> {
-  return await post<CategoryRule>("/api/category-rules", {
-    ...rule,
+function ruleRequestBody(rule: CategoryRule) {
+  return {
+    name: rule.name,
+    enabled: rule.enabled,
+    targetCategory: rule.targetCategory,
+    groupLogic: rule.groupLogic,
     groups: normalizeRuleGroups(rule.groups),
-  });
+    ...(rule.id != null ? { id: rule.id } : {}),
+    ...(rule.sortOrder != null ? { sortOrder: rule.sortOrder } : {}),
+  };
+}
+
+export async function createCategoryRule(
+  rule: CategoryRule,
+): Promise<FetchWrapperResponse<CategoryRule>> {
+  return await post<CategoryRule>("/api/category-rules", ruleRequestBody(rule));
 }
 
 export async function updateCategoryRule(
   id: number,
-  rule: CategoryRulePayload,
+  rule: CategoryRule,
 ): Promise<FetchWrapperResponse<CategoryRule>> {
-  return await put<CategoryRule>(`/api/category-rules/${id}`, {
-    ...rule,
-    groups: normalizeRuleGroups(rule.groups),
-  });
+  return await put<CategoryRule>(
+    `/api/category-rules/${id}`,
+    ruleRequestBody(rule),
+  );
 }
 
 export async function deleteCategoryRule(
