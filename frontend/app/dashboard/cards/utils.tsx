@@ -1,4 +1,4 @@
-import { Analytics } from "@/lib/models/Analytics";
+import { OverviewAnalytics } from "@/lib/models/Analytics";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
 interface BalanceProps {
@@ -6,7 +6,7 @@ interface BalanceProps {
   color: string;
 }
 
-export function getBalanceProps(analytics: Analytics): BalanceProps | null {
+export function getBalanceProps(analytics: OverviewAnalytics): BalanceProps | null {
   if (
     analytics.currentMonthTotalBalance === analytics.previousMonthTotalBalance
   ) {

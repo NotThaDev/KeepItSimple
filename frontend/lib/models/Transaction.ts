@@ -62,6 +62,13 @@ export enum TransactionCategory {
   Taxes = "Taxes",
   Phone = "Phone",
   Film = "Film",
+  Insurance = "Insurance",
+  Lease = "Lease",
+  Rent = "Rent",
+  Mortgage = "Mortgage",
+  Loan = "Loan",
+  Transfer = "Transfer",
+  Withdraw = "Withdraw",
 }
 
 export const EXPENSE_TRANSACTION_CATEGORIES: TransactionCategory[] = [
@@ -108,6 +115,13 @@ export const EXPENSE_TRANSACTION_CATEGORIES: TransactionCategory[] = [
   TransactionCategory.Taxes,
   TransactionCategory.Phone,
   TransactionCategory.Film,
+  TransactionCategory.Insurance,
+  TransactionCategory.Lease,
+  TransactionCategory.Rent,
+  TransactionCategory.Mortgage,
+  TransactionCategory.Loan,
+  TransactionCategory.Transfer,
+  TransactionCategory.Withdraw,
 ];
 
 export const INCOME_TRANSACTION_CATEGORIES: TransactionCategory[] = [
@@ -121,10 +135,23 @@ export const INCOME_TRANSACTION_CATEGORIES: TransactionCategory[] = [
   TransactionCategory.Refund,
   TransactionCategory.Savings,
   TransactionCategory.Investments,
+  TransactionCategory.Transfer,
 ];
 
+export const MOVEMENT_TRANSACTION_CATEGORIES: TransactionCategory[] = [
+  TransactionCategory.Transfer,
+  TransactionCategory.Withdraw,
+];
+
+export const INCOME_ANALYTICS_CATEGORIES: TransactionCategory[] =
+  INCOME_TRANSACTION_CATEGORIES.filter(
+    (category) =>
+      category !== TransactionCategory.Savings &&
+      !MOVEMENT_TRANSACTION_CATEGORIES.includes(category),
+  );
+
 export const DEFAULT_TRANSACTION_PAGE_SIZE = 10;
-const ALL_TRANSACTION_CATEGORIES = Object.values(TransactionCategory);
+export const ALL_TRANSACTION_CATEGORIES = Object.values(TransactionCategory);
 
 export function formatCategoryLabel(category: TransactionCategory): string {
   return category.replace(/([A-Z])/g, " $1").trim();
@@ -300,6 +327,32 @@ export async function createTransaction(expense: Omit<Transaction, "id">) {
   }
 
   return createTransactionResponse;
+}
+
+export async function createTransfer(request: {
+  fromPocketId: number;
+  toPocketId: number;
+  amount: number;
+  date: Date;
+  description?: string;
+}): Promise<
+  FetchWrapperResponse<{ outgoing: Transaction; incoming: Transaction }>
+> {
+  const response = await post<{ outgoing: Transaction; incoming: Transaction }>(
+    "/api/transactions/transfer",
+    request,
+  );
+
+  if ("error" in response) {
+    return response;
+  }
+
+  if (response.data) {
+    response.data.outgoing.date = new Date(response.data.outgoing.date);
+    response.data.incoming.date = new Date(response.data.incoming.date);
+  }
+
+  return response;
 }
 
 export async function updateTransaction(id: number, expense: Transaction) {

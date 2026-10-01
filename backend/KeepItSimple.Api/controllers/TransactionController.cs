@@ -48,6 +48,38 @@ public class TransactionController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = createdTransaction.Id }, createdTransaction);
     }
 
+    [HttpPost("transfer")]
+    public async Task<ActionResult<TransferResponse>> CreateTransfer([FromBody] TransferRequest request)
+    {
+        if (request.FromPocketId == request.ToPocketId)
+        {
+            return BadRequest("Source and destination pockets must be different.");
+        }
+
+        if (request.Amount <= 0)
+        {
+            return BadRequest("Amount must be greater than zero.");
+        }
+
+        var transfer = await Transaction.CreateTransfer(
+            request.FromPocketId,
+            request.ToPocketId,
+            request.Amount,
+            request.Date,
+            request.Description);
+
+        if (transfer == null)
+        {
+            return BadRequest("Unable to create the transfer. Check that both pockets exist.");
+        }
+
+        return Ok(new TransferResponse
+        {
+            Outgoing = transfer.Value.Outgoing,
+            Incoming = transfer.Value.Incoming,
+        });
+    }
+
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] Transaction transaction)
     {
@@ -123,12 +155,13 @@ public class TransactionController : ControllerBase
     }
 
     [HttpPost("import/preview")]
-    public ActionResult<PreviewResponse> PreviewImport(
+    public async Task<ActionResult<PreviewResponse>> PreviewImport(
         [FromBody] PreviewRequest request)
     {
         try
         {
-            var result = TransactionImporter.Preview(request);
+            var rules = await CategoryRule.GetEnabledOrderedAsync();
+            var result = TransactionImporter.Preview(request, rules);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)

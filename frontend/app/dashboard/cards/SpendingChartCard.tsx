@@ -10,12 +10,12 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Analytics } from "@/lib/models/Analytics";
+import { OverviewAnalytics } from "@/lib/models/Analytics";
 import { AreaChart as AreaChartIcon } from "lucide-react";
 import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
 
 interface SpendingChartCardProps {
-  analytics: Analytics;
+  analytics: OverviewAnalytics;
 }
 
 function toSeriesValue(value: number) {
@@ -67,7 +67,11 @@ export function SpendingChartCard({
   const yAxisMax = getMaxValue(chartValues);
 
   return (
-    <DashboardCard title="Expenses trend" icon={AreaChartIcon}>
+    <DashboardCard
+      title="Expenses trend"
+      icon={AreaChartIcon}
+      className="h-auto shrink-0 xl:h-full"
+    >
       <ChartContainer config={chartConfig} className="h-[270px] w-full">
         <AreaChart
           accessibilityLayer

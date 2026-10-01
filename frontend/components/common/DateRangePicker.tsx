@@ -60,17 +60,28 @@ export function DateRangePicker({
   const [draftRange, setDraftRange] = useState<DateRange | undefined>();
   const presets = useMemo(() => getDateRangePresets(), []);
   const range = draftRange ?? { from, to };
-  const currentYear = new Date().getFullYear();
 
   const handleRangeChange = (nextRange: DateRange | undefined) => {
-    if (nextRange?.from && nextRange.to) {
-      setDraftRange(undefined);
-      setOpen(false);
-      onDateRangeChange?.(nextRange.from, nextRange.to);
+    const wasSelectingEnd = Boolean(range.from && !range.to);
+
+    if (!nextRange?.from) {
+      setDraftRange(nextRange);
       return;
     }
 
-    setDraftRange(nextRange);
+    if (!nextRange.to) {
+      setDraftRange(nextRange);
+      return;
+    }
+
+    if (!wasSelectingEnd) {
+      setDraftRange({ from: nextRange.from, to: undefined });
+      return;
+    }
+
+    setDraftRange(undefined);
+    setOpen(false);
+    onDateRangeChange?.(nextRange.from, nextRange.to);
   };
 
   const applyPreset = (preset: DateRangePreset) => {
@@ -136,13 +147,11 @@ export function DateRangePicker({
           </div>
           <Calendar
             mode="range"
-            captionLayout="dropdown"
             locale={enUS}
             selected={range}
             onSelect={handleRangeChange}
             defaultMonth={range.from ?? range.to ?? from ?? to}
-            startMonth={new Date(2000, 0)}
-            endMonth={new Date(currentYear + 1, 11)}
+            numberOfMonths={2}
           />
         </div>
       </PopoverContent>

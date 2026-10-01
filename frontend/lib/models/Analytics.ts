@@ -1,6 +1,6 @@
 import { FetchWrapperResponse, get } from "../fetchWrapper";
 import { Pocket } from "./Pocket";
-import { TransactionCategory } from "./Transaction";
+import { Transaction, TransactionCategory } from "./Transaction";
 
 export interface ExpenseByCategory {
   category: TransactionCategory;
@@ -9,7 +9,7 @@ export interface ExpenseByCategory {
 
 export interface ExpensePerPocket {
   pocket: Pocket;
-  totalExpenses: number;
+  total: number;
 }
 
 export interface DailyExpenseComparison {
@@ -18,7 +18,7 @@ export interface DailyExpenseComparison {
   lastMonth: number;
 }
 
-export interface Analytics {
+export interface OverviewAnalytics {
   totalExpenses: number;
   totalIncome: number;
   monthlyTotalExpenses: number;
@@ -33,6 +33,129 @@ export interface Analytics {
   previousMonthTotalBalance: number;
 }
 
-export async function getAnalytics(): Promise<FetchWrapperResponse<Analytics>> {
-  return await get<Analytics>("/api/analytics");
+export interface TransactionByCategory {
+  category: TransactionCategory;
+  total: number;
+}
+
+export interface TransactionPerPocket {
+  pocket: Pocket;
+  total: number;
+}
+
+export interface MonthlyTransactionByCategory {
+  month: number;
+  categories: Partial<Record<TransactionCategory, number>>;
+}
+
+export interface IncomeAnalytics {
+  totalMonthlyIncome: number;
+  netMonthlyIncome: number;
+  monthlyExpenses: number;
+  previousMonthIncome: number;
+  sixMonthAverageIncome: number;
+  savingsRate: number;
+  monthlyActiveIncome: number;
+  monthlyPassiveIncome: number;
+  monthlyIncomeByCategory: TransactionByCategory[];
+  twelveMonthIncomeTrend: MonthlyTransactionByCategory[];
+  monthlyIncomePerPocket: TransactionPerPocket[];
+  topMonthlyIncome: Transaction[];
+}
+
+export async function getOverview(): Promise<
+  FetchWrapperResponse<OverviewAnalytics>
+> {
+  return await get<OverviewAnalytics>("/api/analytics/overview");
+}
+
+export async function getIncomeAnalytics(): Promise<
+  FetchWrapperResponse<IncomeAnalytics>
+> {
+  const income = await get<IncomeAnalytics>("/api/analytics/income");
+
+  if (income.data) {
+    income.data.topMonthlyIncome = (income.data.topMonthlyIncome ?? []).map(
+      (transaction) => ({
+        ...transaction,
+        date: new Date(transaction.date),
+      }),
+    );
+  }
+
+  return income;
+}
+
+export interface DailyCumulativeExpense {
+  day: number;
+  thisMonth: number | null;
+  lastMonth: number | null;
+}
+
+export interface MonthlyExpenseComparison {
+  month: number;
+  thisYear: number | null;
+  lastYear: number;
+}
+
+export interface ExpenseAnalytics {
+  totalMonthlyExpenses: number;
+  previousMonthExpenses: number;
+  dailyBurn: number;
+  monthProjection: number;
+  monthlyIncome: number;
+  spendingRate: number;
+  projectedSpendingRate: number;
+  previousMonthSpendingRate: number;
+  fixedExpenses: number;
+  topExpenses: Transaction[];
+  expensePerDay: Record<string, number>;
+  expenseByCategory: TransactionByCategory[];
+  monthlySpendingPace: DailyCumulativeExpense[];
+  monthlySpendComparison: MonthlyExpenseComparison[];
+  expensePerPocket: TransactionPerPocket[];
+}
+
+export interface MonthlySaving {
+  month: number;
+  leftover: number | null;
+  saved: number | null;
+  savingRate: number | null;
+}
+
+export interface SavingAnalytics {
+  totalMonthlySavings: number;
+  previousMonthSavings: number;
+  savingsRate: number;
+  captureRate: number;
+  leftOver: number;
+  monthlySavings: MonthlySaving[];
+  savingsByCategory: TransactionByCategory[];
+  topSavings: TransactionByCategory[];
+  monthlyExpenses: number;
+  monthlyIncome: number;
+  currency: string;
+}
+
+export async function getSavingAnalytics(): Promise<
+  FetchWrapperResponse<SavingAnalytics>
+> {
+  return await get<SavingAnalytics>("/api/analytics/saving");
+}
+
+export async function getExpenseAnalytics(): Promise<
+  FetchWrapperResponse<ExpenseAnalytics>
+> {
+  const expense = await get<ExpenseAnalytics>("/api/analytics/expense");
+
+  if (expense.data) {
+    expense.data.topExpenses = (expense.data.topExpenses ?? []).map(
+      (transaction) => ({
+        ...transaction,
+        date: new Date(transaction.date),
+      }),
+    );
+  }
+
+  return expense;
 }

@@ -19,7 +19,6 @@ interface PocketErrors {
   balance: boolean;
   currency: boolean;
   name: boolean;
-  iban: boolean;
 }
 
 interface PocketFormData {
@@ -27,7 +26,6 @@ interface PocketFormData {
   balance?: number;
   currency: string;
   name: string;
-  iban: string;
 }
 
 interface PocketDrawerContentProps {
@@ -48,29 +46,26 @@ export function PocketDrawerContent({
   onSave,
 }: Readonly<PocketDrawerContentProps>) {
   const [pocketData, setPocketData] = useState<PocketFormData>(() =>
-    pocket ? { ...pocket } : { currency: "EUR", name: "", iban: "" },
+    pocket ? { ...pocket } : { currency: "EUR", name: "" },
   );
   const [errors, setErrors] = useState<PocketErrors>({
     balance: false,
     currency: false,
     name: false,
-    iban: false,
   });
 
   const handleSave = useCallback(async () => {
     const balanceValid = validateBalance(pocketData.balance);
     const currencyValid = validateCurrency(pocketData.currency);
     const nameValid = pocketData.name.trim().length > 0;
-    const ibanValid = pocketData.iban.trim().length > 0;
 
     setErrors({
       balance: !balanceValid,
       currency: !currencyValid,
       name: !nameValid,
-      iban: !ibanValid,
     });
 
-    if (!balanceValid || !currencyValid || !nameValid || !ibanValid) {
+    if (!balanceValid || !currencyValid || !nameValid) {
       return;
     }
 
@@ -78,7 +73,6 @@ export function PocketDrawerContent({
       balance: pocketData.balance!,
       currency: pocketData.currency,
       name: pocketData.name,
-      iban: pocketData.iban,
     };
 
     let error: string | undefined;
@@ -166,23 +160,6 @@ export function PocketDrawerContent({
               })
             }
             aria-invalid={errors.currency}
-          />
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor="iban">IBAN</FieldLabel>
-          <Input
-            id="iban"
-            type="text"
-            placeholder="IT60 X054 2811 1010 0000 0123 456"
-            value={pocketData.iban}
-            onChange={(e) =>
-              setPocketData({
-                ...pocketData,
-                iban: e.target.value.toUpperCase(),
-              })
-            }
-            aria-invalid={errors.iban}
           />
         </Field>
       </FieldGroup>

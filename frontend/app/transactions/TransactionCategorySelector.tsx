@@ -13,6 +13,7 @@ import {
   DEFAULT_CATEGORY_COLORS,
 } from "@/lib/helpers/colors";
 import {
+  ALL_TRANSACTION_CATEGORIES,
   EXPENSE_TRANSACTION_CATEGORIES,
   formatCategoryLabel,
   INCOME_TRANSACTION_CATEGORIES,
@@ -21,14 +22,16 @@ import {
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 
-interface TransactionCategorySelectorProps {
-  value: TransactionCategory;
-  isIncome: boolean;
+type TransactionCategorySelectorProps = {
+  value?: TransactionCategory;
   onChange: (category: TransactionCategory) => void;
   isInvalid?: boolean;
   placeholder?: string;
   className?: string;
-}
+} & (
+  | { showAll?: false; isIncome: boolean }
+  | { showAll: true; isIncome?: boolean }
+);
 
 function categoriesForType(isIncome: boolean) {
   return isIncome
@@ -38,21 +41,26 @@ function categoriesForType(isIncome: boolean) {
 
 export function TransactionCategorySelector({
   value,
-  isIncome,
+  isIncome = false,
+  showAll = false,
   onChange,
   isInvalid,
   placeholder,
   className,
 }: Readonly<TransactionCategorySelectorProps>) {
-  const colors = CategoryColorMap[value] ?? DEFAULT_CATEGORY_COLORS;
+  const colors = value
+    ? (CategoryColorMap[value] ?? DEFAULT_CATEGORY_COLORS)
+    : undefined;
   const categoryItems = useMemo(() => {
-    const items = categoriesForType(isIncome);
-    if (items.includes(value)) {
-      return items;
+    const items = showAll
+      ? ALL_TRANSACTION_CATEGORIES
+      : categoriesForType(isIncome);
+    if (value && !items.includes(value)) {
+      return [value, ...items];
     }
 
-    return [value, ...items];
-  }, [isIncome, value]);
+    return items;
+  }, [isIncome, showAll, value]);
 
   return (
     <Select
@@ -65,11 +73,15 @@ export function TransactionCategorySelector({
           "w-full min-w-44 border dark:bg-transparent dark:hover:bg-transparent [&_svg]:text-current",
           className,
         )}
-        style={{
-          backgroundColor: colors.foreground,
-          color: colors.background,
-          borderColor: colors.background,
-        }}
+        style={
+          colors
+            ? {
+                backgroundColor: colors.foreground,
+                color: colors.background,
+                borderColor: colors.background,
+              }
+            : undefined
+        }
       >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

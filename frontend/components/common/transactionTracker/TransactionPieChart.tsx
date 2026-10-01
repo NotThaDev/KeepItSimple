@@ -1,6 +1,5 @@
 "use client";
 
-import { Label, Pie, PieChart } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
@@ -11,22 +10,31 @@ import {
   CategoryColorMap,
   DEFAULT_CATEGORY_COLORS,
 } from "@/lib/helpers/colors";
-import { Analytics } from "@/lib/models/Analytics";
-import { useMemo } from "react";
+import { formatAmount } from "@/lib/helpers/currencyHelper";
+import { ExpenseByCategory } from "@/lib/models/Analytics";
+import {
+  formatCategoryLabel,
+  TransactionCategory,
+} from "@/lib/models/Transaction";
 import { SquircleDashed } from "lucide-react";
-import { TransactionCategory } from "@/lib/models/Transaction";
+import { useMemo } from "react";
+import { Label, Pie, PieChart } from "recharts";
 
 export const description = "A donut chart with text";
 
-interface ExpensesPieChartProps {
-  analytics: Analytics;
+interface TransactionPieChartProps {
+  categories: ExpenseByCategory[];
+  currency?: string;
+  label?: string;
 }
 
-export function ExpensesPieChart({
-  analytics,
-}: Readonly<ExpensesPieChartProps>) {
+export function TransactionPieChart({
+  categories,
+  currency,
+  label = "Expenses",
+}: Readonly<TransactionPieChartProps>) {
   const chartData = useMemo(() => {
-    return analytics.monthlyExpensesByCategory
+    return categories
       .map((entry) => ({
         category: entry.category,
         total: Math.abs(entry.total),
@@ -35,31 +43,34 @@ export function ExpensesPieChart({
           DEFAULT_CATEGORY_COLORS.background,
       }))
       .filter((entry) => entry.total > 0);
-  }, [analytics.monthlyExpensesByCategory]);
+  }, [categories]);
 
   const chartConfig = useMemo(() => {
     const config: ChartConfig = {
       total: {
-        label: "Expenses",
+        label,
       },
     };
 
     chartData.forEach((entry) => {
       config[entry.category] = {
-        label: entry.category,
+        label: formatCategoryLabel(entry.category),
         color: entry.fill,
       };
     });
 
     return config;
-  }, [chartData]);
+  }, [chartData, label]);
 
-  const totalExpenses = useMemo(() => {
+  const total = useMemo(() => {
     return chartData.reduce((acc, curr) => acc + curr.total, 0);
   }, [chartData]);
 
   return (
-    <ChartContainer config={chartConfig} className="aspect-square flex-1">
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-square size-[220px] shrink-0 self-start"
+    >
       <PieChart>
         <ChartTooltip
           cursor={false}
@@ -76,14 +87,11 @@ export function ExpensesPieChart({
                         ?.background ?? DEFAULT_CATEGORY_COLORS.background
                     }
                   />
-                  <span className="text-muted-foreground mr-1">{name}</span>
+                  <span className="text-muted-foreground mr-1">
+                    {formatCategoryLabel(name as TransactionCategory)}
+                  </span>
                   <span className="font-mono font-medium text-foreground tabular-nums">
-                    {typeof value === "number"
-                      ? value.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })
-                      : String(value)}
+                    {formatAmount(Number(value), currency)}
                   </span>
                 </div>
               )}
@@ -114,17 +122,14 @@ export function ExpensesPieChart({
                       y={viewBox.cy}
                       className="fill-foreground text-3xl font-bold"
                     >
-                      {totalExpenses.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {formatAmount(total, currency, 0)}
                     </tspan>
                     <tspan
                       x={viewBox.cx}
                       y={(viewBox.cy || 0) + 30}
                       className="fill-muted-foreground"
                     >
-                      Expenses
+                      {label}
                     </tspan>
                   </text>
                 );
