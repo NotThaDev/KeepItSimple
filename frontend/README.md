@@ -14,6 +14,8 @@ It is a Next.js app. It talks to the API and has these areas:
 
 Home (`/`) redirects to the dashboard.
 
+This file is the overview. Notes for a complex screen live in `docs/`.
+
 ## Stack
 
 - **Next.js** (App Router) and **React**
