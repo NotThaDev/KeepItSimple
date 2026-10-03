@@ -1,11 +1,11 @@
 "use client";
 
+import { PropsWithChildren } from "react";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { NavigationItems } from "./NavigationItems";
@@ -14,6 +14,8 @@ import { BRANDING } from "./Branding";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { PanelLeftIcon } from "lucide-react";
+import { MobileHeader } from "./MobileHeader";
+import { MobileBottomNav } from "./MobileBottomNav";
 
 function AppSidebarHeader() {
   const { state, toggleSidebar } = useSidebar();
@@ -60,12 +62,9 @@ function AppSidebarHeader() {
   );
 }
 
-export function NavigationMenu() {
+export function NavigationMenu({ children }: PropsWithChildren) {
   return (
     <>
-      <div className="fixed left-3 top-3 z-50 md:hidden">
-        <SidebarTrigger />
-      </div>
       <Sidebar collapsible="icon">
         <AppSidebarHeader />
         <SidebarContent className="p-2">
@@ -75,6 +74,13 @@ export function NavigationMenu() {
           <NavUser />
         </SidebarFooter>
       </Sidebar>
+      <div className="flex min-h-svh min-w-0 flex-1 flex-col">
+        <div className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-sm md:hidden">
+          <MobileHeader />
+        </div>
+        {children}
+        <MobileBottomNav />
+      </div>
     </>
   );
 }

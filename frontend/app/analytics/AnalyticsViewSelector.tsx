@@ -16,7 +16,7 @@ export function AnalyticsViewSelector() {
   );
 
   return (
-    <div className="flex shrink-0 items-center justify-end gap-2">
+    <div className="flex items-center justify-end md:w-auto gap-2 ms-auto">
       <Selection
         className="w-[160px]"
         items={monthItems}
@@ -24,7 +24,7 @@ export function AnalyticsViewSelector() {
         onChange={(value) => setMonth(Number(value))}
       />
       <Selection
-        className="w-[220px]"
+        className="w-full md:w-[220px]"
         items={ANALYTICS_VIEW_ITEMS}
         value={view}
         onChange={(value) => setView(value as AnalyticsView)}

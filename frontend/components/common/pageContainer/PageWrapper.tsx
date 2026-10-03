@@ -12,24 +12,31 @@ export function PageWrapper({
   extraContent,
   maximizeContent = false,
 }: PageWrapperProps) {
+  const showDesktopTitle = !maximizeContent;
+  const showToolbar = showDesktopTitle || Boolean(extraContent);
+
   return (
     <div
-      className={`flex h-screen w-full flex-col ${
-        maximizeContent ? "gap-0 px-[16px] py-[16px]" : "gap-4 px-6 py-2"
+      className={`flex w-full flex-col ${
+        maximizeContent
+          ? "h-full min-h-0 gap-0 px-4 py-4 md:px-[16px] md:py-[16px]"
+          : "min-h-full gap-4 px-4 py-3 md:px-6 md:py-2"
       }`}
     >
-      <div
-        className={`flex w-full items-center justify-between ${
-          maximizeContent ? "mb-0" : "mb-8 gap-4"
-        }`}
-      >
-        {!maximizeContent && (
-          <h1 className="mt-2 scroll-m-20 text-center text-3xl font-bold tracking-tight text-balance">
-            {title}
-          </h1>
-        )}
-        {extraContent}
-      </div>
+      {showToolbar && (
+        <div
+          className={`flex w-full items-center justify-between ${
+            maximizeContent ? "mb-0" : "mb-4 gap-4 md:mb-8"
+          }`}
+        >
+          {showDesktopTitle && (
+            <h1 className="mt-2 hidden scroll-m-20 text-center text-3xl font-bold tracking-tight text-balance md:block">
+              {title}
+            </h1>
+          )}
+          {extraContent}
+        </div>
+      )}
       <div
         className={
           maximizeContent ? "flex min-h-0 flex-1 flex-col" : undefined
