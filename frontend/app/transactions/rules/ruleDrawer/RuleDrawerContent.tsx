@@ -132,6 +132,7 @@ export function RuleDrawerContent({
               <FieldLabel htmlFor="target-category">Set category to</FieldLabel>
               <CategorySelector
                 showAll
+                className="min-w-[342px]"
                 category={ruleData.targetCategory}
                 onChange={(targetCategory) =>
                   updateRule({ ...ruleData, targetCategory })
