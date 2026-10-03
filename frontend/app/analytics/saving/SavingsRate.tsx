@@ -16,8 +16,7 @@ import { MONTH_LABELS, formatPercent, getHeatStyle } from "../utils";
 const HEAT_STOPS = ["#ccfbf1", "#99f6e4", "#2dd4bf", "#14b8a6", "#0f766e"];
 
 export function SavingsRate() {
-  const { analytics } = useSavingAnalytics();
-  const currentMonth = useMemo(() => new Date().getMonth() + 1, []);
+  const { analytics, month } = useSavingAnalytics();
   const maxRate = useMemo(
     () =>
       Math.max(
@@ -36,7 +35,7 @@ export function SavingsRate() {
               const rate = entry.savingRate ?? 0;
               const monthLabel =
                 MONTH_LABELS[entry.month - 1] ?? String(entry.month);
-              const isCurrent = entry.month === currentMonth;
+              const isCurrent = entry.month === month;
 
               return (
                 <div

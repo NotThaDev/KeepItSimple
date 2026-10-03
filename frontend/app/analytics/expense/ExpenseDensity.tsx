@@ -50,10 +50,19 @@ function buildMonthWeeks(now: Date): Array<Array<number | null>> {
 }
 
 export function ExpenseDensity() {
-  const { analytics, currency } = useExpenseAnalytics();
-  const now = useMemo(() => new Date(), []);
+  const { analytics, currency, month } = useExpenseAnalytics();
+  const now = useMemo(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), month - 1, 1);
+  }, [month]);
   const weeks = useMemo(() => buildMonthWeeks(now), [now]);
-  const today = now.getDate();
+  const today = useMemo(() => {
+    const current = new Date();
+    return current.getFullYear() === now.getFullYear() &&
+      current.getMonth() === now.getMonth()
+      ? current.getDate()
+      : -1;
+  }, [now]);
   const maxAmount = useMemo(() => {
     return Math.max(
       0,

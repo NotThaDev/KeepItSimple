@@ -11,9 +11,9 @@ import {
 } from "@/components/ui/chart";
 import { BarChart3 } from "lucide-react";
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { useExpenseAnalytics } from "@/stores/analytics";
-import { MONTH_LABELS } from "../utils";
+import { MONTH_LABELS, selectedMonthTick } from "../utils";
 import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 function getMaxValue(values: number[]): number {
@@ -45,10 +45,11 @@ const SERIES_SWATCH: Record<string, string> = {
 };
 
 export function ExpenseMonthlyComparisonChart() {
-  const { analytics, currency } = useExpenseAnalytics();
+  const { analytics, currency, month } = useExpenseAnalytics();
   const chartData = useMemo(() => {
     return analytics.monthlySpendComparison.map((entry) => ({
       month: MONTH_LABELS[entry.month - 1] ?? String(entry.month),
+      monthNumber: entry.month,
       thisYear: entry.thisYear,
       lastYear: entry.lastYear,
     }));
@@ -80,6 +81,7 @@ export function ExpenseMonthlyComparisonChart() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tick={selectedMonthTick(month)}
             />
             <YAxis
               axisLine={false}
@@ -122,13 +124,27 @@ export function ExpenseMonthlyComparisonChart() {
               fill="var(--color-lastYear)"
               radius={[4, 4, 0, 0]}
               maxBarSize={28}
-            />
+            >
+              {chartData.map((entry) => (
+                <Cell
+                  key={`last-year-${entry.monthNumber}`}
+                  opacity={entry.monthNumber === month ? 1 : 0.45}
+                />
+              ))}
+            </Bar>
             <Bar
               dataKey="thisYear"
               fill="var(--color-thisYear)"
               radius={[4, 4, 0, 0]}
               maxBarSize={28}
-            />
+            >
+              {chartData.map((entry) => (
+                <Cell
+                  key={`this-year-${entry.monthNumber}`}
+                  opacity={entry.monthNumber === month ? 1 : 0.45}
+                />
+              ))}
+            </Bar>
             <ChartLegend content={<ChartLegendContent />} />
           </BarChart>
         </ChartContainer>

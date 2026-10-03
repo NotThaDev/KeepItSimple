@@ -63,16 +63,26 @@ export interface IncomeAnalytics {
   topMonthlyIncome: Transaction[];
 }
 
+function analyticsPath(path: string, month?: number): string {
+  if (month == null) {
+    return path;
+  }
+
+  return `${path}?month=${month}`;
+}
+
 export async function getOverview(): Promise<
   FetchWrapperResponse<OverviewAnalytics>
 > {
   return await get<OverviewAnalytics>("/api/analytics/overview");
 }
 
-export async function getIncomeAnalytics(): Promise<
-  FetchWrapperResponse<IncomeAnalytics>
-> {
-  const income = await get<IncomeAnalytics>("/api/analytics/income");
+export async function getIncomeAnalytics(
+  month?: number,
+): Promise<FetchWrapperResponse<IncomeAnalytics>> {
+  const income = await get<IncomeAnalytics>(
+    analyticsPath("/api/analytics/income", month),
+  );
 
   if (income.data) {
     income.data.topMonthlyIncome = (income.data.topMonthlyIncome ?? []).map(
@@ -137,16 +147,18 @@ export interface SavingAnalytics {
   currency: string;
 }
 
-export async function getSavingAnalytics(): Promise<
-  FetchWrapperResponse<SavingAnalytics>
-> {
-  return await get<SavingAnalytics>("/api/analytics/saving");
+export async function getSavingAnalytics(
+  month?: number,
+): Promise<FetchWrapperResponse<SavingAnalytics>> {
+  return await get<SavingAnalytics>(analyticsPath("/api/analytics/saving", month));
 }
 
-export async function getExpenseAnalytics(): Promise<
-  FetchWrapperResponse<ExpenseAnalytics>
-> {
-  const expense = await get<ExpenseAnalytics>("/api/analytics/expense");
+export async function getExpenseAnalytics(
+  month?: number,
+): Promise<FetchWrapperResponse<ExpenseAnalytics>> {
+  const expense = await get<ExpenseAnalytics>(
+    analyticsPath("/api/analytics/expense", month),
+  );
 
   if (expense.data) {
     expense.data.topExpenses = (expense.data.topExpenses ?? []).map(
