@@ -7,7 +7,7 @@ import { ENGLISH_DATE_FORMATTER } from "@/components/common/DateUtils";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { Pocket } from "@/lib/models/Pocket";
-import { CategoryBadge } from "@/components/common/CategoryBadge";
+import { CategoryBadge } from "@/components/common/category/CategoryBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { type DataTableFeatures } from "@/components/common/dataTable/DataTableFeatures";
 

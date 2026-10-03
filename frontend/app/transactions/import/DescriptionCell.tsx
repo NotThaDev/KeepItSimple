@@ -16,9 +16,7 @@ export function DescriptionCell({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <p className="block w-full min-w-0 cursor-default truncate">
-            {text}
-          </p>
+          <p className="block w-full min-w-0 cursor-default truncate">{text}</p>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-sm">
           {text}

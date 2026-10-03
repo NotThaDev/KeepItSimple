@@ -17,7 +17,7 @@ import { Divider } from "../Divider";
 interface EmptyStateCardProps {
   title: string;
   description: string;
-  actionText: string;
+  actionText?: string;
   onAction?: () => void;
   actionHref?: string;
   icon?: ComponentType<{ className?: string }>;
@@ -35,7 +35,7 @@ export function EmptyStateCard({
 }: EmptyStateCardProps) {
   const isActionDisabled = !actionHref && !onAction;
 
-  const actionButton = (
+  const actionButton = actionText ? (
     <Button
       size="lg"
       className="w-full sm:w-auto sm:min-w-44"
@@ -44,7 +44,7 @@ export function EmptyStateCard({
     >
       {actionText}
     </Button>
-  );
+  ) : null;
 
   return (
     <Card
@@ -75,15 +75,17 @@ export function EmptyStateCard({
         </div>
       </CardContent>
 
-      <CardFooter className="justify-center border-t px-6 mt-3 pt-0 sm:px-8 bg-transparent border-t-0">
-        {actionHref ? (
-          <Button asChild size="lg" className="w-full sm:w-auto sm:min-w-44">
-            <Link href={actionHref}>{actionText}</Link>
-          </Button>
-        ) : (
-          actionButton
-        )}
-      </CardFooter>
+      {actionText ? (
+        <CardFooter className="justify-center border-t px-6 mt-3 pt-0 sm:px-8 bg-transparent border-t-0">
+          {actionHref ? (
+            <Button asChild size="lg" className="w-full sm:w-auto sm:min-w-44">
+              <Link href={actionHref}>{actionText}</Link>
+            </Button>
+          ) : (
+            actionButton
+          )}
+        </CardFooter>
+      ) : null}
     </Card>
   );
 }

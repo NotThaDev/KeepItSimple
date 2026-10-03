@@ -1,6 +1,6 @@
 # KeepItSimple – Backend
 
-ASP.NET Core Web API (`net10`) that powers KeepItSimple: pockets, transactions, analytics, and file-based transaction import.
+ASP.NET Core Web API (`net10`) that powers KeepItSimple: pockets, transactions, analytics, file-based transaction import, and category rules.
 
 ## Stack
 
@@ -14,10 +14,11 @@ ASP.NET Core Web API (`net10`) that powers KeepItSimple: pockets, transactions, 
 ```
 backend/
 ├── README.md                 ← this file
+├── docs/                     ← feature notes
 ├── KeepItSimple.Api/
 │   ├── controllers/          ← HTTP endpoints
-│   ├── dtos/Transaction/     ← import request / response types
-│   ├── helpers/              ← TransactionImporter, DB access, currency
+│   ├── dtos/                 ← import + category-rule request / response types
+│   ├── helpers/              ← TransactionImporter, CategoryRuleMatcher, DB access, currency
 │   ├── models/               ← domain entities (Active Record style)
 │   ├── Migrations/
 │   └── Program.cs
@@ -31,6 +32,7 @@ backend/
 |------|--------|--------|
 | Pockets | `/api/pocket` | Accounts with balance / currency |
 | Transactions | `/api/transactions` | CRUD, filter by pocket, and file import |
+| Category rules | `/api/category-rules` | User-defined categorization (groups = parentheses) |
 | Analytics | `/api/analytics` | Aggregations over transactions |
 
 Persistence goes through `KeepItSimpleDbContext`; app code typically uses the static `KeepItSimpleContext` helper to open a scoped DbContext.
@@ -39,24 +41,38 @@ Persistence goes through `KeepItSimpleDbContext`; app code typically uses the st
 
 Bank/export files (`.xls` / `.xlsx` / `.xlsm` / `.csv`) have **unknown layouts**. The API discovers columns, the user maps them onto `MappableField` values, drafts are previewed, then saved.
 
-Docs inside the API project:
+Docs in [`docs/`](./docs/):
 
-- **[TransactionImportUtil.md](./KeepItSimple.Api/TransactionImportUtil.md)** – how `TransactionImporter` works (analyze / preview / confirm)
-- **[TransactionImportFlow.md](./KeepItSimple.Api/TransactionImportFlow.md)** – UI ↔ API conversation: file → columns → map → save
+- **[TransactionImportUtil.md](./docs/TransactionImportUtil.md)** – how `TransactionImporter` works (analyze / preview / confirm)
+- **[TransactionImportFlow.md](./docs/TransactionImportFlow.md)** – UI ↔ API conversation: file → columns → map → save
 
 ```mermaid
 flowchart LR
   BE[Backend README] --> Util[TransactionImportUtil]
   BE --> Flow[TransactionImportFlow]
+  BE --> Rules[CategoryRules]
+  BE --> Matcher[CategoryRuleMatcher]
   Util -.-> Flow
   Flow -.-> Util
+  Rules -.-> Matcher
+  Matcher -.-> Rules
+  Flow -.-> Rules
 ```
+
+## Category rules
+
+Users define rules that set a transaction category from description, amount, pocket, and optionally the category already resolved (for example from an import column). A rule matches whatever the current category is, unless the formula itself includes a category condition. Groups stand in for parentheses; AND/OR is explicit on the group and between groups.
+
+Docs in [`docs/`](./docs/):
+
+- **[CategoryRules.md](./docs/CategoryRules.md)** – UI ↔ API: create rules, import preview, apply to existing rows
+- **[CategoryRuleMatcher.md](./docs/CategoryRuleMatcher.md)** – how `CategoryRuleMatcher` evaluates the tree
 
 ## Tests
 
 `dotnet test KeepItSimple.sln` from the repo root.
 
-`KeepItSimple.Api.Tests` covers `TransactionImporter.Analyze` and `Preview`, which are pure and need no database.
+`KeepItSimple.Api.Tests` covers `TransactionImporter.Analyze` / `Preview` (no database) and `CategoryRuleMatcher` (pure).
 
 Excel/CSV fixtures are **not committed**. `ExcelFixtureGenerator` writes them with NPOI into the test output directory (`bin/.../transactionImports`) when the test run starts. After a successful run the folder is deleted; if a test fails the files are left there so they can be inspected.
 

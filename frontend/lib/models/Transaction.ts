@@ -151,7 +151,7 @@ export const INCOME_ANALYTICS_CATEGORIES: TransactionCategory[] =
   );
 
 export const DEFAULT_TRANSACTION_PAGE_SIZE = 10;
-const ALL_TRANSACTION_CATEGORIES = Object.values(TransactionCategory);
+export const ALL_TRANSACTION_CATEGORIES = Object.values(TransactionCategory);
 
 export function formatCategoryLabel(category: TransactionCategory): string {
   return category.replace(/([A-Z])/g, " $1").trim();
