@@ -1,9 +1,9 @@
 # CategoryRuleMatcher
 
-Implementation reference for [`helpers/CategoryRuleMatcher.cs`](./helpers/CategoryRuleMatcher.cs).
+Implementation reference for [`helpers/CategoryRuleMatcher.cs`](../KeepItSimple.Api/helpers/CategoryRuleMatcher.cs).
 
-**Controller:** [`controllers/CategoryRuleController.cs`](./controllers/CategoryRuleController.cs) (`/api/category-rules`)  
-**Model:** [`models/CategoryRule.cs`](./models/CategoryRule.cs)  
+**Controller:** [`controllers/CategoryRuleController.cs`](../KeepItSimple.Api/controllers/CategoryRuleController.cs) (`/api/category-rules`)  
+**Model:** [`models/CategoryRule.cs`](../KeepItSimple.Api/models/CategoryRule.cs)  
 **Product flow (UI conversation):** [CategoryRules.md](./CategoryRules.md)  
 **Backend overview:** [../README.md](../README.md)
 
@@ -56,7 +56,7 @@ flowchart TD
 - A group does not have its own `logic`. Operators live on each condition after the first. `POST /api/category-rules/backfill-condition-logic` rewrites stored JSON that still has `logic` beside `conditions`.
 - Empty groups / empty condition lists do not match.
 
-Persisted as jsonb on `CategoryRules.Groups`. Shared serializer: [`helpers/CategoryRuleJson.cs`](./helpers/CategoryRuleJson.cs) (camelCase properties, string enums, omit null `logic`).
+Persisted as jsonb on `CategoryRules.Groups`. Shared serializer: [`helpers/CategoryRuleJson.cs`](../KeepItSimple.Api/helpers/CategoryRuleJson.cs) (camelCase properties, string enums, omit null `logic`).
 
 ---
 

@@ -14,6 +14,7 @@ ASP.NET Core Web API (`net10`) that powers KeepItSimple: pockets, transactions, 
 ```
 backend/
 ├── README.md                 ← this file
+├── docs/                     ← feature notes
 ├── KeepItSimple.Api/
 │   ├── controllers/          ← HTTP endpoints
 │   ├── dtos/                 ← import + category-rule request / response types
@@ -40,10 +41,10 @@ Persistence goes through `KeepItSimpleDbContext`; app code typically uses the st
 
 Bank/export files (`.xls` / `.xlsx` / `.xlsm` / `.csv`) have **unknown layouts**. The API discovers columns, the user maps them onto `MappableField` values, drafts are previewed, then saved.
 
-Docs inside the API project:
+Docs in [`docs/`](./docs/):
 
-- **[TransactionImportUtil.md](./KeepItSimple.Api/TransactionImportUtil.md)** – how `TransactionImporter` works (analyze / preview / confirm)
-- **[TransactionImportFlow.md](./KeepItSimple.Api/TransactionImportFlow.md)** – UI ↔ API conversation: file → columns → map → save
+- **[TransactionImportUtil.md](./docs/TransactionImportUtil.md)** – how `TransactionImporter` works (analyze / preview / confirm)
+- **[TransactionImportFlow.md](./docs/TransactionImportFlow.md)** – UI ↔ API conversation: file → columns → map → save
 
 ```mermaid
 flowchart LR
@@ -62,10 +63,10 @@ flowchart LR
 
 Users define rules that set a transaction category from description, amount, pocket, and optionally the category already resolved (for example from an import column). A rule matches whatever the current category is, unless the formula itself includes a category condition. Groups stand in for parentheses; AND/OR is explicit on the group and between groups.
 
-Docs inside the API project:
+Docs in [`docs/`](./docs/):
 
-- **[CategoryRules.md](./KeepItSimple.Api/CategoryRules.md)** – UI ↔ API: create rules, import preview, apply to existing rows
-- **[CategoryRuleMatcher.md](./KeepItSimple.Api/CategoryRuleMatcher.md)** – how `CategoryRuleMatcher` evaluates the tree
+- **[CategoryRules.md](./docs/CategoryRules.md)** – UI ↔ API: create rules, import preview, apply to existing rows
+- **[CategoryRuleMatcher.md](./docs/CategoryRuleMatcher.md)** – how `CategoryRuleMatcher` evaluates the tree
 
 ## Tests
 
