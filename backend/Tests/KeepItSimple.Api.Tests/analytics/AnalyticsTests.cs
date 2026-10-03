@@ -225,6 +225,62 @@ public class AnalyticsTests
     }
 
     [Fact]
+    public void Selected_month_filters_monthly_metrics_and_keeps_current_year_aggregates()
+    {
+        var selected = new DateTime(2026, 8, 31, 23, 59, 59, DateTimeKind.Utc);
+        var transactions = new List<Transaction>
+        {
+            Income(1, 1, TransactionCategory.Salary, 1800, 1, month: 8),
+            Expense(2, 1, TransactionCategory.Food, 400, 10, month: 8),
+            Expense(3, 1, TransactionCategory.Savings, 200, 15, month: 8),
+            Income(4, 1, TransactionCategory.Salary, 2000, 1),
+            Expense(5, 1, TransactionCategory.Food, 500, 10),
+            Expense(6, 1, TransactionCategory.Savings, 300, 15),
+            Income(7, 1, TransactionCategory.Salary, 1700, 1, month: 7),
+            Expense(8, 1, TransactionCategory.Food, 250, 8, month: 7),
+            Expense(9, 1, TransactionCategory.Savings, 150, 12, month: 7),
+        };
+
+        var expenses = BuildExpenseAnalytics(transactions, TwoPockets(1000, 80), selected, Now);
+        var income = BuildIncomeAnalytics(transactions, TwoPockets(1000, 80), selected, Now);
+        var saving = BuildSavingAnalytics(transactions, selected, calendarNow: Now);
+
+        Assert.Equal(400m, expenses.TotalMonthlyExpenses);
+        Assert.Equal(250m, expenses.PreviousMonthExpenses);
+        Assert.Equal(1800m, expenses.MonthlyIncome);
+        Assert.Equal(400m, expenses.MonthlySpendComparison.Single(entry => entry.Month == 8).ThisYear);
+        Assert.Equal(500m, expenses.MonthlySpendComparison.Single(entry => entry.Month == 9).ThisYear);
+        Assert.Equal(12, expenses.MonthlySpendComparison.Count);
+
+        Assert.Equal(1800m, income.TotalMonthlyIncome);
+        Assert.Equal(1700m, income.PreviousMonthIncome);
+        Assert.Equal(400m, income.MonthlyExpenses);
+        Assert.Equal(1800m, income.TwelveMonthIncomeTrend.Single(entry => entry.Month == 8).Categories[TransactionCategory.Salary]);
+        Assert.Equal(2000m, income.TwelveMonthIncomeTrend.Single(entry => entry.Month == 9).Categories[TransactionCategory.Salary]);
+        Assert.Equal(12, income.TwelveMonthIncomeTrend.Count);
+
+        Assert.Equal(200m, saving.TotalMonthlySavings);
+        Assert.Equal(150m, saving.PreviousMonthSavings);
+        Assert.Equal(1400m, saving.LeftOver);
+        Assert.Equal(200m, saving.MonthlySavings.Single(entry => entry.Month == 8).Saved);
+        Assert.Equal(300m, saving.MonthlySavings.Single(entry => entry.Month == 9).Saved);
+        Assert.Equal(12, saving.MonthlySavings.Count);
+    }
+
+    [Fact]
+    public void Resolve_analytics_now_uses_current_year_and_complete_past_months()
+    {
+        var utcNow = new DateTime(2026, 10, 3, 12, 0, 0, DateTimeKind.Utc);
+
+        Assert.Equal(utcNow, ResolveAnalyticsNow(null, utcNow));
+        Assert.Equal(utcNow, ResolveAnalyticsNow(10, utcNow));
+        Assert.Equal(new DateTime(2026, 3, 31, 23, 59, 59, DateTimeKind.Utc), ResolveAnalyticsNow(3, utcNow));
+        Assert.Equal(new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc), ResolveAnalyticsNow(11, utcNow));
+        Assert.Equal(utcNow, ResolveAnalyticsNow(0, utcNow));
+        Assert.Equal(utcNow, ResolveAnalyticsNow(13, utcNow));
+    }
+
+    [Fact]
     public void Saving_analytics_use_zero_rates_when_there_is_no_income_or_leftover()
     {
         var analytics = BuildSavingAnalytics(

@@ -27,6 +27,8 @@ export type AnalyticsPayload =
 
 type AnalyticsContextBase = {
   setView: (view: AnalyticsView) => void;
+  setMonth: (month: number) => void;
+  month: number;
   currency: string;
   isLoading: boolean;
 };
@@ -34,5 +36,6 @@ type AnalyticsContextBase = {
 export type AnalyticsContextValue = AnalyticsContextBase & AnalyticsPayload;
 
 export type AnalyticsProviderProps = AnalyticsPayload & {
+  month: number;
   children: ReactNode;
 };

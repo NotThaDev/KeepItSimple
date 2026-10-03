@@ -13,8 +13,8 @@ import { formatAmount } from "@/lib/helpers/currencyHelper";
 import { useSavingAnalytics } from "@/stores/analytics";
 import { BarChart3 } from "lucide-react";
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { MONTH_LABELS } from "../utils";
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
+import { MONTH_LABELS, selectedMonthTick } from "../utils";
 
 function getAxisDomain(values: number[]): [number, number] {
   if (values.length === 0) {
@@ -50,10 +50,11 @@ const SERIES_SWATCH: Record<string, string> = {
 };
 
 export function SavingLeftoverChart() {
-  const { analytics, currency } = useSavingAnalytics();
+  const { analytics, currency, month } = useSavingAnalytics();
   const chartData = useMemo(() => {
     return analytics.monthlySavings.map((entry) => ({
       month: MONTH_LABELS[entry.month - 1] ?? String(entry.month),
+      monthNumber: entry.month,
       leftover: entry.leftover ?? 0,
       saved: entry.saved ?? 0,
     }));
@@ -85,6 +86,7 @@ export function SavingLeftoverChart() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tick={selectedMonthTick(month)}
             />
             <YAxis
               axisLine={false}
@@ -125,8 +127,22 @@ export function SavingLeftoverChart() {
               dataKey="leftover"
               fill="var(--color-leftover)"
               maxBarSize={28}
-            />
-            <Bar dataKey="saved" fill="var(--color-saved)" maxBarSize={28} />
+            >
+              {chartData.map((entry) => (
+                <Cell
+                  key={`leftover-${entry.monthNumber}`}
+                  opacity={entry.monthNumber === month ? 1 : 0.45}
+                />
+              ))}
+            </Bar>
+            <Bar dataKey="saved" fill="var(--color-saved)" maxBarSize={28}>
+              {chartData.map((entry) => (
+                <Cell
+                  key={`saved-${entry.monthNumber}`}
+                  opacity={entry.monthNumber === month ? 1 : 0.45}
+                />
+              ))}
+            </Bar>
             <ChartLegend content={<ChartLegendContent />} />
           </BarChart>
         </ChartContainer>

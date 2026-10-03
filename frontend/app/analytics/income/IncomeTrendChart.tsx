@@ -31,6 +31,7 @@ import {
 } from "recharts";
 import { useIncomeAnalytics } from "@/stores/analytics";
 import { formatAmount } from "@/lib/helpers/currencyHelper";
+import { MONTH_LABELS, selectedMonthTick } from "../utils";
 
 const STACK_TOP_RADIUS = 4;
 
@@ -54,9 +55,11 @@ function TopRoundedStackBar({
   height,
   fill,
   payload,
+  selectedMonth,
 }: BarShapeProps & {
   categories: TransactionCategory[];
   category: TransactionCategory;
+  selectedMonth: number;
 }) {
   if (width == null || height == null || height <= 0) {
     return null;
@@ -69,6 +72,7 @@ function TopRoundedStackBar({
       width={width}
       height={height}
       fill={fill}
+      opacity={Number(payload?.monthNumber) === selectedMonth ? 1 : 0.45}
       radius={
         isTopStackSegment(categories, category, payload)
           ? [STACK_TOP_RADIUS, STACK_TOP_RADIUS, 0, 0]
@@ -84,23 +88,8 @@ function getMaxValue(values: number[]): number {
     : 1;
 }
 
-const MONTH_LABELS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
 export function IncomeTrendChart() {
-  const { analytics, currency } = useIncomeAnalytics();
+  const { analytics, currency, month: selectedMonth } = useIncomeAnalytics();
   const activeCategories = useMemo(() => {
     return INCOME_ANALYTICS_CATEGORIES.filter((category) =>
       analytics.twelveMonthIncomeTrend.some(
@@ -113,6 +102,7 @@ export function IncomeTrendChart() {
     return analytics.twelveMonthIncomeTrend.map((entry) => {
       const point: Record<string, string | number> = {
         month: MONTH_LABELS[entry.month - 1] ?? String(entry.month),
+        monthNumber: entry.month,
       };
 
       for (const category of activeCategories) {
@@ -164,6 +154,7 @@ export function IncomeTrendChart() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tick={selectedMonthTick(selectedMonth)}
             />
             <YAxis
               axisLine={false}
@@ -211,6 +202,7 @@ export function IncomeTrendChart() {
                     {...props}
                     categories={activeCategories}
                     category={category}
+                    selectedMonth={selectedMonth}
                   />
                 )}
               />
