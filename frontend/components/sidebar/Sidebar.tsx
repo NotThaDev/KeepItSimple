@@ -16,6 +16,7 @@ import Image from "next/image";
 import { PanelLeftIcon } from "lucide-react";
 import { MobileHeader } from "./MobileHeader";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { MobileSubNav } from "./MobileSubNav";
 
 function AppSidebarHeader() {
   const { state, toggleSidebar } = useSidebar();
@@ -75,7 +76,10 @@ export function NavigationMenu({ children }: PropsWithChildren) {
         </SidebarFooter>
       </Sidebar>
       <div className="flex min-h-svh min-w-0 flex-1 flex-col">
-        <MobileHeader />
+        <div className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-sm md:hidden">
+          <MobileHeader />
+          <MobileSubNav />
+        </div>
         {children}
         <MobileBottomNav />
       </div>

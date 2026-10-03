@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { routes, setTitle } from "./RouteDefinition";
+import {
+  getRouteHref,
+  isRouteActive,
+  routes,
+  setTitle,
+} from "./RouteDefinition";
 import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {
@@ -15,13 +20,17 @@ export function MobileBottomNav() {
     >
       <ul className="grid grid-cols-4">
         {routes.map((route) => {
-          const isActive =
-            pathname === route.href || pathname.startsWith(`${route.href}/`);
+          const href = getRouteHref(route);
+          if (!href) {
+            return null;
+          }
+
+          const isActive = isRouteActive(pathname, route);
 
           return (
-            <li key={route.href}>
+            <li key={route.label}>
               <Link
-                href={route.href}
+                href={href}
                 onClick={() => setTitle(route.title)}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
