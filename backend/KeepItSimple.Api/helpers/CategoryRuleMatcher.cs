@@ -58,11 +58,6 @@ public static class CategoryRuleMatcher
             return false;
         }
 
-        if (!HasCategoryCondition(rule) && category != Transaction.TransactionCategory.Other)
-        {
-            return false;
-        }
-
         return rule.GroupLogic == RuleLogic.And
             ? rule.Groups.All(group => MatchesGroup(description, amount, category, pocketId, group))
             : rule.Groups.Any(group => MatchesGroup(description, amount, category, pocketId, group));
@@ -114,13 +109,6 @@ public static class CategoryRuleMatcher
         };
     }
 
-    private static bool HasCategoryCondition(CategoryRule rule)
-    {
-        return rule.Groups.Any(group =>
-            group.Conditions is not null
-            && group.Conditions.Any(condition => condition.Field == RuleField.Category));
-    }
-
     private static bool MatchesDescription(string? description, CategoryRuleCondition condition)
     {
         if (string.IsNullOrWhiteSpace(description))
@@ -145,7 +133,7 @@ public static class CategoryRuleMatcher
 
     private static bool ContainsWordIgnoreCase(string haystack, string needle)
     {
-        var pattern = $@"\b{Regex.Escape(needle)}\b";
+        var pattern = $@"(?<!\w){Regex.Escape(needle)}(?!\w)";
         return Regex.IsMatch(haystack, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
 

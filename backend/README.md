@@ -60,7 +60,7 @@ flowchart LR
 
 ## Category rules
 
-Users define rules that set a transaction category from description, amount, pocket, and optionally the category already resolved (for example from an import column). Without a category condition, a rule only matches `Other`. Groups stand in for parentheses; AND/OR is explicit on the group and between groups.
+Users define rules that set a transaction category from description, amount, pocket, and optionally the category already resolved (for example from an import column). A rule matches whatever the current category is, unless the formula itself includes a category condition. Groups stand in for parentheses; AND/OR is explicit on the group and between groups.
 
 Docs inside the API project:
 

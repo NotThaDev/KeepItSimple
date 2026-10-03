@@ -20,7 +20,7 @@ Used from:
 
 First matching **enabled** rule wins. Evaluation never chains: the snapshot is the original description / amount / category / pocket, not a previous rule’s output.
 
-If a rule has no `Category` condition, it only matches when the snapshot category is `Other`. A category condition in the formula opts in to already-categorized rows.
+A rule matches regardless of the snapshot category. A category condition in the formula is an extra filter, not a requirement.
 
 ---
 
@@ -83,7 +83,7 @@ flowchart TD
 |-------|-----------|--------|
 | `Description` | `Contains`, `Equals` | Trim, case-insensitive. `Contains` matches a whole word (so `ENI` does not match `Enoteca`). Null/blank description never matches |
 | `Amount` | `Gt`, `Gte`, `Lt`, `Lte`, `Eq` | Invariant decimal. Signed: expenses are negative |
-| `Category` | `Equals`, `NotEquals` | Parsed as `TransactionCategory`. This is the category **before** the rule override. If the rule has **no** category condition, it only matches `Other` |
+| `Category` | `Equals`, `NotEquals` | Parsed as `TransactionCategory`. This is the category **before** the rule override. Omit it and the rule still matches any category |
 | `Pocket` | `Equals`, `NotEquals` | Value is the pocket id as a decimal-free integer string. Import uses the session pocket |
 
 Invalid operator/field pairs fail validation on save and do not match at runtime.
@@ -126,6 +126,6 @@ Create/update run `Normalize()` then `Validate()`:
 
 `KeepItSimple.Api.Tests/categoryRules/CategoryRuleMatcherTests.cs` — no database.
 
-Covers AND groups, mixed `And`/`Or` inside one group (left to right), `groupLogic: And` with an inner OR group (`Amount > 0 AND (equals OR contains)`), OR between groups, first-match `sortOrder`, disabled rules, case-insensitive description, existing category, implicit `Other` unless a category condition is present, pocket equals/not equals, blank description.
+Covers AND groups, mixed `And`/`Or` inside one group (left to right), `groupLogic: And` with an inner OR group (`Amount > 0 AND (equals OR contains)`), OR between groups, first-match `sortOrder`, disabled rules, case-insensitive description, existing category, rules without a category condition apply to every category, pocket equals/not equals, blank description.
 
 Import: `Preview_applies_the_first_matching_category_rule` in `transactionImport/PreviewTests.cs`.
