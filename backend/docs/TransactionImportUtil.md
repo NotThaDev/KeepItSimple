@@ -1,9 +1,9 @@
 # TransactionImportUtil
 
-Implementation reference for [`helpers/TransactionImporter.cs`](./helpers/TransactionImporter.cs).
+Implementation reference for [`helpers/TransactionImporter.cs`](../KeepItSimple.Api/helpers/TransactionImporter.cs).
 
-**Controller:** [`controllers/TransactionController.cs`](./controllers/TransactionController.cs) (`POST /api/transactions/import/...`)  
-**DTOs:** [`dtos/Transaction/`](./dtos/Transaction/)  
+**Controller:** [`controllers/TransactionController.cs`](../KeepItSimple.Api/controllers/TransactionController.cs) (`POST /api/transactions/import/...`)  
+**DTOs:** [`dtos/Transaction/`](../KeepItSimple.Api/dtos/Transaction/)  
 **Product flow (UI conversation):** [TransactionImportFlow.md](./TransactionImportFlow.md)  
 **Category rules (preview):** [CategoryRules.md](./CategoryRules.md)  
 **Backend overview:** [../README.md](../README.md)

@@ -1,7 +1,7 @@
 "use client";
 
 import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
-import { CategoryBadge } from "@/components/common/CategoryBadge";
+import { CategoryBadge } from "@/components/common/category/CategoryBadge";
 import { CommonTable } from "@/components/common/table/CommonTable";
 import { format } from "date-fns";
 import { ListOrdered } from "lucide-react";

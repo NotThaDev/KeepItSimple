@@ -5,7 +5,7 @@ import { TransactionImportDraft } from "@/lib/models/Transaction";
 import { IMPORT_TABLE_PAGE_SIZE } from "../../utils";
 import { DescriptionCell } from "../../DescriptionCell";
 import { formatDraftDate } from "../../utils";
-import { CategoryBadge } from "@/components/common/CategoryBadge";
+import { CategoryBadge } from "@/components/common/category/CategoryBadge";
 import { RemoveDraftButton } from "../../RemoveDraftButton";
 import { usePagedItems } from "@/hooks/usePagedItems";
 

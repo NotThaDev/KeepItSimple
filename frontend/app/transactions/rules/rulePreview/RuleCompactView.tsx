@@ -1,4 +1,4 @@
-import { CategoryBadge } from "@/components/common/CategoryBadge";
+import { CategoryBadge } from "@/components/common/category/CategoryBadge";
 import { Divider } from "@/components/common/Divider";
 import { Button } from "@/components/ui/button";
 import {
