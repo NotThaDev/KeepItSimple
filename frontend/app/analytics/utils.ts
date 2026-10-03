@@ -1,4 +1,6 @@
 import { TransactionCategory } from "@/lib/models/Transaction";
+import { createElement, type ReactNode } from "react";
+import type { XAxisTickContentProps } from "recharts";
 
 export function formatPercent(ratio: number): string {
   return `${(ratio * 100).toLocaleString(undefined, {
@@ -43,6 +45,34 @@ export const MONTH_LABELS = [
   "Nov",
   "Dec",
 ];
+
+export function monthLabel(month: number): string {
+  return MONTH_LABELS[month - 1] ?? String(month);
+}
+
+export function selectedMonthTick(
+  selectedMonth: number,
+): (props: XAxisTickContentProps) => ReactNode {
+  const selectedLabel = monthLabel(selectedMonth);
+
+  return function Tick({ x, y, payload }: XAxisTickContentProps) {
+    const isSelected = String(payload.value) === selectedLabel;
+    const tickY = typeof y === "number" ? y + 10 : y;
+
+    return createElement(
+      "text",
+      {
+        x,
+        y: tickY,
+        textAnchor: "middle",
+        fontSize: 12,
+        fontWeight: isSelected ? 700 : 400,
+        className: isSelected ? "fill-foreground" : "fill-muted-foreground",
+      },
+      String(payload.value),
+    );
+  };
+}
 
 export function getHeatIntensity(value: number, maxValue: number): number {
   if (value <= 0 || maxValue <= 0) {

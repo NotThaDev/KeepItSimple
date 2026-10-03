@@ -108,17 +108,19 @@ public static class Analytics
         };
     }
 
-    public static async Task<ExpenseAnalytics> GetExpensesAnalyticsAsync(int? pocketId = null)
+    public static async Task<ExpenseAnalytics> GetExpensesAnalyticsAsync(int? pocketId = null, int? month = null)
     {
         var pockets = await Pocket.GetAllAsync();
         var transactions = pocketId is null ? await Transaction.GetAllAsync() : await Transaction.GetByPocketIdAsync(pocketId.Value);
-        return BuildExpenseAnalytics(transactions, pockets, DateTime.UtcNow);
+        var calendarNow = DateTime.UtcNow;
+        return BuildExpenseAnalytics(transactions, pockets, ResolveAnalyticsNow(month, calendarNow), calendarNow);
     }
 
     public static ExpenseAnalytics BuildExpenseAnalytics(
         IReadOnlyCollection<Transaction> transactions,
         IReadOnlyCollection<Pocket> pockets,
-        DateTime now)
+        DateTime now,
+        DateTime? calendarNow = null)
     {
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
         var monthlyExpenses = monthlyTransactions.Where(IsExpense).ToList();
@@ -184,7 +186,8 @@ public static class Analytics
 
         var fixedExpenses = expensesByCategory.Where(t => FixedExpenseCategories.Contains(t.Category)).Sum(t => t.Total);
 
-        var currentYear = now.Year;
+        var calendar = calendarNow ?? now;
+        var currentYear = calendar.Year;
         var thisYearByMonth = transactions
             .Where(t => IsExpense(t) && t.Date.Year == currentYear)
             .GroupBy(t => t.Date.Month)
@@ -198,7 +201,7 @@ public static class Analytics
             .Select(month => new ExpenseAnalytics.MonthlyExpenseComparison
             {
                 Month = month,
-                ThisYear = month <= now.Month ? thisYearByMonth.GetValueOrDefault(month, 0) : null,
+                ThisYear = month <= calendar.Month ? thisYearByMonth.GetValueOrDefault(month, 0) : null,
                 LastYear = lastYearByMonth.GetValueOrDefault(month, 0)
             })
             .ToList();
@@ -233,17 +236,19 @@ public static class Analytics
         };
     }
 
-    public static async Task<IncomeAnalytics> GetIncomeAnalyticsAsync(int? pocketId = null)
+    public static async Task<IncomeAnalytics> GetIncomeAnalyticsAsync(int? pocketId = null, int? month = null)
     {
         var pockets = await Pocket.GetAllAsync();
         var transactions = pocketId is null ? await Transaction.GetAllAsync() : await Transaction.GetByPocketIdAsync(pocketId.Value);
-        return BuildIncomeAnalytics(transactions, pockets, DateTime.UtcNow);
+        var calendarNow = DateTime.UtcNow;
+        return BuildIncomeAnalytics(transactions, pockets, ResolveAnalyticsNow(month, calendarNow), calendarNow);
     }
 
     public static IncomeAnalytics BuildIncomeAnalytics(
         IReadOnlyCollection<Transaction> transactions,
         IReadOnlyCollection<Pocket> pockets,
-        DateTime now)
+        DateTime now,
+        DateTime? calendarNow = null)
     {
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
         var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
@@ -279,7 +284,7 @@ public static class Analytics
             Total = g.Sum(t => t.Amount)
         }).ToList().OrderByDescending(t => t.Total).ToList();
 
-        var currentYear = now.Year;
+        var currentYear = (calendarNow ?? now).Year;
         var yearIncomeTotalsByMonthAndCategory = transactions
             .Where(t => t.Date.Year == currentYear && IsIncome(t))
             .GroupBy(t => (t.Date.Month, t.Category))
@@ -323,18 +328,20 @@ public static class Analytics
         };
     }
 
-    public static async Task<SavingAnalytics> GetSavingsAnalyticsAsync()
+    public static async Task<SavingAnalytics> GetSavingsAnalyticsAsync(int? month = null)
     {
         var transactions = await Transaction.GetAllAsync();
         var pockets = await Pocket.GetAllAsync();
         var currency = pockets.FirstOrDefault()?.Currency;
-        return BuildSavingAnalytics(transactions, DateTime.UtcNow, currency);
+        var calendarNow = DateTime.UtcNow;
+        return BuildSavingAnalytics(transactions, ResolveAnalyticsNow(month, calendarNow), currency ?? "EUR", calendarNow);
     }
 
     public static SavingAnalytics BuildSavingAnalytics(
         IReadOnlyCollection<Transaction> transactions,
         DateTime now,
-        string currency = "EUR")
+        string currency = "EUR",
+        DateTime? calendarNow = null)
     {
         var monthlyTransactions = transactions
             .Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month)
@@ -354,7 +361,7 @@ public static class Analytics
 
         var savingsRate = monthlyIncome == 0 ? 0 : monthlySavings / monthlyIncome;
 
-        var yearTransactions = transactions.Where(t => t.Date.Year == now.Year).ToList();
+        var yearTransactions = transactions.Where(t => t.Date.Year == (calendarNow ?? now).Year).ToList();
         var incomeByMonth = yearTransactions
             .Where(IsIncome)
             .GroupBy(t => t.Date.Month)
@@ -413,6 +420,29 @@ public static class Analytics
             MonthlyIncome = monthlyIncome,
             Currency = currency,
         };
+    }
+
+    public static DateTime ResolveAnalyticsNow(int? month, DateTime utcNow)
+    {
+        if (month is not int selected || selected is < 1 or > 12)
+        {
+            return utcNow;
+        }
+
+        var year = utcNow.Year;
+        var daysInMonth = DateTime.DaysInMonth(year, selected);
+
+        if (selected == utcNow.Month)
+        {
+            return utcNow;
+        }
+
+        if (selected < utcNow.Month)
+        {
+            return new DateTime(year, selected, daysInMonth, 23, 59, 59, DateTimeKind.Utc);
+        }
+
+        return new DateTime(year, selected, 1, 0, 0, 0, DateTimeKind.Utc);
     }
 
     private static List<TransactionPerPocket> ToPerPocketTotals(

@@ -17,25 +17,25 @@ public class AnalyticsController : ControllerBase
     }
 
     [HttpGet("income")]
-    public async Task<ActionResult<IncomeAnalytics>> GetIncome()
+    public async Task<ActionResult<IncomeAnalytics>> GetIncome([FromQuery] int? month)
     {
-        var income = await GetIncomeAnalyticsAsync();
+        var income = await GetIncomeAnalyticsAsync(month: month);
 
         return Ok(income);
     }
 
     [HttpGet("expense")]
-    public async Task<ActionResult<ExpenseAnalytics>> GetExpense()
+    public async Task<ActionResult<ExpenseAnalytics>> GetExpense([FromQuery] int? month)
     {
-        var expense = await GetExpensesAnalyticsAsync();
+        var expense = await GetExpensesAnalyticsAsync(month: month);
 
         return Ok(expense);
     }
 
     [HttpGet("saving")]
-    public async Task<ActionResult<SavingAnalytics>> GetSaving()
+    public async Task<ActionResult<SavingAnalytics>> GetSaving([FromQuery] int? month)
     {
-        var saving = await GetSavingsAnalyticsAsync();
+        var saving = await GetSavingsAnalyticsAsync(month);
 
         return Ok(saving);
     }

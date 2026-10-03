@@ -17,6 +17,7 @@ const AnalyticsContext = createContext<AnalyticsContextValue | null>(null);
 export function AnalyticsProvider({
   analytics,
   view,
+  month,
   children,
 }: Readonly<AnalyticsProviderProps>) {
   const router = useRouter();
@@ -26,14 +27,27 @@ export function AnalyticsProvider({
   const setView = useCallback(
     (nextView: AnalyticsView) => {
       startTransition(() => {
-        router.replace(toAnalyticsHref(pathname, nextView), { scroll: false });
+        router.replace(toAnalyticsHref(pathname, nextView, month), {
+          scroll: false,
+        });
       });
     },
-    [pathname, router],
+    [month, pathname, router],
+  );
+
+  const setMonth = useCallback(
+    (nextMonth: number) => {
+      startTransition(() => {
+        router.replace(toAnalyticsHref(pathname, view, nextMonth), {
+          scroll: false,
+        });
+      });
+    },
+    [pathname, router, view],
   );
 
   const value = useMemo((): AnalyticsContextValue => {
-    const base = { setView, isLoading: isPending };
+    const base = { setView, setMonth, month, isLoading: isPending };
 
     if (view === AnalyticsView.Expense) {
       return {
@@ -60,7 +74,7 @@ export function AnalyticsProvider({
       analytics,
       currency: analytics?.currency ?? "EUR",
     };
-  }, [analytics, isPending, setView, view]);
+  }, [analytics, isPending, month, setMonth, setView, view]);
 
   return (
     <AnalyticsContext.Provider value={value}>
@@ -79,28 +93,28 @@ export function useAnalytics() {
 }
 
 export function useIncomeAnalytics() {
-  const { view, analytics, currency } = useAnalytics();
+  const { view, analytics, currency, month } = useAnalytics();
   if (view !== AnalyticsView.Income || analytics == undefined) {
     throw new Error("useIncomeAnalytics requires loaded income analytics");
   }
 
-  return { analytics, currency };
+  return { analytics, currency, month };
 }
 
 export function useExpenseAnalytics() {
-  const { view, analytics, currency } = useAnalytics();
+  const { view, analytics, currency, month } = useAnalytics();
   if (view !== AnalyticsView.Expense || analytics == undefined) {
     throw new Error("useExpenseAnalytics requires loaded expense analytics");
   }
 
-  return { analytics, currency };
+  return { analytics, currency, month };
 }
 
 export function useSavingAnalytics() {
-  const { view, analytics, currency } = useAnalytics();
+  const { view, analytics, currency, month } = useAnalytics();
   if (view !== AnalyticsView.Saving || analytics == undefined) {
     throw new Error("useSavingAnalytics requires loaded saving analytics");
   }
 
-  return { analytics, currency };
+  return { analytics, currency, month };
 }
