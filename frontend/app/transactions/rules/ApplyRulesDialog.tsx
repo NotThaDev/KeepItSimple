@@ -3,7 +3,7 @@
 import { DescriptionCell } from "@/app/transactions/import/DescriptionCell";
 import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
 import { formatDraftDate } from "@/app/transactions/import/utils";
-import { CategoryBadge } from "@/components/common/CategoryBadge";
+import { CategoryBadge } from "@/components/common/category/CategoryBadge";
 import { DateRangePicker } from "@/components/common/DateRangePicker";
 import { formatDateOnly } from "@/components/common/DateUtils";
 import { Selection } from "@/components/common/selector/Selection";

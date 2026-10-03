@@ -1,7 +1,7 @@
 "use client";
 
 import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
-import { CategoryBadge } from "@/components/common/CategoryBadge";
+import { CategoryBadge } from "@/components/common/category/CategoryBadge";
 import { CommonTable } from "@/components/common/table/CommonTable";
 import { formatAmount } from "@/lib/helpers/currencyHelper";
 import { useSavingAnalytics } from "@/stores/analytics";

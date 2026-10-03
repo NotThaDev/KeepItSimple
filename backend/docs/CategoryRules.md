@@ -116,7 +116,7 @@ Explicit two-step action from the Rules page. Never automatic on create/update o
 1. `POST /api/category-rules/preview-apply` with optional `pocketId`, `from`, `to` → only rows in that pocket/date range whose category **would change**.
 2. `POST /api/category-rules/apply` with those `transactionIds` → updates `Category` only (pocket balance unchanged).
 
-There is no “manually edited” flag. Rules **without** a category condition only match `Other`, so they do not overwrite Food/Shopping/etc. To recategorize those rows, add a category condition to the formula. Preview-apply still lists only rows whose category would change.
+There is no “manually edited” flag. A matching rule overwrites the current category, including Food, Shopping, and the rest. A category condition in the formula limits which rows match; without one, every category is eligible. Preview-apply still lists only rows whose category would change.
 
 ---
 

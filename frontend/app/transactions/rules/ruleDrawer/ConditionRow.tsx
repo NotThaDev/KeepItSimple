@@ -1,6 +1,6 @@
 "use client";
 
-import { TransactionCategorySelector } from "@/app/transactions/TransactionCategorySelector";
+import { CategorySelector } from "@/components/common/category/selector/CategorySelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,10 +9,7 @@ import {
   RuleField,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
-import {
-  isTransactionCategory,
-  TransactionCategory,
-} from "@/lib/models/Transaction";
+import { TransactionCategory } from "@/lib/models/Transaction";
 import { Trash2 } from "lucide-react";
 import { FieldSelect } from "./selectors/FieldSelect";
 import { OperatorSelect } from "./selectors/OperatorSelect";
@@ -39,7 +36,7 @@ export function ConditionRow({
     onChange({
       field,
       operator: OPERATORS_BY_FIELD[field][0],
-      value: "",
+      value: TransactionCategory.Other,
     });
   };
 
@@ -52,13 +49,9 @@ export function ConditionRow({
         onChange={(operator) => onChange({ ...condition, operator })}
       />
       {condition.field === RuleField.Category ? (
-        <TransactionCategorySelector
+        <CategorySelector
           showAll
-          value={
-            isTransactionCategory(condition.value)
-              ? condition.value
-              : TransactionCategory.Other
-          }
+          category={condition.value as TransactionCategory}
           onChange={(value) => onChange({ ...condition, value })}
           isInvalid={invalidValue}
           className="min-w-0 flex-1"
