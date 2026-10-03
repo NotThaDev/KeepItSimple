@@ -67,9 +67,11 @@ export function PreviewStep() {
             {
               id: "category",
               header: "Category",
-              headerClassName: "w-52",
+              headerClassName: "w-72",
+              cellClassName: "w-72",
               cell: ({ item, index }) => (
                 <CategorySelector
+                  className="w-full max-w-72"
                   category={item.category}
                   isIncome={item.amount > 0}
                   onChange={(category) => updateDraftCategory(index, category)}

@@ -18,13 +18,16 @@ export function CategorySelectItem({
   const colors = CategoryColorMap[category] ?? DEFAULT_CATEGORY_COLORS;
 
   return (
-    <SelectItem value={itemValue}>
+    <SelectItem
+      value={itemValue}
+      className="min-w-0 *:min-w-0 *:[span]:last:overflow-hidden"
+    >
       <span
         className="size-2.5 shrink-0 rounded-full"
         style={{ backgroundColor: colors.background }}
         aria-hidden
       />
-      {formatCategoryLabel(category)}
+      <span className="min-w-0 truncate">{formatCategoryLabel(category)}</span>
     </SelectItem>
   );
 }
