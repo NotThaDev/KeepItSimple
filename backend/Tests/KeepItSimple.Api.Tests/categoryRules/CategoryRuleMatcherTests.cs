@@ -219,6 +219,38 @@ public class CategoryRuleMatcherTests
     }
 
     [Fact]
+    public void FindMatch_description_contains_matches_phrases_that_end_with_punctuation()
+    {
+        var rules = new[]
+        {
+            Rule("Compass", Transaction.TransactionCategory.Loan, groups:
+            [
+                Group(And(
+                    DescriptionContains("ADDEBITO SEPA"),
+                    DescriptionContains("IT050020000000864530159"),
+                    DescriptionContains("COMPASS BANCA S.P.A."))),
+            ]),
+        };
+
+        const string description =
+            "ADDEBITO SEPA DD PER FATTURA A VOSTRO CARICO INCASSO 00408289391 SDD DA IT050020000000864530159 COMPASS BANCA S.P.A. MANDATO NR. MNDTCO000031398944D04032025H091631 PER 0142826CO00408289391 CO8289391";
+
+        var match = CategoryRuleMatcher.FindMatch(description, -120m, Transaction.TransactionCategory.Food, rules);
+
+        Assert.Equal(Transaction.TransactionCategory.Loan, match?.TargetCategory);
+        Assert.Null(CategoryRuleMatcher.FindMatch(
+            "COMPASS BANCA S.P.A.X MANDATO",
+            -120m,
+            Transaction.TransactionCategory.Other,
+            [
+                Rule("Glued", Transaction.TransactionCategory.Loan, groups:
+                [
+                    Group(And(DescriptionContains("COMPASS BANCA S.P.A."))),
+                ]),
+            ]));
+    }
+
+    [Fact]
     public void FindMatch_can_use_existing_category()
     {
         var rules = new[]
@@ -241,7 +273,7 @@ public class CategoryRuleMatcherTests
     }
 
     [Fact]
-    public void FindMatch_without_category_condition_only_applies_to_other()
+    public void FindMatch_without_category_condition_applies_to_any_category()
     {
         var rules = new[]
         {
@@ -263,7 +295,7 @@ public class CategoryRuleMatcherTests
             rules);
 
         Assert.Equal(Transaction.TransactionCategory.Shopping, uncategorized?.TargetCategory);
-        Assert.Null(alreadyFood);
+        Assert.Equal(Transaction.TransactionCategory.Shopping, alreadyFood?.TargetCategory);
     }
 
     [Fact]
