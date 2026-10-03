@@ -116,7 +116,7 @@ export function CategorySelector({
           position="popper"
           align="start"
           data-vaul-no-drag=""
-          className="w-96 p-2 !overflow-hidden [&_[data-radix-select-viewport]]:!h-auto"
+          className="w-(--radix-select-trigger-width) max-w-96 min-w-0 p-2 !overflow-hidden [&_[data-radix-select-viewport]]:!h-auto [&_[data-radix-select-viewport]]:!min-w-0 [&_[data-radix-select-viewport]]:!w-full"
           onPointerDownCapture={(event) => {
             const target = event.target;
             selectingItemRef.current =
@@ -204,7 +204,7 @@ function CategorySelect({
       <SelectTrigger
         aria-invalid={isInvalid}
         className={cn(
-          "w-full min-w-[342px] font-normal dark:bg-transparent dark:hover:bg-transparent [&_svg]:text-current",
+          "w-full min-w-0 font-normal dark:bg-transparent dark:hover:bg-transparent [&_svg]:text-current *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:truncate",
           className,
         )}
         style={{
@@ -236,10 +236,10 @@ function CategoryGroupPanel({
   onGroupSelect: (groupId: string) => void;
 }) {
   return (
-    <div className="grid h-72 grid-cols-[11rem_minmax(0,1fr)] gap-1">
+    <div className="grid max-h-72 min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-1">
       <nav
         aria-label="Category groups"
-        className="overflow-y-auto overscroll-contain border-r pr-1"
+        className="max-h-72 min-w-0 overflow-y-auto overscroll-contain border-r pr-1"
         onKeyDown={(event) => {
           const isTypingKey =
             event.key === "Backspace" ||
@@ -260,7 +260,7 @@ function CategoryGroupPanel({
               type="button"
               aria-pressed={isActive}
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm",
+                "flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm",
                 "hover:bg-accent hover:text-accent-foreground",
                 isActive && "bg-accent text-accent-foreground",
               )}
@@ -273,7 +273,7 @@ function CategoryGroupPanel({
           );
         })}
       </nav>
-      <SelectGroup className="max-h-72 overflow-y-auto overscroll-contain p-0">
+      <SelectGroup className="max-h-72 min-w-0 overflow-y-auto overscroll-contain p-0">
         {activeGroup?.categories.map((category) => (
           <CategorySelectItem
             key={category}
