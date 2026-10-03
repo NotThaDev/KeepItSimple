@@ -51,12 +51,13 @@ export function parseAnalyticsMonth(
   searchParams: Record<string, string | string[] | undefined>,
   now = new Date(),
 ): number {
+  const currentMonth = now.getMonth() + 1;
   const month = Number(firstSearchParam(searchParams.month));
-  if (Number.isInteger(month) && month >= 1 && month <= 12) {
+  if (Number.isInteger(month) && month >= 1 && month <= currentMonth) {
     return month;
   }
 
-  return now.getMonth() + 1;
+  return currentMonth;
 }
 
 export function toAnalyticsHref(

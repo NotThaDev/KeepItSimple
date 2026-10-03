@@ -120,6 +120,7 @@ public static class Analytics
         IReadOnlyCollection<Transaction> transactions,
         IReadOnlyCollection<Pocket> pockets,
         DateTime now,
+        // Tests only: freezes today apart from the selected month. Production always passes DateTime.UtcNow.
         DateTime? calendarNow = null)
     {
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
@@ -248,6 +249,7 @@ public static class Analytics
         IReadOnlyCollection<Transaction> transactions,
         IReadOnlyCollection<Pocket> pockets,
         DateTime now,
+        // Tests only: freezes today apart from the selected month. Production always passes DateTime.UtcNow.
         DateTime? calendarNow = null)
     {
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
@@ -341,6 +343,7 @@ public static class Analytics
         IReadOnlyCollection<Transaction> transactions,
         DateTime now,
         string currency = "EUR",
+        // Tests only: freezes today apart from the selected month. Production always passes DateTime.UtcNow.
         DateTime? calendarNow = null)
     {
         var monthlyTransactions = transactions

@@ -10,12 +10,16 @@ import {
 
 export function AnalyticsViewSelector() {
   const { view, setView, month, setMonth } = useAnalytics();
+  const currentMonth = new Date().getMonth() + 1;
+  const monthItems = ANALYTICS_MONTH_ITEMS.filter(
+    (item) => Number(item.value) <= currentMonth,
+  );
 
   return (
     <div className="flex shrink-0 items-center justify-end gap-2">
       <Selection
         className="w-[160px]"
-        items={ANALYTICS_MONTH_ITEMS}
+        items={monthItems}
         value={String(month)}
         onChange={(value) => setMonth(Number(value))}
       />
