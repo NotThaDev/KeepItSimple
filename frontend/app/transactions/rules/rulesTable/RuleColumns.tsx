@@ -7,7 +7,7 @@ import { Pocket } from "@/lib/models/Pocket";
 import { createColumnHelper } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { RuleCompactView } from "../rulePreview/RuleCompactView";
-import { CategoryBadge } from "@/components/common/CategoryBadge";
+import { CategoryBadge } from "@/components/common/category/CategoryBadge";
 import { RuleActionsMenu } from "./RuleActionsMenu";
 import { useState } from "react";
 

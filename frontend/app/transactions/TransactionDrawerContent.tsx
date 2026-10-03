@@ -2,7 +2,7 @@
 
 import { DatePicker } from "@/components/common/DatePicker";
 import { Selection } from "@/components/common/selector/Selection";
-import { TransactionCategorySelector } from "@/app/transactions/TransactionCategorySelector";
+import { CategorySelector } from "@/components/common/category/selector/CategorySelector";
 import { Button } from "@/components/ui/button";
 import {
   DrawerClose,
@@ -371,11 +371,10 @@ export function TransactionDrawerContent({
 
             <Field className="sm:col-span-5" data-invalid={errors.category}>
               <FieldLabel>Category</FieldLabel>
-              <TransactionCategorySelector
+              <CategorySelector
                 key={transactionType}
-                value={selectedCategory}
+                category={selectedCategory}
                 isIncome={transactionType === TransactionType.Income}
-                placeholder="Select a Category"
                 isInvalid={errors.category}
                 onChange={(category) => {
                   setTransactionData((prev) => ({ ...prev, category }));

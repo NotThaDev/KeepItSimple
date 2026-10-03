@@ -7,7 +7,7 @@ import { DescriptionCell } from "../../DescriptionCell";
 import { RemoveDraftButton } from "../../RemoveDraftButton";
 import { formatDraftDate, IMPORT_TABLE_PAGE_SIZE } from "../../utils";
 import { PreviewErrorsAccordion } from "./PreviewErrorsAccordion";
-import { TransactionCategorySelector } from "@/app/transactions/TransactionCategorySelector";
+import { CategorySelector } from "@/components/common/category/selector/CategorySelector";
 import { usePagedItems } from "@/hooks/usePagedItems";
 
 export function PreviewStep() {
@@ -56,9 +56,7 @@ export function PreviewStep() {
               id: "description",
               header: "Description",
               cellClassName: "max-w-0 overflow-hidden",
-              cell: ({ item }) => (
-                <DescriptionCell value={item.description} />
-              ),
+              cell: ({ item }) => <DescriptionCell value={item.description} />,
             },
             {
               id: "amount",
@@ -71,12 +69,10 @@ export function PreviewStep() {
               header: "Category",
               headerClassName: "w-52",
               cell: ({ item, index }) => (
-                <TransactionCategorySelector
-                  value={item.category}
+                <CategorySelector
+                  category={item.category}
                   isIncome={item.amount > 0}
-                  onChange={(category) =>
-                    updateDraftCategory(index, category)
-                  }
+                  onChange={(category) => updateDraftCategory(index, category)}
                 />
               ),
             },

@@ -1,6 +1,6 @@
 "use client";
 
-import { TransactionCategorySelector } from "@/app/transactions/TransactionCategorySelector";
+import { CategorySelector } from "@/components/common/category/selector/CategorySelector";
 import { Button } from "@/components/ui/button";
 import {
   DrawerClose,
@@ -32,7 +32,7 @@ import { RuleBuilder } from "./RuleBuilder";
 import { draftFrom, RuleValidation, validateRule } from "./utils";
 
 const RULE_DRAWER_HELP =
-  "Groups are parentheses. Pick AND or OR inside a group when it has two or more conditions, and how groups combine with each other. Without a category condition, the rule only matches transactions in Other. Description contains matches a whole word, not a substring.";
+  "Groups are parentheses. Pick AND or OR inside a group when it has two or more conditions, and how groups combine with each other. Description contains matches a whole word, not a substring.";
 
 interface RuleDrawerContentProps {
   rule?: CategoryRule;
@@ -130,9 +130,9 @@ export function RuleDrawerContent({
 
             <Field className="w-[fit-content]">
               <FieldLabel htmlFor="target-category">Set category to</FieldLabel>
-              <TransactionCategorySelector
+              <CategorySelector
                 showAll
-                value={ruleData.targetCategory}
+                category={ruleData.targetCategory}
                 onChange={(targetCategory) =>
                   updateRule({ ...ruleData, targetCategory })
                 }
