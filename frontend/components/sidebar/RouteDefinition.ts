@@ -82,10 +82,6 @@ export function isRouteActive(pathname: string, route: RouteDefinition) {
   );
 }
 
-export function getSectionForPath(pathname: string) {
-  return routes.find((route) => isRouteActive(pathname, route));
-}
-
 export function getRouteForPath(pathname: string) {
   const all = flattenRoutes(routes).filter((route) => route.href);
   const exact = all.find((route) => pathname === route.href);
