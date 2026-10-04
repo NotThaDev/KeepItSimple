@@ -34,6 +34,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 
+    // Ensure the database is created and migrated
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<KeepItSimpleDbContext>();
+    dbContext.Database.EnsureCreated();
 }
 
 KeepItSimpleContext.InitContext(app);
