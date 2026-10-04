@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace KeepItSimple.Api.Helpers;
 
-public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> options) : IdentityDbContext<KeepItSimpleUser>(options)
+public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> options) : IdentityDbContext(options)
 {
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Pocket> Pockets => Set<Pocket>();
