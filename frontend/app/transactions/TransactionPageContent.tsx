@@ -153,7 +153,7 @@ export function TransactionPageContent({
         <DataTable
           key={selectionResetTrigger}
           onRowSelectionChange={setSelectedRows}
-          className="min-h-[580px]"
+          className="min-h-[360px] md:min-h-[580px]"
           columns={transactionDataColumns}
           data={transactions}
           pageCount={pageCount}
@@ -161,7 +161,7 @@ export function TransactionPageContent({
           onPageChange={(pageIndex) => applyFilters({ page: pageIndex + 1 })}
           initialState={{ pagination: { pageSize } }}
           extraContent={
-            <div className="flex gap-2 items-center">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <Dialog
                 open={deleteTransactionOpen}
                 onOpenChange={setDeleteTransactionOpen}

@@ -113,7 +113,7 @@ export function DataTable<TData extends RowData>({
 
   return (
     <div className={`flex w-full flex-col gap-2 ${className ?? ""}`}>
-      <div className="overflow-hidden rounded-md border grow">
+      <div className="grow overflow-x-auto overflow-y-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -164,7 +164,7 @@ export function DataTable<TData extends RowData>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between px-2">
+      <div className="flex flex-col gap-2 px-2 sm:flex-row sm:items-center sm:justify-between">
         {enablePagination ? (
           <PaginationComponent
             pageIndex={currentPage}
@@ -173,7 +173,11 @@ export function DataTable<TData extends RowData>({
           />
         ) : null}
 
-        <div className="ml-auto">{extraContent}</div>
+        {extraContent ? (
+          <div className="flex flex-wrap justify-end gap-2 sm:ml-auto">
+            {extraContent}
+          </div>
+        ) : null}
       </div>
     </div>
   );

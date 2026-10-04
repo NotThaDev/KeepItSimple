@@ -1,13 +1,20 @@
 import "./globals.css";
-import { NavigationMenu } from "@/components/sidebar/Sidebar";
+import { NavigationMenu } from "@/components/sidebar/NavigationMenu";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "next-themes";
 import { CSSProperties } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import type { Viewport } from "next";
 
 export const dynamic = "force-dynamic";
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -32,9 +39,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               } as CSSProperties
             }
           >
-            <NavigationMenu />
-            <Toaster position="top-center" />
-            <main className="w-full">{children}</main>
+            <NavigationMenu>
+              <Toaster position="top-center" />
+              <main className="min-h-0 w-full flex-1 overflow-y-auto">
+                {children}
+              </main>
+            </NavigationMenu>
           </SidebarProvider>
         </ThemeProvider>
       </body>

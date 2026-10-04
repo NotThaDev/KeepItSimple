@@ -12,6 +12,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -63,18 +64,29 @@ function isPathActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function NavItem({
-  route,
-  pathname,
-}: {
+function useNavigateAndCloseSidebar() {
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  return (title: string) => {
+    setTitle(title);
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+}
+
+interface NavItemProps {
   route: RouteDefinition;
   pathname: string;
-}) {
+}
+
+function NavItem({ route, pathname }: Readonly<NavItemProps>) {
   const children = route.children ?? [];
   const childActive = children.some(
     (child) => child.href && isPathActive(pathname, child.href),
   );
   const [open, setOpen] = useState(childActive);
+  const navigateAndClose = useNavigateAndCloseSidebar();
 
   if (children.length === 0) {
     if (!route.href) {
@@ -84,7 +96,10 @@ function NavItem({
     return (
       <SidebarMenuItem>
         <SidebarMenuButton asChild isActive={pathname === route.href}>
-          <Link href={route.href} onClick={() => setTitle(route.title)}>
+          <Link
+            href={route.href}
+            onClick={() => navigateAndClose(route.title)}
+          >
             <route.icon />
             <span>{route.label}</span>
           </Link>
@@ -122,7 +137,7 @@ function NavItem({
                   >
                     <Link
                       href={child.href}
-                      onClick={() => setTitle(child.title)}
+                      onClick={() => navigateAndClose(child.title)}
                     >
                       <child.icon />
                       <span>{child.label}</span>

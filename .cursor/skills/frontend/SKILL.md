@@ -49,7 +49,7 @@ frontend/
   components/
     ui/                       # shadcn primitives
     common/                   # widgets used by more than one feature
-    sidebar/                  # nav; routes live in RouteDefinition.ts
+    sidebar/                  # nav shell and RouteDefinition.ts
   stores/<feature>/           # context: Action + State
   hooks/                      # hooks shared across features
   lib/
@@ -59,6 +59,8 @@ frontend/
 ```
 
 Feature UI stays under its route (`app/transactions/rules/`). Move a component to `components/common/` only when a second feature needs it. Add a page that should appear in the nav to `components/sidebar/RouteDefinition.ts`.
+
+`NavigationMenu` mounts the desktop sidebar and the mobile header and bottom nav together. The server does not know the viewport, so do not mount only one of them. `md:hidden` and `hidden md:block` choose which one is visible.
 
 ## Page split
 

@@ -62,6 +62,26 @@ function flattenRoutes(items: RouteDefinition[]): RouteDefinition[] {
   );
 }
 
+export function getRouteHref(route: RouteDefinition) {
+  if (route.href) {
+    return route.href;
+  }
+
+  return route.children?.find((child) => child.href)?.href;
+}
+
+export function isRouteActive(pathname: string, route: RouteDefinition) {
+  if (route.href) {
+    return pathname === route.href || pathname.startsWith(`${route.href}/`);
+  }
+
+  return (route.children ?? []).some(
+    (child) =>
+      Boolean(child.href) &&
+      (pathname === child.href || pathname.startsWith(`${child.href}/`)),
+  );
+}
+
 export function getRouteForPath(pathname: string) {
   const all = flattenRoutes(routes).filter((route) => route.href);
   const exact = all.find((route) => pathname === route.href);
