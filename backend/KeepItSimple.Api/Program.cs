@@ -1,4 +1,6 @@
 using KeepItSimple.Api.Helpers;
+using KeepItSimple.Api.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +22,8 @@ builder.Services.AddDbContext<KeepItSimpleDbContext>((serviceProvider, options) 
     options.UseNpgsql(connectionString);
 });
 
+builder.Services.AddIdentity<KeepItSimpleUser, IdentityRole>()
+    .AddEntityFrameworkStores<KeepItSimpleDbContext>();
 
 var app = builder.Build();
 

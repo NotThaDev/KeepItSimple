@@ -22,6 +22,7 @@ flowchart TD
 ## Model that should not be redone later
 
 - `ApplicationUser` extends `IdentityUser` (string id, login with `UserName` and password). No application roles.
+- Identity tables (`AspNetUsers` and the login, token, claim, and role tables) and `RefreshToken` live in the PostgreSQL schema `identity`. Pockets, rules, and transactions stay in `public`. Foreign keys cross that schema. `HasDefaultSchema` is not used.
 - On [backend/KeepItSimple.Api/models/Pocket.cs](backend/KeepItSimple.Api/models/Pocket.cs), nullable `OwnerId` pointing at the user. That user is the owner.
 - On [backend/KeepItSimple.Api/models/CategoryRule.cs](backend/KeepItSimple.Api/models/CategoryRule.cs), nullable `UserId` pointing at the user. That user is the owner of the rule. The step 3 claim also assigns rules that still have no user, and from then on creating, reading, and updating rules uses only that user's rules.
 - [backend/KeepItSimple.Api/models/Transaction.cs](backend/KeepItSimple.Api/models/Transaction.cs) does not get a user. Reads and writes stay valid when the pocket is accessible.
@@ -95,7 +96,7 @@ Three substeps, in this order.
 - Configuration section `Jwt`: `Issuer`, `Audience`, `Key`, access lifetime 15 minutes, refresh lifetime 14 days. The key is at least 32 characters and lives in user secrets or an environment variable, not in the committed `appsettings.json`.
 - In [backend/KeepItSimple.Api/Program.cs](backend/KeepItSimple.Api/Program.cs), after Identity: `AddAuthentication` with `JwtBearer` as the default authenticate and challenge scheme. Validation checks issuer, audience, lifetime, and the signing key (`HMAC-SHA256`). `AddAuthorization` is registered. `UseAuthentication` and `UseAuthorization` stay before the controllers.
 - Access token claims are the user id (`ClaimTypes.NameIdentifier`) and the username (`ClaimTypes.Name`). Issuer, audience, and key match the validation parameters. A helper builds the token. The controller does not sign it inline.
-- Refresh token: 32 random bytes, stored only as a SHA-256 hash. Entity `RefreshToken` (user id, hash, expires, created, revoked, replaced-by). One row per login. Deleting a user cascades these rows. A new migration adds the table. Migrations already in the tree are left unchanged.
+- Refresh token: 32 random bytes, stored only as a SHA-256 hash. Entity `RefreshToken` (user id, hash, expires, created, revoked, replaced-by) in the `identity` schema. One row per login. Deleting a user cascades these rows. A new migration adds the table. Migrations already in the tree are left unchanged.
 - Cookie `kis_refresh`: `HttpOnly`, `SameSite=Lax` (localhost:3000 and localhost:5264 are same-site), `Secure` only when the request is already HTTPS, `Path=/api/account`. The browser stores it. Script cannot read it.
 - `POST login` checks the password, returns `{ accessToken, expiresAt }`, and sets the refresh cookie.
 - `POST refresh` reads that cookie. A valid row is revoked, a new row and a new cookie are issued, and the response is a new access token. Each rotation gets a fresh 14-day expiry. A missing, expired, or revoked cookie is 401. Presenting a token that was already rotated revokes every active refresh token of that user and clears the cookie.
