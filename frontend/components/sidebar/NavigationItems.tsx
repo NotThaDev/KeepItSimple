@@ -75,13 +75,12 @@ function useNavigateAndCloseSidebar() {
   };
 }
 
-function NavItem({
-  route,
-  pathname,
-}: {
+interface NavItemProps {
   route: RouteDefinition;
   pathname: string;
-}) {
+}
+
+function NavItem({ route, pathname }: Readonly<NavItemProps>) {
   const children = route.children ?? [];
   const childActive = children.some(
     (child) => child.href && isPathActive(pathname, child.href),

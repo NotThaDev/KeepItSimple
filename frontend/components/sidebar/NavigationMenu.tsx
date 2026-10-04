@@ -62,7 +62,7 @@ function AppSidebarHeader() {
   );
 }
 
-export function NavigationMenu({ children }: PropsWithChildren) {
+export function NavigationMenu({ children }: Readonly<PropsWithChildren>) {
   return (
     <>
       <Sidebar collapsible="icon">

@@ -1,5 +1,5 @@
 import "./globals.css";
-import { NavigationMenu } from "@/components/sidebar/Sidebar";
+import { NavigationMenu } from "@/components/sidebar/NavigationMenu";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { SidebarProvider } from "@/components/ui/sidebar";

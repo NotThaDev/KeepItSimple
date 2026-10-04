@@ -34,13 +34,15 @@ export function MobileBottomNav() {
   );
 }
 
+interface MobileNavItemProps {
+  route: RouteDefinition;
+  pathname: string;
+}
+
 function MobileNavItem({
   route,
   pathname,
-}: {
-  route: RouteDefinition;
-  pathname: string;
-}) {
+}: Readonly<MobileNavItemProps>) {
   const children = (route.children ?? []).filter((child) => child.href);
   const isActive = isRouteActive(pathname, route);
 
@@ -77,17 +79,19 @@ function MobileNavItem({
   );
 }
 
+interface SectionMenuProps {
+  route: RouteDefinition;
+  pathname: string;
+  isActive: boolean;
+  items: RouteDefinition[];
+}
+
 function SectionMenu({
   route,
   pathname,
   isActive,
   items,
-}: {
-  route: RouteDefinition;
-  pathname: string;
-  isActive: boolean;
-  items: RouteDefinition[];
-}) {
+}: Readonly<SectionMenuProps>) {
   const activeHref = activeChildHref(pathname, items);
 
   return (
@@ -130,13 +134,12 @@ function SectionMenu({
   );
 }
 
-function ItemIcon({
-  icon: Icon,
-  isActive,
-}: {
+interface ItemIconProps {
   icon: RouteDefinition["icon"];
   isActive: boolean;
-}) {
+}
+
+function ItemIcon({ icon: Icon, isActive }: Readonly<ItemIconProps>) {
   return (
     <span
       className={cn(
