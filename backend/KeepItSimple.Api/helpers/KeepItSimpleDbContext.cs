@@ -1,12 +1,13 @@
 
 using System.Text.Json;
 using KeepItSimple.Api.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace KeepItSimple.Api.Helpers;
 
-public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> options) : DbContext(options)
+public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> options) : IdentityDbContext(options)
 {
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Pocket> Pockets => Set<Pocket>();
