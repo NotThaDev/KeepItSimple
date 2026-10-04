@@ -1,8 +1,8 @@
 # Users with ASP.NET Identity
 
-Add users with ASP.NET Identity in three steps: first accounts and schema without locking the APIs, then login and registration in the frontend, and finally assignment of existing data and protection of the APIs. Pockets and rules belong to the user. Sharing is not part of this work: later it will be a group of users that shares selected pockets and selected rules.
+Add users with ASP.NET Identity in three steps: first the backend, then login and registration in the frontend, and finally assignment of existing data and protection of the APIs. The backend step is two pull requests. Pockets and rules belong to the user. Sharing is not part of this work: later it will be a group of users that shares selected pockets and selected rules.
 
-Three steps, in this order. After approval, only step 1 is implemented. Steps 2 and 3 start when you ask for them.
+Three steps, in this order. The first one is split into 1.1 and 1.2, one pull request each. After approval, only step 1.1 is implemented. The following steps start when you ask for them.
 
 Sharing is out of this work. The schema only leaves room for it later, without moving pockets, rules, or transactions.
 
@@ -12,7 +12,8 @@ Future sharing is a group. A user picks the other users to create it with. The g
 
 ```mermaid
 flowchart TD
-  step1[Step 1 Accounts and schema] --> step2[Step 2 Login UI]
+  step1a[Step 1.1 Identity users] --> step1b[Step 1.2 Auth process]
+  step1b --> step2[Step 2 Login UI]
   step2 --> step3[Step 3 Claim and protection]
   step3 --> later[Later Group sharing]
 ```
@@ -38,19 +39,30 @@ Assignment is the step 3 claim: the signed-in user takes the rows that still hav
 
 ## Step 1 — Backend, without requiring login
 
+Two pull requests. Domain APIs stay open in both.
+
+### Step 1.1 — Identity users, login and logout
+
 - Package `Microsoft.AspNetCore.Identity.EntityFrameworkCore` aligned with EF Core 10.
-- [backend/KeepItSimple.Api/helpers/KeepItSimpleDbContext.cs](backend/KeepItSimple.Api/helpers/KeepItSimpleDbContext.cs) becomes `IdentityDbContext<ApplicationUser>`. `OnModelCreating` still calls `base` and adds the two foreign keys.
-- In [backend/KeepItSimple.Api/Program.cs](backend/KeepItSimple.Api/Program.cs): `AddIdentityCore<ApplicationUser>` (email not required, no email confirmation), EF store, `SignInManager`, Identity cookie. Passwords use Identity's default rules.
+- `ApplicationUser` extends `IdentityUser`. [backend/KeepItSimple.Api/helpers/KeepItSimpleDbContext.cs](backend/KeepItSimple.Api/helpers/KeepItSimpleDbContext.cs) becomes `IdentityDbContext<ApplicationUser>`. `OnModelCreating` still calls `base` and adds the `OwnerId` and `UserId` foreign keys.
+- In [backend/KeepItSimple.Api/Program.cs](backend/KeepItSimple.Api/Program.cs): `AddIdentityCore<ApplicationUser>` (email not required, no email confirmation), EF store, `SignInManager`. Passwords use Identity's default rules.
 - `AccountController` at `/api/account`:
   - `POST register` — username, password, password confirmation. Duplicate username or rejected password: 400.
   - `POST login` — `PasswordSignInAsync`.
   - `POST logout`
   - `GET me` — id and username, or 401.
 - DTOs in `dtos/Account/`. The controller does not open the `DbContext`: it uses `UserManager` and `SignInManager`.
-- No `[Authorize]` on pockets, transactions, rules, analytics, or test data. Creates do not write `OwnerId` / `UserId`.
-- Cookie `SameSite=Lax` (localhost:3000 and localhost:5264 are same-site). No credentialed CORS in this step: login can be checked from Swagger on the same origin.
-- A new migration. Migrations already in the tree are left unchanged.
-- A note in [backend/docs/Accounts.md](backend/docs/Accounts.md) (schema, endpoints, why rules have a user, why transactions do not, claim deferred, group as future sharing with no tables yet) and an Account row in [backend/README.md](backend/README.md).
+- A new migration for the Identity tables and the nullable owner columns. Migrations already in the tree are left unchanged. Creates do not write `OwnerId` / `UserId`.
+- A note in [backend/docs/Accounts.md](backend/docs/Accounts.md) for the user schema and the account endpoints, plus an Account row in [backend/README.md](backend/README.md).
+
+### Step 1.2 — Auth process
+
+- Identity cookie on the application scheme: `HttpOnly`, `SameSite=Lax` (localhost:3000 and localhost:5264 are same-site), `Secure` only when the request is already HTTPS.
+- An unauthenticated call to a protected endpoint returns 401. A forbidden call returns 403. The API does not redirect to an HTML login page.
+- [backend/KeepItSimple.Api/Program.cs](backend/KeepItSimple.Api/Program.cs) runs `UseAuthentication` and `UseAuthorization` before the controllers.
+- Login from step 1.1 is what establishes that cookie. Logout clears it. `GET me` reads the signed-in user from it.
+- No `[Authorize]` yet on pockets, transactions, rules, analytics, or test data. No credentialed CORS yet: login can be checked from Swagger on the same origin.
+- Extend [backend/docs/Accounts.md](backend/docs/Accounts.md) with the cookie session: what login sets, what logout clears, and why domain APIs stay open until step 3.
 
 ## Step 2 — Login screen, APIs still open
 
