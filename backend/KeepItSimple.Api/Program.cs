@@ -22,7 +22,7 @@ builder.Services.AddDbContext<KeepItSimpleDbContext>((serviceProvider, options) 
     options.UseNpgsql(connectionString);
 });
 
-builder.Services.AddIdentity<KeepItSimpleUser, IdentityRole>()
+builder.Services.AddIdentity<KeepItSimpleUser, IdentityRole>(options => builder.Configuration.GetSection("Identity:Password").Bind(options.Password))
     .AddEntityFrameworkStores<KeepItSimpleDbContext>();
 
 var app = builder.Build();
