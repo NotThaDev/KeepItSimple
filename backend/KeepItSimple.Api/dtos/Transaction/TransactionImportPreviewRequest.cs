@@ -3,7 +3,7 @@ using static KeepItSimple.Api.Helpers.TransactionImporter;
 
 namespace KeepItSimple.Api.dtos.Transaction;
 
-public class PreviewRequest
+public class TransactionImportPreviewRequest
 {
     public Guid SessionId { get; set; }
     public int PocketId { get; set; }

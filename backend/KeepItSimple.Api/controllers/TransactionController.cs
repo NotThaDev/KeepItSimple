@@ -156,7 +156,7 @@ public class TransactionController : ControllerBase
 
     [HttpPost("import/preview")]
     public async Task<ActionResult<PreviewResponse>> PreviewImport(
-        [FromBody] PreviewRequest request)
+        [FromBody] TransactionImportPreviewRequest request)
     {
         try
         {
