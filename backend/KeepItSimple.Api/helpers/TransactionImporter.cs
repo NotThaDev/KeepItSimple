@@ -338,7 +338,7 @@ public static class TransactionImporter
     /// <see cref="PreviewResponse.Errors"/> instead of aborting the whole preview.
     /// Nothing is written to the database.
     /// </summary>
-    public static PreviewResponse Preview(PreviewRequest request, IReadOnlyList<CategoryRule>? rules = null)
+    public static PreviewResponse Preview(TransactionImportPreviewRequest request, IReadOnlyList<CategoryRule>? rules = null)
     {
         if (!Sessions.TryGetValue(request.SessionId, out var session))
         {

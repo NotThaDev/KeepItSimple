@@ -124,7 +124,7 @@ public class PreviewTests
     [Fact]
     public void Preview_rejects_an_unknown_session()
     {
-        var request = new PreviewRequest
+        var request = new TransactionImportPreviewRequest
         {
             SessionId = Guid.NewGuid(),
             PocketId = PocketId,
@@ -320,7 +320,7 @@ public class PreviewTests
         Transaction.TransactionCategory defaultCategory = Transaction.TransactionCategory.Other,
         IReadOnlyList<CategoryRule>? rules = null)
     {
-        return TransactionImporter.Preview(new PreviewRequest
+        return TransactionImporter.Preview(new TransactionImportPreviewRequest
         {
             SessionId = analyzed.SessionId,
             PocketId = PocketId,
