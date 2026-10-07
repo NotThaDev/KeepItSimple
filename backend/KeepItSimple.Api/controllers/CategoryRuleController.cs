@@ -91,7 +91,7 @@ public class CategoryRuleController : ControllerBase
 
     [HttpPost("preview")]
     public async Task<ActionResult<IEnumerable<CategoryRuleApplyPreviewItem>>> Preview(
-        [FromBody] PreviewRequest? request)
+        [FromBody] RulePreviewRequest? request)
     {
         var changes = await CategoryRule.PreviewAsync(request);
         return Ok(changes);
