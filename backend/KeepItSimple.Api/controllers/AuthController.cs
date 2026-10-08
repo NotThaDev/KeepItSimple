@@ -17,6 +17,30 @@ public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInMan
             UserName = request.Username,
             Email = request.Email,
         };
+
+        if (string.IsNullOrEmpty(request.Username) && string.IsNullOrEmpty(request.Email))
+        {
+            return BadRequest("Username or email is required.");
+        }
+
+        if (!string.IsNullOrEmpty(request.Username))
+        {
+            var userExists = await userManager.FindByNameAsync(request.Username);
+            if (userExists == null)
+            {
+                return BadRequest("Username already exists.");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            var userExists = await userManager.FindByEmailAsync(request.Email);
+            if (userExists != null)
+            {
+                return BadRequest("Email already exists.");
+            }
+        }
+
         await userManager.CreateAsync(user, request.Password);
         return Ok(user);
     }
