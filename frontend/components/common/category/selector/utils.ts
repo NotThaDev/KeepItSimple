@@ -175,7 +175,6 @@ const INCOME_CATEGORY_GROUPS: CategoryGroup[] = [
   },
 ];
 
-// #TODO we need to define an "all"
 export const CATEGORY_GROUPS = {
   expenses: EXPENSE_CATEGORY_GROUPS.concat({
     id: "other",

@@ -45,6 +45,9 @@ if (app.Environment.IsDevelopment())
 }
 
 KeepItSimpleContext.InitContext(app);
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.MapControllers();
 app.Run();
