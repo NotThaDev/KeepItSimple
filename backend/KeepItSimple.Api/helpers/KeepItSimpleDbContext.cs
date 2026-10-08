@@ -1,12 +1,14 @@
 
 using System.Text.Json;
 using KeepItSimple.Api.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace KeepItSimple.Api.Helpers;
 
-public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> options) : DbContext(options)
+public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> options) : IdentityDbContext<KeepItSimpleUser>(options)
 {
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Pocket> Pockets => Set<Pocket>();
@@ -15,6 +17,7 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        UseIdentitySchema(modelBuilder);
 
         modelBuilder.Entity<Transaction>()
             .HasOne(transaction => transaction.Pocket)
@@ -40,6 +43,18 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
                         JsonSerializer.Serialize(groups, CategoryRuleJson.Options),
                         CategoryRuleJson.Options) ?? new List<CategoryRuleGroup>()));
         });
+    }
+
+    private static void UseIdentitySchema(ModelBuilder modelBuilder)
+    {
+        var identityAssembly = typeof(IdentityUser).Assembly;
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (entityType.ClrType.Assembly == identityAssembly || entityType.ClrType == typeof(KeepItSimpleUser))
+            {
+                entityType.SetSchema("identity");
+            }
+        }
     }
 
 }
