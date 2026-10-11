@@ -22,8 +22,7 @@ builder.Services.AddDbContext<KeepItSimpleDbContext>((serviceProvider, options) 
     options.UseNpgsql(connectionString);
 });
 
-builder.Services.AddIdentity<KeepItSimpleUser, IdentityRole>(options => builder.Configuration.GetSection("Identity:Password").Bind(options.Password))
-    .AddEntityFrameworkStores<KeepItSimpleDbContext>();
+builder.Services.AddKeepItSimpleIdentity(builder.Configuration);
 
 var app = builder.Build();
 
@@ -41,7 +40,7 @@ if (app.Environment.IsDevelopment())
     // Ensure the database is created and migrated
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<KeepItSimpleDbContext>();
-    dbContext.Database.EnsureCreated();
+    dbContext.Database.Migrate();
 }
 
 KeepItSimpleContext.InitContext(app);

@@ -12,7 +12,15 @@ public static class IdentitySetup
     private const string _passwordSection = "Identity:Password";
     public static IServiceCollection AddKeepItSimpleIdentity(this IServiceCollection services, IConfiguration configuration)
     {
-        _ = services.AddIdentity<KeepItSimpleUser, IdentityRole>(options => configuration.GetSection(_passwordSection).Bind(options.Password))
+        _ = services.AddIdentity<KeepItSimpleUser, IdentityRole>(options =>
+            {
+                configuration.GetSection(_passwordSection).Bind(options.Password);
+
+                options.User.RequireUniqueEmail = true;
+                options.Lockout.AllowedForNewUsers = true;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            })
             .AddEntityFrameworkStores<KeepItSimpleDbContext>();
 
         return services;
