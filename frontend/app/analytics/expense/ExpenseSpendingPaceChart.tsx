@@ -47,8 +47,17 @@ function toLinearCumulative(
 
 export function ExpenseSpendingPaceChart() {
   const { analytics, currency } = useExpenseAnalytics();
+
+  const thisMonthPace = toLinearCumulative(
+    analytics.monthlySpendingPace.map((entry) => entry.thisMonth),
+  );
+  const lastMonthPace = toLinearCumulative(
+    analytics.monthlySpendingPace.map((entry) => entry.lastMonth),
+  );
+  // The lines are linear paces, so compare them on the same day (today), not against last month's full total.
+  const today = thisMonthPace.findLastIndex((value) => value != null);
   const isSpendingMoreThanLastMonth =
-    analytics.totalMonthlyExpenses > analytics.previousMonthExpenses;
+    (thisMonthPace[today] ?? 0) > (lastMonthPace[today] ?? 0);
 
   const thisMonthColor = isSpendingMoreThanLastMonth ? "#ef4444" : "#22c55e";
   const lastMonthColor = "#94a3b8";
@@ -75,12 +84,6 @@ export function ExpenseSpendingPaceChart() {
     lastMonth: lastMonthColor,
   };
 
-  const thisMonthPace = toLinearCumulative(
-    analytics.monthlySpendingPace.map((entry) => entry.thisMonth),
-  );
-  const lastMonthPace = toLinearCumulative(
-    analytics.monthlySpendingPace.map((entry) => entry.lastMonth),
-  );
   const chartData = analytics.monthlySpendingPace.map((entry, index) => ({
     day: entry.day,
     thisMonth: thisMonthPace[index],
