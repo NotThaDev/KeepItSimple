@@ -1,6 +1,6 @@
 "use client";
 
-import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
+import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { formatAmount } from "@/lib/helpers/currencyHelper";

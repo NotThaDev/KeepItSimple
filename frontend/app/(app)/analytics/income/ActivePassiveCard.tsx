@@ -1,4 +1,4 @@
-import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
+import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import { Activity } from "lucide-react";
 import { useIncomeAnalytics } from "@/stores/analytics";
 import { Progress } from "@/components/ui/progress";

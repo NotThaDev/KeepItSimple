@@ -1,6 +1,6 @@
 "use client";
 
-import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
+import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import {
   Tooltip,
   TooltipContent,

@@ -1,8 +1,8 @@
 "use client";
 
-import { DescriptionCell } from "@/app/transactions/import/DescriptionCell";
+import { DescriptionCell } from "@/app/(app)/transactions/import/DescriptionCell";
 import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
-import { formatDraftDate } from "@/app/transactions/import/utils";
+import { formatDraftDate } from "@/app/(app)/transactions/import/utils";
 import { CategoryBadge } from "@/components/common/category/CategoryBadge";
 import { DateRangePicker } from "@/components/common/DateRangePicker";
 import { formatDateOnly } from "@/components/common/DateUtils";

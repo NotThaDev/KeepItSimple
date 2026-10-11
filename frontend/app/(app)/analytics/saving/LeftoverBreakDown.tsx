@@ -1,4 +1,4 @@
-import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
+import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { formatAmount } from "@/lib/helpers/currencyHelper";

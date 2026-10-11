@@ -1,10 +1,7 @@
 import "./globals.css";
-import { NavigationMenu } from "@/components/sidebar/NavigationMenu";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "next-themes";
-import { CSSProperties } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import type { Viewport } from "next";
 
@@ -31,21 +28,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
-          <SidebarProvider
-            defaultOpen={true}
-            style={
-              {
-                "--sidebar-width": "220px",
-              } as CSSProperties
-            }
-          >
-            <NavigationMenu>
-              <Toaster position="top-center" />
-              <main className="min-h-0 w-full flex-1 overflow-y-auto">
-                {children}
-              </main>
-            </NavigationMenu>
-          </SidebarProvider>
+          {children}
+          <Toaster position="top-center" />
         </ThemeProvider>
       </body>
     </html>
