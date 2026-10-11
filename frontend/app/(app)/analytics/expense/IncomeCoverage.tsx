@@ -1,6 +1,6 @@
 "use client";
 
-import { DashboardCard } from "@/app/dashboard/cards/DashboardCard";
+import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import { Progress } from "@/components/ui/progress";
 import { Wallet } from "lucide-react";
 import { useExpenseAnalytics } from "@/stores/analytics";
