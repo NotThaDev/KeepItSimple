@@ -23,6 +23,7 @@ builder.Services.AddDbContext<KeepItSimpleDbContext>((serviceProvider, options) 
 });
 
 builder.Services.AddKeepItSimpleIdentity(builder.Configuration);
+builder.Services.AddKeepItSimpleAuth(builder.Configuration);
 
 var app = builder.Build();
 
@@ -44,6 +45,9 @@ if (app.Environment.IsDevelopment())
 }
 
 KeepItSimpleContext.InitContext(app);
+app.UseAuthentication();
+app.UseAuthorization();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
