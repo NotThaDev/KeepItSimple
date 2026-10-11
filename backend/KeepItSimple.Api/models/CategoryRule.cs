@@ -5,7 +5,7 @@ using KeepItSimple.Api.dtos.CategoryRule;
 using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Helpers;
 using Microsoft.EntityFrameworkCore;
-using PreviewRequest = KeepItSimple.Api.dtos.CategoryRule.PreviewRequest;
+using RulePreviewRequest = KeepItSimple.Api.dtos.CategoryRule.RulePreviewRequest;
 
 namespace KeepItSimple.Api.Models;
 
@@ -122,7 +122,7 @@ public class CategoryRule
         });
     }
 
-    public static Task<List<CategoryRuleApplyPreviewItem>> PreviewAsync(PreviewRequest? request)
+    public static Task<List<CategoryRuleApplyPreviewItem>> PreviewAsync(RulePreviewRequest? request)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
