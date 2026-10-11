@@ -10,7 +10,7 @@ namespace KeepItSimple.Api.Controllers;
 public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInManager<KeepItSimpleUser> signInManager) : ControllerBase
 {
     [HttpPost("register")]
-    public async Task<ActionResult<KeepItSimpleUser>> Register([FromBody] RegisterRequest request)
+    public async Task<ActionResult<UserResponse>> Register([FromBody] RegisterRequest request)
     {
         var user = new KeepItSimpleUser
         {
@@ -18,35 +18,36 @@ public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInMan
             Email = request.Email,
         };
 
-        if (string.IsNullOrEmpty(request.Username) && string.IsNullOrEmpty(request.Email))
+        if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Email))
         {
             return BadRequest("Username or email is required.");
         }
 
-        if (!string.IsNullOrEmpty(request.Username))
+
+        var userExists = await userManager.FindByNameAsync(request.Username);
+        if (userExists != null)
         {
-            var userExists = await userManager.FindByNameAsync(request.Username);
-            if (userExists == null)
-            {
-                return BadRequest("Username already exists.");
-            }
+            return BadRequest("Username already exists.");
         }
 
-        if (!string.IsNullOrEmpty(request.Email))
+
+        userExists = await userManager.FindByEmailAsync(request.Email);
+        if (userExists != null)
         {
-            var userExists = await userManager.FindByEmailAsync(request.Email);
-            if (userExists != null)
-            {
-                return BadRequest("Email already exists.");
-            }
+            return BadRequest("Email already exists.");
         }
 
-        await userManager.CreateAsync(user, request.Password);
-        return Ok(user);
+        var userCreationResult = await userManager.CreateAsync(user, request.Password);
+        if (!userCreationResult.Succeeded)
+        {
+            return BadRequest("Failed to create user.");
+        }
+
+        return Ok(new UserResponse(user.Id, user.UserName, user.Email));
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<Pocket>> Login([FromBody] LoginRequest request)
+    public async Task<ActionResult<UserResponse>> Login([FromBody] LoginRequest request)
     {
         if (string.IsNullOrEmpty(request.Username) && string.IsNullOrEmpty(request.Email))
         {
@@ -68,31 +69,27 @@ public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInMan
             return Unauthorized();
         }
 
-        var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, false);
+        var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
         if (!result.Succeeded)
         {
             return Unauthorized();
         }
 
-        return Ok(user);
+        return Ok(new UserResponse(user.Id, user.UserName, user.Email));
     }
 
     [HttpGet("me")]
-    public async Task<ActionResult<KeepItSimpleUser>> Me()
+    public async Task<ActionResult<UserResponse>> Me()
     {
-        var user = await userManager.GetUserAsync(HttpContext.User);
-        if (user == null)
-        {
-            return Unauthorized();
-        }
-        return Ok(user);
+        // This will be implemented later when we have a proper authentication mechanism in place (like JWT tokens).
+        throw new NotImplementedException();
     }
 
     [HttpPost("logout")]
     public async Task<ActionResult> Logout()
     {
-        await signInManager.SignOutAsync();
-        return Ok();
+        // This will be implemented later when we have a proper authentication mechanism in place (like JWT tokens).
+        throw new NotImplementedException();
     }
 
     // Here we need to define all the endpoits to refresh the token, password reset, etc.
