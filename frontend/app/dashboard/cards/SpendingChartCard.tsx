@@ -33,9 +33,14 @@ function getMaxValue(values: number[]): number {
 export function SpendingChartCard({
   analytics,
 }: Readonly<SpendingChartCardProps>) {
-  const currentMonthSpent = Math.abs(analytics.monthlyTotalExpenses);
-  const previousMonthSpent = Math.abs(analytics.previousMonthTotalExpenses);
-  const isSpendingMoreThanLastMonth = currentMonthSpent > previousMonthSpent;
+  // Compare like with like: last month only up to today, not its full total.
+  const today = new Date().getDate();
+  const sumUpToToday = (key: "thisMonth" | "lastMonth") =>
+    analytics.monthlyExpensesDailyComparison
+      .filter((entry) => entry.day <= today)
+      .reduce((sum, entry) => sum + Math.abs(entry[key]), 0);
+  const isSpendingMoreThanLastMonth =
+    sumUpToToday("thisMonth") > sumUpToToday("lastMonth");
 
   const chartConfig: ChartConfig = {
     thisMonth: {
