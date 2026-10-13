@@ -1,5 +1,4 @@
-// Fixed locale: server (Node) and browser locales differ, which breaks hydration.
-export const APP_LOCALE = "en-US";
+import { APP_LOCALE } from "@/lib/locale";
 
 export function getCurrencySymbolFromCode(currencyCode: string): string {
   try {

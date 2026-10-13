@@ -1,4 +1,4 @@
-import { APP_LOCALE } from "@/lib/helpers/currencyHelper";
+import { APP_LOCALE } from "@/lib/locale";
 import { TransactionCategory } from "@/lib/models/Transaction";
 import { createElement, type ReactNode } from "react";
 import type { XAxisTickContentProps } from "recharts";

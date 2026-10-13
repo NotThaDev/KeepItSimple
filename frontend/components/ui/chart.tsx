@@ -5,7 +5,7 @@ import * as RechartsPrimitive from "recharts"
 import type { TooltipValueType } from "recharts"
 
 import { cn } from "@/lib/utils"
-import { APP_LOCALE } from "@/lib/helpers/currencyHelper"
+import { APP_LOCALE } from "@/lib/locale"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
