@@ -47,7 +47,10 @@ jobs:
           plugins: |
             ponytail@ponytail
             code-review@claude-code-plugins
-          claude_args: '--allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"'
+          # Skills are model-invoked, so the prompt must tell Claude to load the workflow skill; Skill/Task let it run the review skills and their subagents
+          claude_args: |
+            --allowedTools "Skill,Task,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh issue view:*),Bash(gh search:*),Bash(git diff:*),Bash(git log:*)"
+            --append-system-prompt "Before answering any review request, load the workflow skill (.claude/skills/workflow/SKILL.md) with the Skill tool and follow its rule 3 exactly, including the report format."
 
           # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
           # prompt: 'Update the pull request description to include a summary of changes.'
