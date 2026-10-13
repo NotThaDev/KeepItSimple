@@ -1,6 +1,9 @@
+// Fixed locale: server (Node) and browser locales differ, which breaks hydration.
+export const APP_LOCALE = "en-US";
+
 export function getCurrencySymbolFromCode(currencyCode: string): string {
   try {
-    const formatter = new Intl.NumberFormat(undefined, {
+    const formatter = new Intl.NumberFormat(APP_LOCALE, {
       style: "currency",
       currency: currencyCode,
       minimumFractionDigits: 0,
@@ -23,7 +26,7 @@ export function formatAmount(
   currency?: string,
   digits = 2,
 ): string {
-  const formatted = amount.toLocaleString(undefined, {
+  const formatted = amount.toLocaleString(APP_LOCALE, {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });

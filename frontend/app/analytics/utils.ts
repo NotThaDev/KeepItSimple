@@ -1,9 +1,10 @@
+import { APP_LOCALE } from "@/lib/helpers/currencyHelper";
 import { TransactionCategory } from "@/lib/models/Transaction";
 import { createElement, type ReactNode } from "react";
 import type { XAxisTickContentProps } from "recharts";
 
 export function formatPercent(ratio: number): string {
-  return `${(ratio * 100).toLocaleString(undefined, {
+  return `${(ratio * 100).toLocaleString(APP_LOCALE, {
     maximumFractionDigits: 0,
   })}%`;
 }
