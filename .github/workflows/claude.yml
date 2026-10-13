@@ -40,6 +40,15 @@ jobs:
           additional_permissions: |
             actions: read
 
+          # Plugins and tools needed by .claude/skills/workflow (Ponytail + code-review, PR comment report)
+          plugin_marketplaces: |
+            https://github.com/dietrichgebert/ponytail.git
+            https://github.com/anthropics/claude-code.git
+          plugins: |
+            ponytail@ponytail
+            code-review@claude-code-plugins
+          claude_args: '--allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"'
+
           # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
           # prompt: 'Update the pull request description to include a summary of changes.'
 
