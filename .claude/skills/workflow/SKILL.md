@@ -52,14 +52,45 @@ Fix or report the findings before committing.
 ### Reviewing an entire PR
 
 When the review is for the entire PR (the user names a PR or asks to review
-"the PR"), also post the same report as a comment on the PR:
+"the PR"), also post the report as a comment on the PR, in this format:
+
+```markdown
+## Code review results
+
+### Ponytail
+
+**Must fix**
+1. `path/to/file.ts:42` — <the problem>: <what breaks, and the fix>
+
+**Improvements**
+- `path/to/file.ts:10` — <the suggestion>
+
+### Claude Code Review
+
+**Must fix**
+1. ...
+
+**Improvements**
+- ...
+
+---
+
+**Would I merge?** <Yes / Yes, after the must-fix items / No> — <one sentence why>.
+```
+
+- **Must fix**: bugs, security holes, data loss, broken behavior — anything
+  that blocks the merge. **Improvements**: everything else (simplification,
+  naming, missing tests, performance nice-to-haves).
+- Rank each list most severe first. Write "None" for an empty list.
+- A finding both reviews report is listed once, under Ponytail, marked
+  "(also found by Claude Code Review)".
 
 ```
 gh pr comment <PR#> --body-file <report.md>
 ```
 
-Use the scratchpad for the temp file. The comment text is identical to the chat
-report and follows rule 1 (no co-author or AI attribution lines).
+Use the scratchpad (or a temp dir) for the file. Use the same text for the chat
+report. It follows rules 1 and 5 (no AI attribution, English).
 
 ## 4. Use docs MCPs for library and how-to questions
 
