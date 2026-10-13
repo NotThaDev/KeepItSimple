@@ -59,27 +59,29 @@ When the review is for the entire PR (the user names a PR or asks to review
 
 ### Ponytail
 
-**Must fix**
+**🔴 Must fix**
 1. `path/to/file.ts:42` — <the problem>: <what breaks, and the fix>
 
-**Improvements**
+**🟡 Should fix / follow-up**
 - `path/to/file.ts:10` — <the suggestion>
 
 ### Claude Code Review
 
-**Must fix**
+**🔴 Must fix**
 1. ...
 
-**Improvements**
+**🟡 Should fix / follow-up**
 - ...
 
 ---
 
-**Would I merge?** <Yes / Yes, after the must-fix items / No> — <one sentence why>.
+**<verdict icon> Would I merge?** <Yes / Yes, after the must-fix items / No> — <one sentence why>.
 ```
 
+- Icons: 🔴 for **Must fix**, 🟡 for **Should fix / follow-up**. The verdict
+  icon matches the answer: ✅ Yes, ⚠️ Yes, after the must-fix items, ❌ No.
 - **Must fix**: bugs, security holes, data loss, broken behavior — anything
-  that blocks the merge. **Improvements**: everything else (simplification,
+  that blocks the merge. **Should fix / follow-up**: everything else (simplification,
   naming, missing tests, performance nice-to-haves).
 - Rank each list most severe first. Write "None" for an empty list.
 - A finding both reviews report is listed once, under Ponytail, marked
@@ -91,6 +93,12 @@ gh pr comment <PR#> --body-file <report.md>
 
 Use the scratchpad (or a temp dir) for the file. Use the same text for the chat
 report. It follows rules 1 and 5 (no AI attribution, English).
+
+**In the GitHub Action (`@claude` on a PR):** your tracking comment is the
+chat. Put the report there, in the format above, and skip `gh pr comment` so it
+is not posted twice. The tracking comment is your own: it does not count as
+"Claude already commented on this PR" for the `code-review` skill, so do not stop
+because of it.
 
 ## 4. Use docs MCPs for library and how-to questions
 
