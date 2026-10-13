@@ -1,6 +1,8 @@
+import { APP_LOCALE } from "@/lib/locale";
+
 export function getCurrencySymbolFromCode(currencyCode: string): string {
   try {
-    const formatter = new Intl.NumberFormat(undefined, {
+    const formatter = new Intl.NumberFormat(APP_LOCALE, {
       style: "currency",
       currency: currencyCode,
       minimumFractionDigits: 0,
@@ -23,7 +25,7 @@ export function formatAmount(
   currency?: string,
   digits = 2,
 ): string {
-  const formatted = amount.toLocaleString(undefined, {
+  const formatted = amount.toLocaleString(APP_LOCALE, {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
