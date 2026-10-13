@@ -2,9 +2,12 @@
 name: workflow
 description: >-
   Base KeepItSimple working rules for every task: commit without co-author
-  trailers, offer a "deep check" after finishing a feature, and run a Ponytail
-  review before committing or when the user asks for a review. Use whenever
-  implementing a feature, committing, opening a PR, or reviewing changes.
+  trailers, offer a "deep check" after finishing a feature, run Ponytail plus
+  the standard code review before committing or when the user asks for a
+  review, and use Microsoft Learn (C#/.NET) or Context7 (other libraries) for
+  docs and how-to questions. Use whenever
+  implementing a feature, committing, opening a PR, reviewing changes, or
+  answering how to do something with a library, language, or pattern.
 ---
 
 # KeepItSimple workflow
@@ -28,9 +31,48 @@ When a feature is finished, ask the user: "Run a deep check?" If they agree:
 
 Report what was found, what was dropped and why, and what was changed.
 
-## 3. Ponytail review before committing
+## 3. Reviews run both Ponytail and Claude's standard review
 
-Before every commit, and whenever the user asks for a review, run the
-`ponytail:ponytail-review` skill on the pending changes. Fix or report its
-findings before committing. The Ponytail plugin is enabled for this repo in
+Before every commit, and whenever the user asks for a review, run **both**
+reviews on the same target (pending changes, a commit, or the PR diff):
+
+1. `ponytail:ponytail-review` skill.
+2. Claude's standard review: the `code-review` skill.
+
+Never run only one of them. The Ponytail plugin is enabled for this repo in
 `.claude/settings.json`.
+
+### Report
+
+When both reviews are done, post one merged report **in the chat where the
+review was asked**: findings from each review (label which one found what),
+deduplicated, ranked most severe first. Say what was fixed, if anything.
+Fix or report the findings before committing.
+
+### Reviewing an entire PR
+
+When the review is for the entire PR (the user names a PR or asks to review
+"the PR"), also post the same report as a comment on the PR:
+
+```
+gh pr comment <PR#> --body-file <report.md>
+```
+
+Use the scratchpad for the temp file. The comment text is identical to the chat
+report and follows rule 1 (no co-author or AI attribution lines).
+
+## 4. Use docs MCPs for library and how-to questions
+
+When building a feature that relies on a library or framework with online docs,
+or when the user asks how to do something in a language or pattern, fetch
+current docs before answering or writing code. Prefer them over memory for
+APIs, config, and version-specific behavior.
+
+- **C# / .NET** (ASP.NET Core, EF Core, Identity, xUnit, anything under
+  `backend/`): use the Microsoft Learn MCP — search the docs, then fetch the
+  relevant page or code samples.
+- **Everything else** (Next.js, React, other libraries): use the Context7 MCP —
+  resolve the library ID, then query its docs for the specific topic.
+
+If the MCP has no match, say so and fall back to the other MCP, then to web
+search.
