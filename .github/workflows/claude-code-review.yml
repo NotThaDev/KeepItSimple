@@ -1,8 +1,8 @@
 name: Claude Code Review
 
+# Disabled on purpose: reviews are triggered manually by tagging @claude (see claude.yml).
 on:
-  pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
+  workflow_dispatch:
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
@@ -12,6 +12,7 @@ on:
 
 jobs:
   claude-review:
+    if: false # never run
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
