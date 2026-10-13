@@ -2,7 +2,7 @@
 name: workflow
 description: >-
   Base KeepItSimple working rules for every task: commit without co-author
-  trailers, offer a "deep check" after finishing a feature, run Ponytail plus
+  trailers, write reviews, comments and descriptions in English, offer a "deep check" after finishing a feature, run Ponytail plus
   the standard code review before committing or when the user asks for a
   review, and use Microsoft Learn (C#/.NET) or Context7 (other libraries) for
   docs and how-to questions. Use whenever
@@ -76,3 +76,9 @@ APIs, config, and version-specific behavior.
 
 If the MCP has no match, say so and fall back to the other MCP, then to web
 search.
+
+## 5. Reviews, comments and descriptions are in English
+
+Write reviews, review reports, PR/issue comments, PR descriptions and commit
+messages in English, even if the user writes to you in another language. Use
+another language only when the user explicitly asks for it.
