@@ -45,8 +45,8 @@ Never run only one of them. The Ponytail plugin is enabled for this repo in
 ### Report
 
 When both reviews are done, post one merged report **in the chat where the
-review was asked**: findings from each review (label which one found what),
-deduplicated, ranked most severe first. Say what was fixed, if anything.
+review was asked**: the findings of both reviews, deduplicated and
+ranked most severe first. Say what was fixed, if anything.
 Fix or report the findings before committing.
 
 ### Reviewing an entire PR
@@ -57,35 +57,28 @@ When the review is for the entire PR (the user names a PR or asks to review
 ```markdown
 ## Code review results
 
-### Ponytail
-
 **🔴 Must fix**
 1. `path/to/file.ts:42` — <the problem>: <what breaks, and the fix>
 
 **🟡 Should fix / follow-up**
 - `path/to/file.ts:10` — <the suggestion>
 
-### Claude Code Review
-
-**🔴 Must fix**
-1. ...
-
-**🟡 Should fix / follow-up**
-- ...
-
 ---
 
 **<verdict icon> Would I merge?** <Yes / Yes, after the must-fix items / No> — <one sentence why>.
 ```
 
+- One list per severity with the findings of both reviews. Do not say which
+  review found what.
+- A point that both reviews report, or that is the same problem in more than
+  one place, is listed once.
 - Icons: 🔴 for **Must fix**, 🟡 for **Should fix / follow-up**. The verdict
   icon matches the answer: ✅ Yes, ⚠️ Yes, after the must-fix items, ❌ No.
 - **Must fix**: bugs, security holes, data loss, broken behavior — anything
   that blocks the merge. **Should fix / follow-up**: everything else (simplification,
   naming, missing tests, performance nice-to-haves).
-- Rank each list most severe first. Write "None" for an empty list.
-- A finding both reviews report is listed once, under Ponytail, marked
-  "(also found by Claude Code Review)".
+- Rank each list most severe first. Leave out a list that has no findings,
+  heading included.
 
 ```
 gh pr comment <PR#> --body-file <report.md>
