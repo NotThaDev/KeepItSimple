@@ -1,6 +1,5 @@
 import { SpendingChartCard } from "@/app/(app)/dashboard/cards/SpendingChartCard";
-import { TransactionPieChart } from "@/components/common/transactionTracker/TransactionPieChart";
-import { SAMPLE_ANALYTICS, SAMPLE_CATEGORIES } from "./sampleAnalytics";
+import { SAMPLE_ANALYTICS } from "./sampleAnalytics";
 
 export function ShowcasePanel() {
   return (
@@ -17,26 +16,19 @@ export function ShowcasePanel() {
       <div
         aria-hidden
         inert
-        className="grid max-w-xl grid-cols-[auto_1fr] gap-3 text-card-foreground"
+        className="grid max-w-xl grid-cols-2 gap-3 text-card-foreground"
       >
         <div className="col-span-2">
           <SpendingChartCard analytics={SAMPLE_ANALYTICS} />
         </div>
-        <div className="rounded-2xl bg-card p-4">
-          <TransactionPieChart categories={SAMPLE_CATEGORIES} currency="EUR" />
+        <div className="rounded-2xl bg-white/15 p-5 text-white">
+          <p className="text-sm text-indigo-100">Total balance</p>
+          <p className="mt-2 text-3xl font-semibold">€12,480</p>
         </div>
-        <div className="grid gap-3">
-          <div className="rounded-2xl bg-white/15 p-5 text-white">
-            <p className="text-sm text-indigo-100">Total balance</p>
-            <p className="mt-2 text-3xl font-semibold">€12,480</p>
-          </div>
-          <div className="rounded-2xl bg-card p-5">
-            <p className="text-sm text-muted-foreground">Saved this month</p>
-            <p className="mt-2 text-3xl font-semibold">€640</p>
-            <p className="mt-1 text-xs text-emerald-600">
-              ↑ 8% from last month
-            </p>
-          </div>
+        <div className="rounded-2xl bg-card p-5">
+          <p className="text-sm text-muted-foreground">Saved this month</p>
+          <p className="mt-2 text-3xl font-semibold">€640</p>
+          <p className="mt-1 text-xs text-emerald-600">↑ 8% from last month</p>
         </div>
       </div>
     </aside>

@@ -1,15 +1,6 @@
-import { ExpenseByCategory, OverviewAnalytics } from "@/lib/models/Analytics";
-import { TransactionCategory } from "@/lib/models/Transaction";
+import { OverviewAnalytics } from "@/lib/models/Analytics";
 
 // Fixed showcase numbers: no randomness, so server and client render the same.
-export const SAMPLE_CATEGORIES: ExpenseByCategory[] = [
-  { category: TransactionCategory.Food, total: -420 },
-  { category: TransactionCategory.Transport, total: -180 },
-  { category: TransactionCategory.Entertainment, total: -140 },
-  { category: TransactionCategory.Utilities, total: -210 },
-  { category: TransactionCategory.Shopping, total: -260 },
-];
-
 const dailyComparison = Array.from({ length: 30 }, (_, i) => {
   const day = i + 1;
   return {
@@ -20,14 +11,14 @@ const dailyComparison = Array.from({ length: 30 }, (_, i) => {
 });
 
 export const SAMPLE_ANALYTICS: OverviewAnalytics = {
-  totalExpenses: -1210,
+  totalExpenses: -1140,
   totalIncome: 2350,
   monthlyTotalExpenses: -1140,
   monthlyTotalIncome: 2350,
   previousMonthTotalExpenses: -1350,
   previousMonthTotalIncome: 2350,
   monthlyExpensesDailyComparison: dailyComparison,
-  monthlyExpensesByCategory: SAMPLE_CATEGORIES,
+  monthlyExpensesByCategory: [],
   expensesPerPocket: [],
   currentMonthTotalBalance: 12480,
   previousMonthTotalBalance: 11840,
