@@ -4,6 +4,15 @@ import { useEffect, useRef } from "react";
 
 const SYMBOLS = ["$", "€", "£", "¥", "₿", "₹", "¢", "₩"];
 const CELL = 28;
+const RING_SPEED = 700; // px per second
+const RING_WIDTH = 60;
+// Brand sweep: indigo → violet → pink as the ring travels outwards.
+const HUE_START = 240;
+const HUE_RANGE = 90;
+
+function randomSymbol() {
+  return SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+}
 
 export function MoneyBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -11,63 +20,94 @@ export function MoneyBackground() {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
+    const area = canvas?.parentElement;
+    if (!canvas || !ctx || !area) return;
 
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    let cells: { symbol: string; phase: number; speed: number }[] = [];
+    let symbols: string[] = [];
     let cols = 0;
+    let width = 0;
+    let height = 0;
+    let ripples: { x: number; y: number; start: number }[] = [];
     let frame = 0;
 
     function resize() {
       const dpr = window.devicePixelRatio || 1;
-      const { width, height } = canvas!.getBoundingClientRect();
+      ({ width, height } = canvas!.getBoundingClientRect());
       canvas!.width = width * dpr;
       canvas!.height = height * dpr;
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
       cols = Math.ceil(width / CELL);
-      const rows = Math.ceil(height / CELL);
-      cells = Array.from({ length: cols * rows }, () => ({
-        symbol: SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.4 + Math.random() * 0.8,
-      }));
+      symbols = Array.from(
+        { length: cols * Math.ceil(height / CELL) },
+        randomSymbol,
+      );
+      // A running ripple loop redraws on its next frame anyway.
+      if (!frame) draw(performance.now());
     }
 
-    function draw(time: number) {
-      const { width, height } = canvas!.getBoundingClientRect();
-      const color = getComputedStyle(canvas!).color;
+    function draw(now: number) {
+      const maxRadius = Math.hypot(width, height);
+      ripples = ripples.filter(
+        (r) =>
+          ((now - r.start) / 1000) * RING_SPEED < maxRadius + RING_WIDTH * 3,
+      );
+      const idleColor = getComputedStyle(canvas!).color;
       ctx!.clearRect(0, 0, width, height);
-      ctx!.fillStyle = color;
-      ctx!.font = `14px ui-monospace, monospace`;
       ctx!.textAlign = "center";
       ctx!.textBaseline = "middle";
-      const t = time / 1000;
-      cells.forEach((cell, i) => {
-        const wave = Math.sin(t * cell.speed + cell.phase);
-        // Swap the glyph while it is invisible so the change is not seen.
-        if (!reduceMotion && wave < -0.98) {
-          cell.symbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-        }
-        ctx!.globalAlpha = 0.08 + 0.22 * (wave + 1) * 0.5;
+
+      symbols.forEach((_, i) => {
         const x = (i % cols) * CELL + CELL / 2;
         const y = Math.floor(i / cols) * CELL + CELL / 2;
-        ctx!.fillText(cell.symbol, x, y);
+        let intensity = 0;
+        let hue = HUE_START;
+        for (const ripple of ripples) {
+          const radius = ((now - ripple.start) / 1000) * RING_SPEED;
+          const offset =
+            (Math.hypot(x - ripple.x, y - ripple.y) - radius) / RING_WIDTH;
+          const strength =
+            Math.exp(-offset * offset) * Math.max(0, 1 - radius / maxRadius);
+          if (strength > intensity) {
+            intensity = strength;
+            hue = HUE_START + HUE_RANGE * Math.min(1, radius / maxRadius);
+          }
+        }
+        // The ring reshuffles the symbols it passes over.
+        if (intensity > 0.9 && Math.random() < 0.15)
+          symbols[i] = randomSymbol();
+
+        ctx!.globalAlpha = 0.2 + 0.8 * intensity;
+        ctx!.fillStyle = intensity > 0.02 ? `hsl(${hue} 85% 60%)` : idleColor;
+        ctx!.font = `${14 * (1 + 0.5 * intensity)}px ui-monospace, monospace`;
+        ctx!.fillText(symbols[i], x, y);
       });
-      if (!reduceMotion) frame = requestAnimationFrame(draw);
+
+      frame = ripples.length > 0 ? requestAnimationFrame(draw) : 0;
+    }
+
+    function onPointerDown(event: PointerEvent) {
+      if (reduceMotion) return;
+      if ((event.target as Element).closest("input, button, a, label")) return;
+      const rect = canvas!.getBoundingClientRect();
+      ripples.push({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+        start: performance.now(),
+      });
+      if (!frame) frame = requestAnimationFrame(draw);
     }
 
     // Fires once on observe, so this also does the first draw.
-    const observer = new ResizeObserver(() => {
-      resize();
-      if (reduceMotion) draw(0);
-    });
+    const observer = new ResizeObserver(resize);
     observer.observe(canvas);
-    if (!reduceMotion) frame = requestAnimationFrame(draw);
+    area.addEventListener("pointerdown", onPointerDown);
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
+      area.removeEventListener("pointerdown", onPointerDown);
     };
   }, []);
 

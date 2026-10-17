@@ -111,7 +111,9 @@ export function LoginPageContent() {
             {isRegister ? "Register" : "Log in"}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            {isRegister ? "Already have an account? " : "Don't have an account? "}
+            {isRegister
+              ? "Already have an account? "
+              : "Don't have an account? "}
             <button
               type="button"
               className="font-medium text-indigo-600 hover:underline"
