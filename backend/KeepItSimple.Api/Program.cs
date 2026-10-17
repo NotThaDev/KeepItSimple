@@ -1,4 +1,6 @@
 using KeepItSimple.Api.Helpers;
+using KeepItSimple.Api.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +22,7 @@ builder.Services.AddDbContext<KeepItSimpleDbContext>((serviceProvider, options) 
     options.UseNpgsql(connectionString);
 });
 
+builder.Services.AddKeepItSimpleIdentity(builder.Configuration);
 
 var app = builder.Build();
 
@@ -34,9 +37,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 
+    // Ensure the database is created and migrated
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<KeepItSimpleDbContext>();
+    dbContext.Database.Migrate();
 }
 
 KeepItSimpleContext.InitContext(app);
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.MapControllers();
 app.Run();

@@ -43,7 +43,7 @@ backend/
   KeepItSimple.Api/
     controllers/          # HTTP only
     dtos/<Domain>/        # request and response types that are not the entity
-    helpers/              # pure logic, queries, importer, DbContext access
+    helpers/              # pure logic, queries, importer, DbContext access, service setup
     models/               # entities and their static persistence methods
       analytics/          # aggregation types and Analytics static methods
     Migrations/           # EF Core; do not edit migrations that already shipped
@@ -100,6 +100,8 @@ Analytics lives in `models/analytics/`. `Analytics` is a static class: `Get*Asyn
 Add a DTO only when the HTTP type is not the entity: filters, commands, paged results, import, preview, apply. Put it in `dtos/<Domain>/` as its own file.
 
 Put logic that does not need the database in a static helper (`CategoryRuleMatcher`, `TransactionQuery`, `CurrencyHelper`). The helper takes the values it needs. Callers load entities and pass them in. `TransactionImporter` stays the home for analyze, preview, and confirm.
+
+Service registration that is more than one call goes in a static `*Setup` class in `helpers/` with an `IServiceCollection` extension method (`IdentitySetup.AddKeepItSimpleIdentity`). `Program.cs` calls the extension and stays a list of registrations.
 
 ## Tests
 
