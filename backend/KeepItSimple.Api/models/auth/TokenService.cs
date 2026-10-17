@@ -9,6 +9,25 @@ public class TokenService(JwtSettings settings)
 {
     private readonly JwtSettings _settings = settings;
 
+    public TimeSpan RefreshLifetime => TimeSpan.FromDays(_settings.RefreshExpiryDays);
+
+    public const string AccessCookieName = "kis_access";
+
+    public TimeSpan AccessLifetime => TimeSpan.FromMinutes(_settings.ExpiryMinutes);
+
+    // New instance per call: Secure and MaxAge change per response, and CookieOptions is mutable.
+    // Path "/" so the Next.js proxy sees both cookies on page requests.
+    // MaxAge (not Expires): the browser counts it with its own clock, so a wrong client clock doesn't matter.
+    // Response.Cookies.Delete sets its own past expiry, so deletes leave maxAge null.
+    public CookieOptions AuthCookieOptions(bool secure, TimeSpan? maxAge = null) => new()
+    {
+        HttpOnly = true,
+        SameSite = SameSiteMode.Lax,
+        Secure = secure,
+        Path = "/",
+        MaxAge = maxAge,
+    };
+
     public (string Token, DateTime ExpiresAt) CreateToken(KeepItSimpleUser user, IEnumerable<string> roles)
     {
         var expiresAt = DateTime.UtcNow.AddMinutes(_settings.ExpiryMinutes);

@@ -1,6 +1,7 @@
 
 using System.Text.Json;
 using KeepItSimple.Api.Models;
+using KeepItSimple.Api.Models.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -8,11 +9,12 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace KeepItSimple.Api.Helpers;
 
-public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> options) : IdentityDbContext<KeepItSimpleUser>(options)
+public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> options) : IdentityDbContext(options)
 {
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Pocket> Pockets => Set<Pocket>();
     public DbSet<CategoryRule> CategoryRules => Set<CategoryRule>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,6 +27,17 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
             .HasForeignKey(transaction => transaction.PocketId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasIndex(token => token.TokenHash).IsUnique();
+            entity.HasIndex(token => token.UserId);
+            entity.HasOne<KeepItSimpleUser>()
+                .WithMany()
+                .HasForeignKey(token => token.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         modelBuilder.Entity<CategoryRule>(entity =>
         {
@@ -50,7 +63,7 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
         var identityAssembly = typeof(IdentityUser).Assembly;
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            if (entityType.ClrType.Assembly == identityAssembly || entityType.ClrType == typeof(KeepItSimpleUser))
+            if (entityType.ClrType.Assembly == identityAssembly || entityType.ClrType == typeof(KeepItSimpleUser) || entityType.ClrType == typeof(RefreshToken))
             {
                 entityType.SetSchema("identity");
             }

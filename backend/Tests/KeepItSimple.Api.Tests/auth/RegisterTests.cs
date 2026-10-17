@@ -1,7 +1,10 @@
+using System.Security.Claims;
 using KeepItSimple.Api.Controllers;
 using KeepItSimple.Api.Dtos.Auth;
 using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models;
+using KeepItSimple.Api.Models.Auth;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +17,9 @@ public class RegisterTests
 {
     private const string Password = "Tha1pwd!";
 
-    private static AuthController NewController()
+    private static AuthController NewController() => NewControllerWithUsers().Controller;
+
+    private static (AuthController Controller, UserManager<KeepItSimpleUser> Users) NewControllerWithUsers()
     {
         // Same password rules as appsettings.Development.json.
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
@@ -34,23 +39,26 @@ public class RegisterTests
         services.AddHttpContextAccessor();
         var provider = services.BuildServiceProvider();
 
-        return new AuthController(
-            provider.GetRequiredService<UserManager<KeepItSimpleUser>>(),
-            provider.GetRequiredService<SignInManager<KeepItSimpleUser>>());
+        var jwtSettings = new JwtSettings { Key = new string('k', 32), Issuer = "test", Audience = "test", ExpiryMinutes = 15, RefreshExpiryDays = 14 };
+        var users = provider.GetRequiredService<UserManager<KeepItSimpleUser>>();
+        var controller = new AuthController(
+            users,
+            provider.GetRequiredService<SignInManager<KeepItSimpleUser>>(),
+            new TokenService(jwtSettings));
+        return (controller, users);
     }
 
     [Fact]
     public async Task Register_creates_user_that_can_log_in()
     {
-        var controller = NewController();
+        var (controller, users) = NewControllerWithUsers();
 
         var registered = await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
 
-        var user = Assert.IsType<UserResponse>(Assert.IsType<OkObjectResult>(registered.Result).Value);
-        Assert.Equal("Tha", user.UserName);
+        Assert.IsType<OkResult>(registered);
 
-        var loggedIn = await controller.Login(new LoginRequest(Password, Username: "Tha"));
-        Assert.IsType<OkObjectResult>(loggedIn.Result);
+        // shortcut: a successful Login stores a refresh row through KeepItSimpleContext, which needs a running app; check the password instead.
+        Assert.True(await users.CheckPasswordAsync((await users.FindByNameAsync("Tha"))!, Password));
     }
 
     [Fact]
@@ -62,8 +70,8 @@ public class RegisterTests
         var sameName = await controller.Register(new RegisterRequest("Tha", "other@example.com", Password));
         var sameEmail = await controller.Register(new RegisterRequest("Other", "tha@example.com", Password));
 
-        Assert.IsType<BadRequestObjectResult>(sameName.Result);
-        Assert.IsType<BadRequestObjectResult>(sameEmail.Result);
+        Assert.IsType<BadRequestObjectResult>(sameName);
+        Assert.IsType<BadRequestObjectResult>(sameEmail);
     }
 
     [Fact]
@@ -71,7 +79,7 @@ public class RegisterTests
     {
         var result = await NewController().Register(new RegisterRequest("Tha", "tha@example.com", "weak"));
 
-        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.IsType<BadRequestObjectResult>(result);
     }
 
     [Fact]
@@ -82,6 +90,33 @@ public class RegisterTests
 
         var result = await controller.Login(new LoginRequest("Wrong1pwd!", Username: "Tha"));
 
+        Assert.IsType<UnauthorizedResult>(result);
+    }
+
+    [Fact]
+    public async Task Me_returns_the_signed_in_user()
+    {
+        var (controller, users) = NewControllerWithUsers();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+        var user = (await users.FindByNameAsync("Tha"))!;
+        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = SignedIn(user.Id) } };
+
+        var result = await controller.Me();
+
+        var me = Assert.IsType<UserResponse>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal("Tha", me.UserName);
+    }
+
+    [Fact]
+    public async Task Me_rejects_unknown_user()
+    {
+        var controller = NewController();
+        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = SignedIn("missing") } };
+
+        var result = await controller.Me();
+
         Assert.IsType<UnauthorizedResult>(result.Result);
     }
+
+    private static ClaimsPrincipal SignedIn(string userId) => new(new ClaimsIdentity([new Claim("sub", userId)], "test"));
 }

@@ -1,8 +1,14 @@
 import { NavigationMenu } from "@/components/sidebar/NavigationMenu";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { CSSProperties } from "react";
+import { getCurrentUser } from "@/lib/dal";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const user = await getCurrentUser();
   return (
     <SidebarProvider
       defaultOpen={true}
@@ -12,7 +18,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         } as CSSProperties
       }
     >
-      <NavigationMenu>
+      <NavigationMenu user={user}>
         <main className="min-h-0 w-full flex-1 overflow-y-auto">
           {children}
         </main>
