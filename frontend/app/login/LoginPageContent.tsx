@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { login, register } from "@/lib/models/Auth";
+import { PasswordRequirements } from "./PasswordRequirements";
+import { meetsPasswordRules } from "./utils";
 
 export function LoginPageContent() {
   const router = useRouter();
@@ -88,6 +90,7 @@ export function LoginPageContent() {
                 className="h-11 bg-background pr-10 dark:bg-background"
                 autoComplete={isRegister ? "new-password" : "current-password"}
                 required
+                aria-describedby={isRegister ? "password-rules" : undefined}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -102,11 +105,14 @@ export function LoginPageContent() {
                 {showPassword ? <EyeOff /> : <Eye />}
               </Button>
             </div>
+            {isRegister && (
+              <PasswordRequirements id="password-rules" password={password} />
+            )}
           </Field>
           <Button
             type="submit"
             className="h-11 bg-indigo-600 text-white hover:bg-indigo-700"
-            disabled={loading}
+            disabled={loading || (isRegister && !meetsPasswordRules(password))}
           >
             {isRegister ? "Register" : "Log in"}
           </Button>
