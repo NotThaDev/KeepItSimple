@@ -19,13 +19,28 @@ import {
 } from "../ui/dropdown-menu";
 import { CircleUserRound, EllipsisVertical, LogOut } from "lucide-react";
 import { ThemeButton } from "../common/themeSelector/ThemeButton";
+import { useRouter } from "next/navigation";
+import { User } from "@/lib/models/Auth";
+import { logout } from "@/lib/actions/auth";
 
-const user = {
-  name: "Tha",
-  email: "tha@example.com",
-};
+interface UserMenuContentProps {
+  name: string;
+  email: string;
+}
 
-function UserMenuContent() {
+function UserMenuContent({ name, email }: Readonly<UserMenuContentProps>) {
+  const router = useRouter();
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } finally {
+      // Even if the call failed (for example the session was already gone), leave the app.
+      router.push("/login");
+      router.refresh();
+    }
+  }
+
   return (
     <>
       <DropdownMenuLabel className="p-0 font-normal">
@@ -33,13 +48,13 @@ function UserMenuContent() {
           <div className="flex items-center gap-2 text-left text-sm">
             <Avatar className="h-8 w-8 rounded-lg">
               <AvatarFallback className="rounded-lg">
-                {user.name.charAt(0)}
+                {name.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{user.name}</span>
+              <span className="truncate font-medium">{name}</span>
               <span className="truncate text-xs text-muted-foreground">
-                {user.email}
+                {email}
               </span>
             </div>
           </div>
@@ -54,7 +69,7 @@ function UserMenuContent() {
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
-      <DropdownMenuItem>
+      <DropdownMenuItem onSelect={handleLogout}>
         <LogOut />
         Log out
       </DropdownMenuItem>
@@ -64,10 +79,14 @@ function UserMenuContent() {
 
 interface NavUserProps {
   compact?: boolean;
+  user: User | null;
 }
 
-export function NavUser({ compact = false }: Readonly<NavUserProps>) {
+export function NavUser({ compact = false, user }: Readonly<NavUserProps>) {
   const { isMobile } = useSidebar();
+  // null when the API couldn't answer; the menu still works so the user can log out.
+  const name = user?.userName ?? "Account";
+  const email = user?.email ?? "";
 
   if (compact) {
     return (
@@ -81,7 +100,7 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
           >
             <Avatar className="h-8 w-8 rounded-lg grayscale">
               <AvatarFallback className="rounded-lg">
-                {user.name.charAt(0)}
+                {name.charAt(0)}
               </AvatarFallback>
             </Avatar>
           </Button>
@@ -92,7 +111,7 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
           align="end"
           sideOffset={4}
         >
-          <UserMenuContent />
+          <UserMenuContent name={name} email={email} />
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -109,11 +128,11 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 <AvatarFallback className="rounded-lg">
-                  {user.name.charAt(0)}
+                  {name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
+                <span className="truncate font-medium">{name}</span>
               </div>
               <EllipsisVertical className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -124,7 +143,7 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
             align="end"
             sideOffset={4}
           >
-            <UserMenuContent />
+            <UserMenuContent name={name} email={email} />
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

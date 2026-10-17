@@ -23,9 +23,9 @@ export function LoginPageContent() {
     const response = isRegister
       ? await register(username, email, password)
       : await login(username, password);
-    setLoading(false);
 
     if (response.error) {
+      setLoading(false);
       toast.error(
         isRegister
           ? `Failed to register: ${response.error}`
@@ -34,9 +34,19 @@ export function LoginPageContent() {
       return;
     }
 
-    // shortcut: no token/session stored yet, wire it in with the JWT work.
-    toast.success(isRegister ? "Account created" : "Logged in");
+    // Registering sets no cookies, so log in right away instead of bouncing back to /login.
+    if (isRegister) {
+      const loginResponse = await login(username, password);
+      if (loginResponse.error) {
+        setLoading(false);
+        toast.error(`Failed to log in: ${loginResponse.error}`);
+        return;
+      }
+    }
+
     router.push("/");
+    // Server components read the new auth cookies on the next render.
+    router.refresh();
   }
 
   return (

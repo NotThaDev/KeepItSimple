@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using KeepItSimple.Api.Models.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 
 namespace KeepItSimple.Api.Helpers;
@@ -27,6 +28,18 @@ public static class AuthSetup
             {
                 // Keep the claim names exactly as they appear in the token (no surprise remapping).
                 options.MapInboundClaims = false;
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        if (string.IsNullOrEmpty(context.Request.Headers.Authorization))
+                        {
+                            context.Token = context.Request.Cookies[TokenService.AccessCookieName];
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                };
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -42,7 +55,9 @@ public static class AuthSetup
                 };
             });
 
-        services.AddAuthorization();
+        // Every endpoint needs a signed-in user unless it opts out with [AllowAnonymous].
+        services.AddAuthorizationBuilder()
+            .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
         return services;
     }
 
@@ -66,6 +81,11 @@ public static class AuthSetup
         if (jwtSettings.ExpiryMinutes <= 0)
         {
             throw new InvalidOperationException("JWT ExpiryMinutes must be greater than zero.");
+        }
+
+        if (jwtSettings.RefreshExpiryDays <= 0)
+        {
+            throw new InvalidOperationException("JWT RefreshExpiryDays must be greater than zero.");
         }
     }
 

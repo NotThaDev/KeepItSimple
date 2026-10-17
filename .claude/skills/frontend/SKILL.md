@@ -52,8 +52,11 @@ frontend/
     sidebar/                  # nav shell and RouteDefinition.ts
   stores/<feature>/           # context: Action + State
   hooks/                      # hooks shared across features
+  proxy.ts                    # optimistic auth check + token refresh (Next 16 "proxy", formerly middleware)
   lib/
-    fetchWrapper.ts           # get, post, put, del
+    fetchWrapper.ts           # get, post, put, del; works on server and client
+    dal.ts                    # getCurrentUser() for server components (React cache)
+    actions/                  # Server Functions ("use server"), e.g. logout
     models/<Domain>.ts        # types, enums, API functions
     helpers/                  # formatting and small pure helpers
 ```
@@ -116,6 +119,19 @@ export async function getPockets(): Promise<FetchWrapperResponse<Pocket[]>> {
 - URL list filters live beside the list function: `parseXSearchParams` and `toXSearchParams`.
 
 Components and stores import `@/lib/models/...`. They do not call `fetch` or build endpoint strings.
+
+### Auth
+
+Auth lives in HttpOnly cookies (`kis_access`, `kis_refresh`), set by the API. No component or model reads, stores or sends a token; never put tokens in `localStorage` or `sessionStorage`.
+
+- The browser calls relative `/api/...`, which `next.config.ts` rewrites to `API_BASE_URL`, so the cookies go along automatically.
+- On the server, `fetchWrapper` sends `kis_access` as `Bearer`, and a 401 becomes `redirect("/login")`. A `page.tsx` load needs no auth check of its own.
+- In the browser, a 401 refreshes once and retries, otherwise it sends the user to `/login`.
+- `proxy.ts` refreshes an expired access token before the page renders.
+- Pass `withAuth = false` only for the `/api/auth` login, register, refresh and logout calls.
+- Server components that need the user call `getCurrentUser()` from `@/lib/dal`. Client components get it as props.
+
+Flow and limits: `backend/docs/Accounts.md`.
 
 On the client, branch on `response.error`, toast `` `Failed to …: ${response.error}` ``, and return. Do not throw for an expected API error.
 
