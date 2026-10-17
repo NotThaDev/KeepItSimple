@@ -58,7 +58,7 @@ export function LoginPageContent() {
             <FieldLabel htmlFor="username">Username</FieldLabel>
             <Input
               id="username"
-              className="h-11"
+              className="h-11 bg-background dark:bg-background"
               autoComplete="username"
               required
               value={username}
@@ -71,7 +71,7 @@ export function LoginPageContent() {
               <Input
                 id="email"
                 type="email"
-                className="h-11"
+                className="h-11 bg-background dark:bg-background"
                 autoComplete="email"
                 required
                 value={email}
@@ -85,7 +85,7 @@ export function LoginPageContent() {
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                className="h-11 pr-10"
+                className="h-11 bg-background pr-10 dark:bg-background"
                 autoComplete={isRegister ? "new-password" : "current-password"}
                 required
                 value={password}
