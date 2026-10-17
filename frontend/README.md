@@ -34,6 +34,6 @@ bun run dev
 
 The app is at [http://localhost:3000](http://localhost:3000).
 
-The API has to be running, and `NEXT_PUBLIC_API_BASE_URL` has to point at it (in development, `http://localhost:5264`). Without that, requests never reach the data.
+The API has to be running, and `API_BASE_URL` in `.env.local` has to point at it (in development, `http://localhost:5264`). The browser never calls the API directly: Next forwards `/api/*` to it (`next.config.ts`), and server components call it with the user's `kis_access` cookie. Login state lives in HttpOnly cookies; `proxy.ts` refreshes them.
 
 How to start the API and the database is in the [backend README](../backend/README.md).

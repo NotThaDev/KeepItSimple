@@ -18,7 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { DashboardCard } from "../../../app/dashboard/cards/DashboardCard";
+import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import { TransactionPieChart } from "./TransactionPieChart";
 
 interface TransactionTrackerCardProps {
