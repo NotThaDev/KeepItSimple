@@ -44,11 +44,12 @@ export function MoneyBackground() {
         { length: cols * Math.ceil(height / CELL) },
         randomSymbol,
       );
-      // A running ripple loop redraws on its next frame anyway.
-      if (!frame) draw(performance.now());
+      // The animation loop redraws on its next frame anyway.
+      if (reduceMotion) draw(0);
     }
 
     function draw(now: number) {
+      const t = now / 1000;
       const maxRadius = Math.hypot(width, height);
       ripples = ripples.filter(
         (r) =>
@@ -60,14 +61,28 @@ export function MoneyBackground() {
       ctx!.textBaseline = "middle";
 
       symbols.forEach((_, i) => {
-        const x = (i % cols) * CELL + CELL / 2;
-        const y = Math.floor(i / cols) * CELL + CELL / 2;
-        let intensity = 0;
-        let hue = HUE_START;
+        const gx = (i % cols) * CELL + CELL / 2;
+        const gy = Math.floor(i / cols) * CELL + CELL / 2;
+
+        // Ambient flow: overlapping travelling waves make the grid drift.
+        const flow = reduceMotion
+          ? 0
+          : (Math.sin(gx * 0.011 + t * 0.7) +
+              Math.sin(gy * 0.014 - t * 0.5) +
+              Math.sin((gx + gy) * 0.007 + t * 0.35) +
+              3) /
+            6;
+        const x = gx + (reduceMotion ? 0 : 3 * Math.sin(gy * 0.02 + t * 0.9));
+        const y = gy + (reduceMotion ? 0 : 3 * Math.cos(gx * 0.02 + t * 0.8));
+        // Only the crests of the flow pick up colour.
+        let intensity = Math.max(0, (flow - 0.6) / 0.4) * 0.55;
+        let hue =
+          HUE_START + HUE_RANGE * (0.5 + 0.5 * Math.sin(t * 0.25 + gx * 0.004));
+
         for (const ripple of ripples) {
           const radius = ((now - ripple.start) / 1000) * RING_SPEED;
           const offset =
-            (Math.hypot(x - ripple.x, y - ripple.y) - radius) / RING_WIDTH;
+            (Math.hypot(gx - ripple.x, gy - ripple.y) - radius) / RING_WIDTH;
           const strength =
             Math.exp(-offset * offset) * Math.max(0, 1 - radius / maxRadius);
           if (strength > intensity) {
@@ -75,17 +90,20 @@ export function MoneyBackground() {
             hue = HUE_START + HUE_RANGE * Math.min(1, radius / maxRadius);
           }
         }
-        // The ring reshuffles the symbols it passes over.
-        if (intensity > 0.9 && Math.random() < 0.15)
+        // Rings reshuffle the symbols they pass over; the flow does it rarely.
+        if (
+          (intensity > 0.9 && Math.random() < 0.15) ||
+          (!reduceMotion && Math.random() < 0.0008)
+        )
           symbols[i] = randomSymbol();
 
-        ctx!.globalAlpha = 0.2 + 0.8 * intensity;
+        ctx!.globalAlpha = 0.15 + 0.15 * flow + 0.7 * intensity;
         ctx!.fillStyle = intensity > 0.02 ? `hsl(${hue} 85% 60%)` : idleColor;
         ctx!.font = `${14 * (1 + 0.5 * intensity)}px ui-monospace, monospace`;
         ctx!.fillText(symbols[i], x, y);
       });
 
-      frame = ripples.length > 0 ? requestAnimationFrame(draw) : 0;
+      if (!reduceMotion) frame = requestAnimationFrame(draw);
     }
 
     function onPointerDown(event: PointerEvent) {
@@ -97,12 +115,12 @@ export function MoneyBackground() {
         y: event.clientY - rect.top,
         start: performance.now(),
       });
-      if (!frame) frame = requestAnimationFrame(draw);
     }
 
-    // Fires once on observe, so this also does the first draw.
+    // Fires once on observe, which sizes the grid before the first frame.
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
+    if (!reduceMotion) frame = requestAnimationFrame(draw);
     area.addEventListener("pointerdown", onPointerDown);
     return () => {
       cancelAnimationFrame(frame);
