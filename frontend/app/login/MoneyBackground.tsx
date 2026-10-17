@@ -131,7 +131,7 @@ export function MoneyBackground() {
     <canvas
       ref={canvasRef}
       aria-hidden
-      className="pointer-events-none absolute inset-0 size-full text-muted-foreground [mask-image:radial-gradient(ellipse_at_center,transparent_25%,black_75%)]"
+      className="pointer-events-none absolute inset-0 size-full text-muted-foreground [mask-image:linear-gradient(to_bottom,black,rgb(0_0_0/0.15)_15%,rgb(0_0_0/0.15)_85%,black)] lg:[mask-image:radial-gradient(ellipse_at_center,transparent_25%,black_75%)]"
     />
   );
 }
