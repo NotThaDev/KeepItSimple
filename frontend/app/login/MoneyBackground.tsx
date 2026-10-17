@@ -61,28 +61,26 @@ export function MoneyBackground() {
       ctx!.textBaseline = "middle";
 
       symbols.forEach((_, i) => {
-        const gx = (i % cols) * CELL + CELL / 2;
-        const gy = Math.floor(i / cols) * CELL + CELL / 2;
+        const x = (i % cols) * CELL + CELL / 2;
+        const y = Math.floor(i / cols) * CELL + CELL / 2;
 
-        // Ambient flow: overlapping travelling waves make the grid drift.
+        // Ambient flow: overlapping travelling waves sweep brightness across the grid.
         const flow = reduceMotion
           ? 0
-          : (Math.sin(gx * 0.011 + t * 0.7) +
-              Math.sin(gy * 0.014 - t * 0.5) +
-              Math.sin((gx + gy) * 0.007 + t * 0.35) +
+          : (Math.sin(x * 0.011 + t * 0.7) +
+              Math.sin(y * 0.014 - t * 0.5) +
+              Math.sin((x + y) * 0.007 + t * 0.35) +
               3) /
             6;
-        const x = gx + (reduceMotion ? 0 : 3 * Math.sin(gy * 0.02 + t * 0.9));
-        const y = gy + (reduceMotion ? 0 : 3 * Math.cos(gx * 0.02 + t * 0.8));
         // Only the crests of the flow pick up colour.
         let intensity = Math.max(0, (flow - 0.6) / 0.4) * 0.55;
         let hue =
-          HUE_START + HUE_RANGE * (0.5 + 0.5 * Math.sin(t * 0.25 + gx * 0.004));
+          HUE_START + HUE_RANGE * (0.5 + 0.5 * Math.sin(t * 0.25 + x * 0.004));
 
         for (const ripple of ripples) {
           const radius = ((now - ripple.start) / 1000) * RING_SPEED;
           const offset =
-            (Math.hypot(gx - ripple.x, gy - ripple.y) - radius) / RING_WIDTH;
+            (Math.hypot(x - ripple.x, y - ripple.y) - radius) / RING_WIDTH;
           const strength =
             Math.exp(-offset * offset) * Math.max(0, 1 - radius / maxRadius);
           if (strength > intensity) {
