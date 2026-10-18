@@ -13,7 +13,8 @@ namespace KeepItSimple.Api.Controllers;
 [Route("api/auth")]
 public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInManager<KeepItSimpleUser> signInManager, TokenService tokenManager, IConfiguration configuration) : ControllerBase
 {
-    private int? PasswordExpirationDays => configuration.GetValue<int?>("Identity:PasswordExpirationDays");
+    // A missing key means 182 days; 0 turns expiration off.
+    private int PasswordExpirationDays => configuration.GetValue<int>("Identity:PasswordExpirationDays", 182);
 
     [HttpPost("register")]
     [AllowAnonymous]

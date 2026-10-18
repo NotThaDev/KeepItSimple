@@ -190,4 +190,18 @@ public class RegisterTests
 
         Assert.IsType<BadRequestObjectResult>(result);
     }
+
+    [Fact]
+    public async Task ChangeExpiredPassword_rejects_a_wrong_current_password()
+    {
+        var (controller, users) = NewControllerWithUsers();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+        var user = (await users.FindByNameAsync("Tha"))!;
+        user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
+        await users.UpdateAsync(user);
+
+        var result = await controller.ChangeExpiredPassword(new("Tha", "Wr0ng!pass", "N3wpwd!xyz"));
+
+        Assert.IsType<UnauthorizedResult>(result);
+    }
 }
