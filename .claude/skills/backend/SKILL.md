@@ -79,7 +79,7 @@ public async Task<ActionResult<Pocket>> GetById(int id)
 - `ArgumentException` from the model becomes `BadRequest(ex.Message)`. Missing rows become `NotFound`. Delete returns `NoContent`. Create returns `CreatedAtAction`.
 - Keep request-shape checks in the action (empty id list, same pocket on both sides of a transfer). Domain checks (`Validate`, matching, normalization) stay on the model or a helper.
 
-Existing prefixes: `/api/pocket`, `/api/transactions`, `/api/category-rules`, `/api/analytics`. `TestDataController` is `#if DEBUG` and returns `NotFound` outside Development.
+Existing prefixes: `/api/pocket`, `/api/transactions`, `/api/category-rules`, `/api/analytics`.
 
 ## Models
 
