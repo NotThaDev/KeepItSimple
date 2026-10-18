@@ -16,9 +16,9 @@ public class CategoryRule
     public bool Enabled { get; set; } = true;
     public int SortOrder { get; set; }
 
-    // Owner. Nullable until the backfill has assigned the existing rows; never sent to or read from the client.
+    // Owner; never sent to or read from the client.
     [JsonIgnore]
-    public string? UserId { get; set; }
+    public string UserId { get; set; } = string.Empty;
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public Transaction.TransactionCategory TargetCategory { get; set; }
@@ -131,22 +131,6 @@ public class CategoryRule
 
             await dbContext.SaveChangesAsync();
             return true;
-        });
-    }
-
-    // shortcut: one-off backfill for rows created before rules had an owner; removed once UserId is required.
-    public static Task<int> AssignUnownedAsync(string userId)
-    {
-        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
-        {
-            var unowned = await dbContext.CategoryRules.Where(rule => rule.UserId == null).ToListAsync();
-            foreach (var rule in unowned)
-            {
-                rule.UserId = userId;
-            }
-
-            await dbContext.SaveChangesAsync();
-            return unowned.Count;
         });
     }
 
