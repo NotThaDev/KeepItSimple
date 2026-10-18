@@ -39,6 +39,8 @@ export async function login(
 export interface ChangeExpiredPasswordResponse extends FetchWrapperResponse<void> {
   // 400 ValidationProblemDetails: why the new password was rejected.
   newPasswordErrors?: string[];
+  // Set when too many failed attempts locked the account.
+  retryAfterSeconds?: number;
 }
 
 // Sets the auth cookies on success, like login.
@@ -52,6 +54,11 @@ export async function changeExpiredPassword(
     { username, currentPassword, newPassword },
     false,
   );
+  if (response.status === 423) {
+    const lockout = response.errorData as
+      { retryAfterSeconds?: number } | undefined;
+    return { ...response, retryAfterSeconds: lockout?.retryAfterSeconds ?? 0 };
+  }
   if (response.status === 400) {
     const problem = response.errorData as
       { errors?: { newPassword?: string[] } } | undefined;

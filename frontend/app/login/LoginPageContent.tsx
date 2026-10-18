@@ -83,6 +83,10 @@ export function LoginPageContent() {
           setErrors({ password: changed.newPasswordErrors[0] });
           return;
         }
+        if (changed.retryAfterSeconds !== undefined) {
+          setLockedUntil(Date.now() + changed.retryAfterSeconds * 1000);
+          return;
+        }
         toast.error(`Failed to update password: ${changed.error}`);
         return;
       }
