@@ -12,7 +12,13 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { login, register, RegisterResponse } from "@/lib/models/Auth";
+import {
+  login,
+  LoginResponse,
+  register,
+  RegisterResponse,
+} from "@/lib/models/Auth";
+import { LockoutNotice } from "./LockoutNotice";
 import { PasswordRequirements } from "./PasswordRequirements";
 import { EMAIL_PATTERN, meetsPasswordRules } from "./utils";
 
@@ -31,6 +37,9 @@ export function LoginPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+  // Epoch ms when the account lockout ends; null when not locked.
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const clearLockout = useCallback(() => setLockedUntil(null), []);
   const isInvalid = (field: FormField) => errors[field] !== undefined;
 
   const clearError = useCallback((field: FormField) => {
@@ -59,13 +68,17 @@ export function LoginPageContent() {
     if (Object.keys(invalid).length > 0) return;
 
     setLoading(true);
-    // A login response fits too: it just never has fieldErrors.
-    const response: RegisterResponse = isRegister
+    // Each response type only adds optional fields, so one variable fits both.
+    const response: RegisterResponse & LoginResponse = isRegister
       ? await register(username, email, password)
       : await login(username, password);
 
     if (response.error) {
       setLoading(false);
+      if (response.retryAfterSeconds !== undefined) {
+        setLockedUntil(Date.now() + response.retryAfterSeconds * 1000);
+        return;
+      }
       const taken = response.fieldErrors;
       if (taken) {
         setErrors({ username: taken.username?.[0], email: taken.email?.[0] });
@@ -123,6 +136,8 @@ export function LoginPageContent() {
               onChange={(e) => {
                 setUsername(e.target.value);
                 clearError("username");
+                // The lockout belongs to the account that was typed.
+                clearLockout();
               }}
             />
             <FieldError id="username-error" className={FIELD_ERROR_CLASS}>
@@ -192,6 +207,9 @@ export function LoginPageContent() {
               {errors.password}
             </FieldError>
           </Field>
+          {lockedUntil !== null && !isRegister && (
+            <LockoutNotice until={lockedUntil} onExpire={clearLockout} />
+          )}
           <Button
             type="submit"
             className="h-11 bg-indigo-600 text-white hover:bg-indigo-700"

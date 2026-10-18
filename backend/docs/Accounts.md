@@ -19,7 +19,8 @@ The JWT is read from the `Authorization: Bearer` header when there is one; this 
 - `POST login`:
   - checks the password and revokes the user's other refresh rows (one session per user);
   - creates a new row, sets both cookies, and returns 204;
-  - the other browser gets a 401 on its next refresh, but keeps its current access token until it expires.
+  - the other browser gets a 401 on its next refresh, but keeps its current access token until it expires;
+  - 5 wrong passwords lock the account for 15 minutes (`IdentitySetup`). While locked, every attempt, even with the right password, gets **423 Locked** with `LockoutResponse { retryAfterSeconds }`. Seconds rather than an end timestamp, so the client's countdown doesn't depend on its clock. This tells a caller the username exists, but only after 5 failed tries on it; an unknown username stays a plain 401.
 - `POST refresh`: no body; reads `kis_refresh`.
   - **Valid**: in one transaction, the row is revoked and points at its replacement (`ReplacedByHash`), and the new row is inserted. Both cookies are set again.
   - **Unknown, expired or revoked** (for example after logout): 401, and both cookies are cleared.
@@ -57,6 +58,7 @@ Only `register`, `login`, `refresh` and `logout` are `[AllowAnonymous]`. `refres
 
 The browser only talks to the Next app. `next.config.ts` rewrites `/api/*` to `API_BASE_URL`, so the cookies are first-party and the API needs no CORS.
 
+- **Login page**: a 423 shows `LockoutNotice` with a live countdown (`m:ss`) instead of the error toast. It goes away when the time runs out or the username changes. `fetchWrapper` keeps the JSON body of failed responses in `errorData`; `login()` reads the lockout from it and `register()` the taken fields of a 409.
 - **`frontend/proxy.ts`** is the optimistic check, and it never calls the API when `kis_access` is present.
   - `/login` is public.
   - With `kis_access`, the request goes on.

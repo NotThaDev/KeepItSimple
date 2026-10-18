@@ -14,3 +14,10 @@ export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function meetsPasswordRules(password: string) {
   return PASSWORD_RULES.every((rule) => rule.test(password));
 }
+
+// 905 -> "15:05"
+export function formatCountdown(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}

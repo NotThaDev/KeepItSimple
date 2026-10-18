@@ -6,12 +6,28 @@ export interface User {
   email?: string;
 }
 
+export interface LoginResponse extends FetchWrapperResponse<void> {
+  // Set when too many failed attempts locked the account.
+  retryAfterSeconds?: number;
+}
+
 // Login and refresh only set the HttpOnly auth cookies; there is no body. Logout is a Server Function (lib/actions/auth.ts).
 export async function login(
   username: string,
   password: string,
-): Promise<FetchWrapperResponse<void>> {
-  return await post<void>("/api/auth/login", { username, password }, false);
+): Promise<LoginResponse> {
+  const response = await post<void>(
+    "/api/auth/login",
+    { username, password },
+    false,
+  );
+  // 423 Locked: the body says how long the lockout still lasts.
+  if (response.status === 423) {
+    const lockout = response.errorData as
+      { retryAfterSeconds?: number } | undefined;
+    return { ...response, retryAfterSeconds: lockout?.retryAfterSeconds ?? 0 };
+  }
+  return response;
 }
 
 type FieldErrors = Partial<Record<"username" | "email", string[]>>;
@@ -20,35 +36,22 @@ export interface RegisterResponse extends FetchWrapperResponse<void> {
   fieldErrors?: FieldErrors;
 }
 
-// Calls fetch directly instead of fetchWrapper: this is the only call that needs the error body.
-// Browser only (the login page): the relative URL goes through the /api rewrite.
 export async function register(
   username: string,
   email: string,
   password: string,
 ): Promise<RegisterResponse> {
-  let response: Response;
-  try {
-    response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, email, password }),
-    });
-  } catch {
-    return { error: "Server is unreachable", status: 0 };
+  const response = await post<void>(
+    "/api/auth/register",
+    { username, email, password },
+    false,
+  );
+  // 409 ValidationProblemDetails: its errors list the fields already taken.
+  if (response.status === 409) {
+    const problem = response.errorData as { errors?: FieldErrors } | undefined;
+    return { ...response, fieldErrors: problem?.errors };
   }
-
-  if (response.ok) return { status: response.status };
-
-  const body: { errors?: FieldErrors } | undefined =
-    response.status === 409
-      ? await response.json().catch(() => undefined)
-      : undefined;
-  return {
-    error: `Request failed with status ${response.status}`,
-    fieldErrors: body?.errors,
-    status: response.status,
-  };
+  return response;
 }
 
 // The refresh token travels in the HttpOnly cookie, not in the body.
