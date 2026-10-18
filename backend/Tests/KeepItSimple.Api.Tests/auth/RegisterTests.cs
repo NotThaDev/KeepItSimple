@@ -29,6 +29,7 @@ public class RegisterTests
             ["Identity:Password:RequireLowercase"] = "true",
             ["Identity:Password:RequireUppercase"] = "true",
             ["Identity:Password:RequireNonAlphanumeric"] = "true",
+            ["Identity:PasswordExpirationDays"] = "182",
         }).Build();
 
         var services = new ServiceCollection();
@@ -44,7 +45,8 @@ public class RegisterTests
         var controller = new AuthController(
             users,
             provider.GetRequiredService<SignInManager<KeepItSimpleUser>>(),
-            new TokenService(jwtSettings));
+            new TokenService(jwtSettings),
+            configuration);
         return (controller, users);
     }
 
@@ -147,4 +149,45 @@ public class RegisterTests
     }
 
     private static ClaimsPrincipal SignedIn(string userId) => new(new ClaimsIdentity([new Claim("sub", userId)], "test"));
+
+    [Fact]
+    public async Task Login_rejects_expired_password_without_tokens()
+    {
+        var (controller, users) = NewControllerWithUsers();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+        var user = (await users.FindByNameAsync("Tha"))!;
+        user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
+        await users.UpdateAsync(user);
+
+        var result = await controller.Login(new LoginRequest(Password, Username: "Tha"));
+
+        var status = Assert.IsType<StatusCodeResult>(result);
+        Assert.Equal(StatusCodes.Status403Forbidden, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangeExpiredPassword_rejects_the_same_password()
+    {
+        var (controller, users) = NewControllerWithUsers();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+        var user = (await users.FindByNameAsync("Tha"))!;
+        user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
+        await users.UpdateAsync(user);
+
+        var result = await controller.ChangeExpiredPassword(new("Tha", Password, Password));
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.True(await users.CheckPasswordAsync(user, Password));
+    }
+
+    [Fact]
+    public async Task ChangeExpiredPassword_rejects_password_that_has_not_expired()
+    {
+        var controller = NewController();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+
+        var result = await controller.ChangeExpiredPassword(new("Tha", Password, "N3wpwd!xyz"));
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
 }

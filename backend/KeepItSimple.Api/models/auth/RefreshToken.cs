@@ -123,6 +123,11 @@ public class RefreshToken
             .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, DateTime.UtcNow)));
     }
 
+    public static Task<int> RevokeAllAsync(string userId)
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(dbContext => RevokeAllAsync(dbContext, userId, DateTime.UtcNow));
+    }
+
     private static Task<int> RevokeAllAsync(KeepItSimpleDbContext dbContext, string userId, DateTime now)
     {
         return dbContext.RefreshTokens
