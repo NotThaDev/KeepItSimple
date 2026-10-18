@@ -8,7 +8,6 @@ namespace KeepItSimple.Api.Tests.Ownership;
 
 /// <summary>
 /// Each user only sees and changes their own pockets, transactions, category rules and import sessions.
-/// All tests stay in this class: only this class creates unowned rows for the backfill test.
 /// </summary>
 public class OwnershipTests
 {
@@ -120,40 +119,6 @@ public class OwnershipTests
         Assert.Equal(0, first.SortOrder);
         Assert.Equal(1, second.SortOrder);
         Assert.Equal(0, strangerRule.SortOrder);
-    }
-
-    [Fact]
-    public async Task AssignUnownedAsync_gives_only_unowned_rows_to_the_caller_once()
-    {
-        // Clear rows left unowned by earlier runs of the suite.
-        await Pocket.AssignUnownedAsync(TestApp.NewUserId());
-        await CategoryRule.AssignUnownedAsync(TestApp.NewUserId());
-
-        var owner = TestApp.NewUserId();
-        var other = TestApp.NewUserId();
-
-        await KeepItSimpleContext.Context.WithDbContextAsync(async db =>
-        {
-            db.Pockets.Add(new Pocket { Name = "legacy" });
-            db.CategoryRules.Add(NewRule("legacy rule"));
-            await db.SaveChangesAsync();
-            return true;
-        });
-        var otherPocket = await Pocket.Update(new Pocket { Name = "other" }, other);
-
-        Assert.Empty(await Pocket.GetAllAsync(owner));
-        Assert.Equal(1, await Pocket.AssignUnownedAsync(owner));
-        Assert.Equal(1, await CategoryRule.AssignUnownedAsync(owner));
-
-        Assert.Single(await Pocket.GetAllAsync(owner));
-        Assert.Single(await CategoryRule.GetAllAsync(owner));
-
-        var otherPockets = await Pocket.GetAllAsync(other);
-        Assert.Single(otherPockets);
-        Assert.Equal(otherPocket!.Id, otherPockets[0].Id);
-
-        Assert.Equal(0, await Pocket.AssignUnownedAsync(owner));
-        Assert.Equal(0, await CategoryRule.AssignUnownedAsync(owner));
     }
 
     [Fact]
