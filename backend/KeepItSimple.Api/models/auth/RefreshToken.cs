@@ -38,6 +38,7 @@ public class RefreshToken
             var now = DateTime.UtcNow;
             // One session per user: logging in elsewhere ends the other browsers' sessions.
             await RevokeAllAsync(dbContext, userId, now);
+            await DeleteExpiredAsync(dbContext, userId, now);
             var (token, row) = NewRow(userId, lifetime, now);
             dbContext.RefreshTokens.Add(row);
             await dbContext.SaveChangesAsync();
@@ -87,6 +88,8 @@ public class RefreshToken
                 return await GraceRotateAsync(dbContext, row, lifetime, now);
             }
 
+            // Here too, not only at login: an active user refreshes for weeks without logging in again.
+            await DeleteExpiredAsync(dbContext, row.UserId, now);
             dbContext.RefreshTokens.Add(newRow);
             await dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -125,6 +128,14 @@ public class RefreshToken
         return dbContext.RefreshTokens
             .Where(t => t.UserId == userId && t.RevokedAt == null)
             .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, now));
+    }
+
+    // Only expired rows: revoked ones that are still unexpired must stay, they are how a replayed stolen token gets caught.
+    private static Task<int> DeleteExpiredAsync(KeepItSimpleDbContext dbContext, string userId, DateTime now)
+    {
+        return dbContext.RefreshTokens
+            .Where(t => t.UserId == userId && t.ExpiresAt <= now)
+            .ExecuteDeleteAsync();
     }
 
     private static (string Token, RefreshToken Row) NewRow(string userId, TimeSpan lifetime, DateTime now)

@@ -26,6 +26,7 @@ The JWT is read from the `Authorization: Bearer` header when there is one; this 
   - **Rotated less than 10 s ago, and its successor is still active** (grace period): a new row and cookies are issued. Parallel requests that found the same expired token (prefetches, several tabs) don't log the user out.
   - **Rotated earlier** (reuse): 401 and **every active session of that user is revoked**. Only the attacker or the real user can hold the newer token, and the server can't tell which, so both have to log in again.
 - `POST logout`: revokes the cookie's row and clears both cookies. Always 204, even without a cookie.
+- Login and a valid refresh also delete the user's expired rows. Revoked rows stay until they expire: a reused token is only caught while its row exists.
 - `GET me`: the signed-in user (`UserResponse`), read from the JWT's `sub` claim. Returns 401 when that user no longer exists.
 
 ```mermaid
@@ -66,7 +67,7 @@ The browser only talks to the Next app. `next.config.ts` rewrites `/api/*` to `A
 - **`frontend/lib/fetchWrapper.ts`** behaves differently on each side:
   - **On the server**, it sends `kis_access` as `Bearer`, and a 401 becomes `redirect("/login")`. That makes every server-side data load the real guard.
   - **In the browser**, it calls relative `/api/...`, and the cookies go along automatically. A 401 triggers one refresh (`refreshOnce`, never two at a time), then one retry. If the refresh fails, the user is sent to `/login`.
-- **`frontend/lib/dal.ts`**: `getCurrentUser()` (React `cache`, so once per render) loads `/me` for the sidebar.
+- **`frontend/lib/dal.ts`**: `getCurrentUser()` (React `cache`, so once per render) loads `/me`. The `(app)` layout passes the result to `UserIdentityProvider` (`frontend/stores/userIdentity`). Client components read it, and the `logout` action, with `useUserIdentityContext()`.
 
 ## Known limits
 
@@ -74,5 +75,4 @@ The browser only talks to the Next app. `next.config.ts` rewrites `/api/*` to `A
 - Each grace-period refresh leaves one extra active refresh row for the session, until it expires or the next login. The `SessionId` in #149 fixes it.
 - Through the rewrite, the API sees HTTP, so in production behind TLS `Secure` would be off. That needs `UseForwardedHeaders` when we deploy.
 - The proxy dedupes refreshes within one server process. With several instances, only the grace period protects parallel refreshes.
-- Expired and revoked rows are never deleted.
 - Data isn't filtered by the signed-in user yet (plan step 3).

@@ -129,7 +129,7 @@ Auth lives in HttpOnly cookies (`kis_access`, `kis_refresh`), set by the API. No
 - In the browser, a 401 refreshes once and retries, otherwise it sends the user to `/login`.
 - `proxy.ts` refreshes an expired access token before the page renders.
 - Pass `withAuth = false` only for the `/api/auth` login, register, refresh and logout calls.
-- Server components that need the user call `getCurrentUser()` from `@/lib/dal`. Client components get it as props.
+- Server components that need the user call `getCurrentUser()` from `@/lib/dal`. Client components call `useUserIdentityContext()` from `@/stores/userIdentity` (`user` and `logout`). The `(app)` layout fills its provider from `getCurrentUser()`, so do not pass the user as a prop or load `/me` in the browser.
 
 Flow and limits: `backend/docs/Accounts.md`.
 

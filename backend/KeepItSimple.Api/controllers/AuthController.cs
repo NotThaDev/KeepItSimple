@@ -80,6 +80,13 @@ public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInMan
         }
 
         var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
+        if (result.IsLockedOut)
+        {
+            var lockoutEnd = await userManager.GetLockoutEndDateAsync(user);
+            var remaining = lockoutEnd.HasValue ? lockoutEnd.Value - DateTimeOffset.UtcNow : TimeSpan.Zero;
+            return StatusCode(StatusCodes.Status423Locked, new LockoutResponse((int)Math.Ceiling(Math.Max(0, remaining.TotalSeconds))));
+        }
+
         if (!result.Succeeded)
         {
             return Unauthorized();

@@ -19,9 +19,7 @@ import {
 } from "../ui/dropdown-menu";
 import { CircleUserRound, EllipsisVertical, LogOut } from "lucide-react";
 import { ThemeButton } from "../common/themeSelector/ThemeButton";
-import { useRouter } from "next/navigation";
-import { User } from "@/lib/models/Auth";
-import { logout } from "@/lib/actions/auth";
+import { useUserIdentityContext } from "@/stores/userIdentity";
 
 interface UserMenuContentProps {
   name: string;
@@ -29,17 +27,7 @@ interface UserMenuContentProps {
 }
 
 function UserMenuContent({ name, email }: Readonly<UserMenuContentProps>) {
-  const router = useRouter();
-
-  async function handleLogout() {
-    try {
-      await logout();
-    } finally {
-      // Even if the call failed (for example the session was already gone), leave the app.
-      router.push("/login");
-      router.refresh();
-    }
-  }
+  const { logout } = useUserIdentityContext();
 
   return (
     <>
@@ -69,7 +57,7 @@ function UserMenuContent({ name, email }: Readonly<UserMenuContentProps>) {
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
-      <DropdownMenuItem onSelect={handleLogout}>
+      <DropdownMenuItem onSelect={logout}>
         <LogOut />
         Log out
       </DropdownMenuItem>
@@ -79,12 +67,11 @@ function UserMenuContent({ name, email }: Readonly<UserMenuContentProps>) {
 
 interface NavUserProps {
   compact?: boolean;
-  user: User | null;
 }
 
-export function NavUser({ compact = false, user }: Readonly<NavUserProps>) {
+export function NavUser({ compact = false }: Readonly<NavUserProps>) {
   const { isMobile } = useSidebar();
-  // null when the API couldn't answer; the menu still works so the user can log out.
+  const { user } = useUserIdentityContext();
   const name = user?.userName ?? "Account";
   const email = user?.email ?? "";
 

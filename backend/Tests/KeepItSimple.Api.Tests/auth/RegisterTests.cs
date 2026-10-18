@@ -98,6 +98,30 @@ public class RegisterTests
     }
 
     [Fact]
+    public async Task Login_locks_the_account_after_too_many_failures()
+    {
+        var controller = NewController();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+
+        // IdentitySetup: 5 failed attempts lock the account for 15 minutes.
+        for (var i = 0; i < 4; i++)
+        {
+            Assert.IsType<UnauthorizedResult>(await controller.Login(new LoginRequest("Wrong1pwd!", Username: "Tha")));
+        }
+        AssertLockedOut(await controller.Login(new LoginRequest("Wrong1pwd!", Username: "Tha")));
+
+        // The right password doesn't get through while the lockout lasts.
+        AssertLockedOut(await controller.Login(new LoginRequest(Password, Username: "Tha")));
+    }
+
+    private static void AssertLockedOut(ActionResult result)
+    {
+        var locked = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status423Locked, locked.StatusCode);
+        Assert.InRange(Assert.IsType<LockoutResponse>(locked.Value).RetryAfterSeconds, 14 * 60, 15 * 60);
+    }
+
+    [Fact]
     public async Task Me_returns_the_signed_in_user()
     {
         var (controller, users) = NewControllerWithUsers();

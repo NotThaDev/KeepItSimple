@@ -16,7 +16,6 @@ import Image from "next/image";
 import { PanelLeftIcon } from "lucide-react";
 import { MobileHeader } from "./MobileHeader";
 import { MobileBottomNav } from "./MobileBottomNav";
-import { User } from "@/lib/models/Auth";
 
 function AppSidebarHeader() {
   const { state, toggleSidebar } = useSidebar();
@@ -63,14 +62,7 @@ function AppSidebarHeader() {
   );
 }
 
-interface NavigationMenuProps extends PropsWithChildren {
-  user: User | null;
-}
-
-export function NavigationMenu({
-  children,
-  user,
-}: Readonly<NavigationMenuProps>) {
+export function NavigationMenu({ children }: Readonly<PropsWithChildren>) {
   return (
     <>
       <Sidebar collapsible="icon">
@@ -79,12 +71,12 @@ export function NavigationMenu({
           <NavigationItems />
         </SidebarContent>
         <SidebarFooter>
-          <NavUser user={user} />
+          <NavUser />
         </SidebarFooter>
       </Sidebar>
       <div className="flex min-h-svh min-w-0 flex-1 flex-col">
         <div className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-sm md:hidden">
-          <MobileHeader user={user} />
+          <MobileHeader />
         </div>
         {children}
         <MobileBottomNav />
