@@ -164,17 +164,18 @@ export function DataTable<TData extends RowData>({
         </Table>
       </div>
 
-      <div className="flex flex-col gap-2 px-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 px-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         {enablePagination ? (
           <PaginationComponent
             pageIndex={currentPage}
             pageCount={pageCount}
             onPageChange={goToPage}
+            className="sm:mx-0 sm:w-auto"
           />
         ) : null}
 
         {extraContent ? (
-          <div className="flex flex-wrap justify-end gap-2 sm:ml-auto">
+          <div className="flex flex-wrap justify-end gap-2 sm:ml-auto sm:shrink-0">
             {extraContent}
           </div>
         ) : null}
