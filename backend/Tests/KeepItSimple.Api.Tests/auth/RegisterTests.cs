@@ -62,16 +62,20 @@ public class RegisterTests
     }
 
     [Fact]
-    public async Task Register_rejects_duplicate_username_and_email()
+    public async Task Register_returns_conflict_for_the_taken_fields()
     {
         var controller = NewController();
         await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
 
-        var sameName = await controller.Register(new RegisterRequest("Tha", "other@example.com", Password));
-        var sameEmail = await controller.Register(new RegisterRequest("Other", "tha@example.com", Password));
+        Assert.Equal(["username"], ConflictFields(await controller.Register(new RegisterRequest("Tha", "other@example.com", Password))));
+        Assert.Equal(["email"], ConflictFields(await controller.Register(new RegisterRequest("Other", "tha@example.com", Password))));
+        Assert.Equal(["username", "email"], ConflictFields(await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password))));
+    }
 
-        Assert.IsType<BadRequestObjectResult>(sameName);
-        Assert.IsType<BadRequestObjectResult>(sameEmail);
+    private static IEnumerable<string> ConflictFields(ActionResult result)
+    {
+        var conflict = Assert.IsType<ConflictObjectResult>(result);
+        return Assert.IsType<ValidationProblemDetails>(conflict.Value).Errors.Keys;
     }
 
     [Fact]

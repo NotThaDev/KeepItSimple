@@ -29,17 +29,21 @@ public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInMan
         }
 
 
-        var userExists = await userManager.FindByNameAsync(request.Username);
-        if (userExists != null)
+        // Keyed by form field, so the frontend can mark the taken field; both are checked to report both at once.
+        var conflicts = new Dictionary<string, string[]>();
+        if (await userManager.FindByNameAsync(request.Username) != null)
         {
-            return BadRequest("Username already exists.");
+            conflicts["username"] = ["Username is already taken."];
         }
 
-
-        userExists = await userManager.FindByEmailAsync(request.Email);
-        if (userExists != null)
+        if (await userManager.FindByEmailAsync(request.Email) != null)
         {
-            return BadRequest("Email already exists.");
+            conflicts["email"] = ["Email is already in use."];
+        }
+
+        if (conflicts.Count > 0)
+        {
+            return Conflict(new ValidationProblemDetails(conflicts) { Status = StatusCodes.Status409Conflict });
         }
 
         var userCreationResult = await userManager.CreateAsync(user, request.Password);
