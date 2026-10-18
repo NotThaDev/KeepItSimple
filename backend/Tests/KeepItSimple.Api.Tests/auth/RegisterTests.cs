@@ -19,7 +19,7 @@ public class RegisterTests
 
     private static AuthController NewController() => NewControllerWithUsers().Controller;
 
-    private static (AuthController Controller, UserManager<KeepItSimpleUser> Users) NewControllerWithUsers()
+    private static (AuthController Controller, KeepItSimpleUserManager Users) NewControllerWithUsers()
     {
         // Same password rules as appsettings.Development.json.
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
@@ -29,7 +29,7 @@ public class RegisterTests
             ["Identity:Password:RequireLowercase"] = "true",
             ["Identity:Password:RequireUppercase"] = "true",
             ["Identity:Password:RequireNonAlphanumeric"] = "true",
-            ["Identity:PasswordExpirationDays"] = "182",
+            ["Identity:Password:ExpirationDays"] = "182",
         }).Build();
 
         var services = new ServiceCollection();
@@ -41,12 +41,11 @@ public class RegisterTests
         var provider = services.BuildServiceProvider();
 
         var jwtSettings = new JwtSettings { Key = new string('k', 32), Issuer = "test", Audience = "test", ExpiryMinutes = 15, RefreshExpiryDays = 14 };
-        var users = provider.GetRequiredService<UserManager<KeepItSimpleUser>>();
+        var users = provider.GetRequiredService<KeepItSimpleUserManager>();
         var controller = new AuthController(
             users,
             provider.GetRequiredService<SignInManager<KeepItSimpleUser>>(),
-            new TokenService(jwtSettings),
-            configuration);
+            new TokenService(jwtSettings));
         return (controller, users);
     }
 
@@ -192,5 +191,37 @@ public class RegisterTests
         var result = await controller.ChangePassword(new("Tha", "Wr0ng!pass", "N3wpwd!xyz"));
 
         Assert.IsType<UnauthorizedResult>(result);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_sets_PasswordChangedAt()
+    {
+        var (controller, users) = NewControllerWithUsers();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+        var user = (await users.FindByNameAsync("Tha"))!;
+        user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
+        await users.UpdateAsync(user);
+
+        var result = await users.ChangePasswordAsync(user, Password, "N3wpwd!xyz");
+
+        Assert.True(result.Succeeded);
+        Assert.True(DateTime.UtcNow - user.PasswordChangedAt < TimeSpan.FromMinutes(1));
+        Assert.False(users.IsPasswordExpired(user));
+    }
+
+    [Fact]
+    public async Task Failed_ChangePasswordAsync_keeps_PasswordChangedAt()
+    {
+        var (controller, users) = NewControllerWithUsers();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+        var user = (await users.FindByNameAsync("Tha"))!;
+        var previous = DateTime.UtcNow.AddDays(-200);
+        user.PasswordChangedAt = previous;
+        await users.UpdateAsync(user);
+
+        var result = await users.ChangePasswordAsync(user, "Wr0ng!pass", "N3wpwd!xyz");
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(previous, user.PasswordChangedAt);
     }
 }

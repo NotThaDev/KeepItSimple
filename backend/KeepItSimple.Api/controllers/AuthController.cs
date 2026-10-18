@@ -11,11 +11,8 @@ namespace KeepItSimple.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInManager<KeepItSimpleUser> signInManager, TokenService tokenManager, IConfiguration configuration) : ControllerBase
+public class AuthController(KeepItSimpleUserManager userManager, SignInManager<KeepItSimpleUser> signInManager, TokenService tokenManager) : ControllerBase
 {
-    // A missing key means 182 days; 0 turns expiration off.
-    private int PasswordExpirationDays => configuration.GetValue<int>("Identity:PasswordExpirationDays", 182);
-
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<ActionResult> Register([FromBody] RegisterRequest request)
@@ -89,7 +86,7 @@ public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInMan
         }
 
         // No tokens: the frontend turns the login form into a "set a new password" form.
-        if (user.IsPasswordExpired(PasswordExpirationDays, DateTime.UtcNow))
+        if (userManager.IsPasswordExpired(user))
         {
             return StatusCode(StatusCodes.Status403Forbidden);
         }
@@ -120,7 +117,6 @@ public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInMan
             return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["newPassword"] = ["Choose a password different from the current one."] }));
         }
 
-        user.PasswordChangedAt = DateTime.UtcNow;
         var changed = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!changed.Succeeded)
         {
@@ -148,7 +144,7 @@ public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInMan
         var rotated = await RefreshToken.RotateAsync(token, tokenManager.RefreshLifetime);
         var user = rotated == null ? null : await userManager.FindByIdAsync(rotated.Value.UserId);
         // An expired password ends the session too, so active users also get sent to the login form.
-        if (user == null || user.IsPasswordExpired(PasswordExpirationDays, DateTime.UtcNow))
+        if (user == null || userManager.IsPasswordExpired(user))
         {
             ClearAuthCookies();
             return Unauthorized();
