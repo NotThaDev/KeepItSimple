@@ -166,7 +166,7 @@ public class RegisterTests
     }
 
     [Fact]
-    public async Task ChangeExpiredPassword_rejects_the_same_password()
+    public async Task ChangePassword_rejects_the_same_password()
     {
         var (controller, users) = NewControllerWithUsers();
         await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
@@ -174,25 +174,14 @@ public class RegisterTests
         user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
         await users.UpdateAsync(user);
 
-        var result = await controller.ChangeExpiredPassword(new("Tha", Password, Password));
+        var result = await controller.ChangePassword(new("Tha", Password, Password));
 
         Assert.IsType<BadRequestObjectResult>(result);
         Assert.True(await users.CheckPasswordAsync(user, Password));
     }
 
     [Fact]
-    public async Task ChangeExpiredPassword_rejects_password_that_has_not_expired()
-    {
-        var controller = NewController();
-        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
-
-        var result = await controller.ChangeExpiredPassword(new("Tha", Password, "N3wpwd!xyz"));
-
-        Assert.IsType<BadRequestObjectResult>(result);
-    }
-
-    [Fact]
-    public async Task ChangeExpiredPassword_rejects_a_wrong_current_password()
+    public async Task ChangePassword_rejects_a_wrong_current_password()
     {
         var (controller, users) = NewControllerWithUsers();
         await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
@@ -200,7 +189,7 @@ public class RegisterTests
         user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
         await users.UpdateAsync(user);
 
-        var result = await controller.ChangeExpiredPassword(new("Tha", "Wr0ng!pass", "N3wpwd!xyz"));
+        var result = await controller.ChangePassword(new("Tha", "Wr0ng!pass", "N3wpwd!xyz"));
 
         Assert.IsType<UnauthorizedResult>(result);
     }

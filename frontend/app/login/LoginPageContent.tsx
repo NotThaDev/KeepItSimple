@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
-  changeExpiredPassword,
+  changePassword,
   login,
   LoginResponse,
   register,
@@ -76,7 +76,7 @@ export function LoginPageContent() {
     setLoading(true);
     // Narrowed on expiredPassword itself: TS does not narrow through the isExpired boolean.
     if (expiredPassword !== null) {
-      const changed = await changeExpiredPassword(username, expiredPassword, password);
+      const changed = await changePassword(username, expiredPassword, password);
       if (changed.error) {
         setLoading(false);
         if (changed.newPasswordErrors) {

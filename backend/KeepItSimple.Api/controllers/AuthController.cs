@@ -98,10 +98,10 @@ public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInMan
         return await BuildAuthResponse(user, refreshToken);
     }
 
-    // Anonymous because an expired password gets no tokens; the current password proves who is asking.
-    [HttpPost("change-expired-password")]
+    // Anonymous so an expired password (which gets no tokens) can be changed too; the current password proves who is asking.
+    [HttpPost("change-password")]
     [AllowAnonymous]
-    public async Task<ActionResult> ChangeExpiredPassword([FromBody] ChangeExpiredPasswordRequest request)
+    public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         var user = string.IsNullOrEmpty(request.Username) ? null : await userManager.FindByNameAsync(request.Username);
         if (user == null)
@@ -115,27 +115,19 @@ public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInMan
             return failure;
         }
 
-        // Voluntary changes belong to the account page (#154), not this anonymous endpoint.
-        if (!user.IsPasswordExpired(PasswordExpirationDays, DateTime.UtcNow))
-        {
-            return BadRequest("Password has not expired.");
-        }
-
         if (request.NewPassword == request.CurrentPassword)
         {
             return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["newPassword"] = ["Choose a password different from the current one."] }));
         }
 
-        // Set before the change, so ChangePasswordAsync saves the password and its date in one write.
         user.PasswordChangedAt = DateTime.UtcNow;
         var changed = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!changed.Succeeded)
         {
-            var errors = new Dictionary<string, string[]> { ["newPassword"] = changed.Errors.Select(e => e.Description).ToArray() };
+            var errors = new Dictionary<string, string[]> { ["newPassword"] = [.. changed.Errors.Select(e => e.Description)] };
             return BadRequest(new ValidationProblemDetails(errors));
         }
 
-        // Sessions opened with the old password end here.
         await RefreshToken.RevokeAllAsync(user.Id);
 
         var (refreshToken, _) = await RefreshToken.CreateAsync(user.Id, tokenManager.RefreshLifetime);
@@ -192,7 +184,6 @@ public class AuthController(UserManager<KeepItSimpleUser> userManager, SignInMan
         return NoContent();
     }
 
-    // Shared by login and change-expired-password so both count failed attempts toward the same lockout.
     private async Task<ActionResult?> CheckPassword(KeepItSimpleUser user, string password)
     {
         var result = await signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);

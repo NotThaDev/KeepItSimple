@@ -36,7 +36,7 @@ export async function login(
   return response;
 }
 
-export interface ChangeExpiredPasswordResponse extends FetchWrapperResponse<void> {
+export interface ChangePasswordResponse extends FetchWrapperResponse<void> {
   // 400 ValidationProblemDetails: why the new password was rejected.
   newPasswordErrors?: string[];
   // Set when too many failed attempts locked the account.
@@ -44,13 +44,13 @@ export interface ChangeExpiredPasswordResponse extends FetchWrapperResponse<void
 }
 
 // Sets the auth cookies on success, like login.
-export async function changeExpiredPassword(
+export async function changePassword(
   username: string,
   currentPassword: string,
   newPassword: string,
-): Promise<ChangeExpiredPasswordResponse> {
+): Promise<ChangePasswordResponse> {
   const response = await post<void>(
-    "/api/auth/change-expired-password",
+    "/api/auth/change-password",
     { username, currentPassword, newPassword },
     false,
   );
