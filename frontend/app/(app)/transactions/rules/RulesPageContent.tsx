@@ -84,7 +84,7 @@ export function RulesPageContent({
   );
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-4">
+    <div className="flex w-full min-w-0 flex-1 flex-col gap-4">
       <Drawer
         open={createOpen}
         onOpenChange={(open) => {
@@ -108,7 +108,7 @@ export function RulesPageContent({
         ) : null}
 
         {rules.length === 0 ? (
-          <div className="flex justify-center">
+          <div className="flex flex-1 items-center justify-center">
             <EmptyStateCard
               title="No category rules yet"
               description="Create a rule to set a category from description, amount, pocket, or the current category. Groups act as parentheses."

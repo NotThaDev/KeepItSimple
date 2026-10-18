@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import { CategoryBadge } from "@/components/common/category/CategoryBadge";
 import { CommonTable } from "@/components/common/table/CommonTable";
@@ -24,9 +25,11 @@ export function IncomeTopTable() {
       className="h-auto shrink-0"
     >
       {analytics.topMonthlyIncome.length === 0 ? (
-        <p className="flex min-h-[120px] items-center justify-center text-sm text-muted-foreground">
-          No income transactions recorded this month.
-        </p>
+        <EmptyWidgetState
+          title="No income yet"
+          description="Your largest income this month will be listed here."
+          className="min-h-[120px]"
+        />
       ) : (
         <CommonTable
           tableClassName="table-fixed"

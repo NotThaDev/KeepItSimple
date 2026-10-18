@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import {
   ChartConfig,
@@ -108,9 +109,11 @@ export function SavingCashFlowChart() {
           </BarChart>
         </ChartContainer>
       ) : (
-        <p className="flex h-full min-h-[240px] items-center justify-center text-sm text-muted-foreground">
-          No leftover or savings recorded this month.
-        </p>
+        <EmptyWidgetState
+          title="No leftover yet"
+          description="Leftover and savings this month will appear here."
+          className="h-full min-h-[240px]"
+        />
       )}
     </DashboardCard>
   );

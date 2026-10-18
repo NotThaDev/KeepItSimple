@@ -46,15 +46,16 @@ function BreakdownRow({
 
 export function LeftoverBreakDown() {
   const { analytics, currency } = useSavingAnalytics();
-  const expensesPercentage =
-    (analytics.monthlyExpenses / analytics.monthlyIncome) * 100;
-  const leftoverPercentage =
-    (analytics.leftOver / analytics.monthlyIncome) * 100;
-  const savingsPercentage =
-    (analytics.totalMonthlySavings / analytics.monthlyIncome) * 100;
+  const income = analytics.monthlyIncome;
+  const toPercentage = (value: number) =>
+    income > 0 ? Math.min(100, Math.max(0, (value / income) * 100)) : 0;
+
+  const expensesPercentage = toPercentage(analytics.monthlyExpenses);
+  const leftoverPercentage = toPercentage(analytics.leftOver);
+  const savingsPercentage = toPercentage(analytics.totalMonthlySavings);
 
   const moneyLeft = analytics.leftOver - analytics.totalMonthlySavings;
-  const moneyLeftPercentage = (moneyLeft / analytics.monthlyIncome) * 100;
+  const moneyLeftPercentage = toPercentage(moneyLeft);
 
   return (
     <DashboardCard title="Leftover Break Down" icon={Wallet}>
@@ -62,7 +63,7 @@ export function LeftoverBreakDown() {
         <BreakdownRow
           label="Income"
           amount={formatAmount(analytics.monthlyIncome, currency)}
-          value={100}
+          value={income > 0 ? 100 : 0}
           color="income"
         />
         <BreakdownRow

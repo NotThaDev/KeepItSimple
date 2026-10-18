@@ -31,6 +31,7 @@ interface DataTableProps<TData extends RowData> {
   };
   className?: string;
   extraContent?: React.ReactNode;
+  emptyState?: React.ReactNode;
   onRowSelectionChange?: (selectedRows: TData[]) => void;
 }
 
@@ -44,6 +45,7 @@ export function DataTable<TData extends RowData>({
   onPageChange,
   className,
   extraContent,
+  emptyState,
   onRowSelectionChange,
 }: DataTableProps<TData>) {
   const [rowSelection, setRowSelection] = useState({});
@@ -154,9 +156,11 @@ export function DataTable<TData extends RowData>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className={
+                    emptyState ? "py-10 whitespace-normal" : "h-24 text-center"
+                  }
                 >
-                  No results.
+                  {emptyState ?? "No results."}
                 </TableCell>
               </TableRow>
             )}

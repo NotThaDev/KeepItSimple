@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import { CategoryBadge } from "@/components/common/category/CategoryBadge";
 import { CommonTable } from "@/components/common/table/CommonTable";
@@ -24,9 +25,11 @@ export function ExpenseTopTable() {
       className="h-auto shrink-0"
     >
       {analytics.topExpenses.length === 0 ? (
-        <p className="flex min-h-[120px] items-center justify-center text-sm text-muted-foreground">
-          No expense transactions recorded this month.
-        </p>
+        <EmptyWidgetState
+          title="No expenses yet"
+          description="Your largest expenses this month will be listed here."
+          className="min-h-[120px]"
+        />
       ) : (
         <CommonTable
           tableClassName="table-fixed"

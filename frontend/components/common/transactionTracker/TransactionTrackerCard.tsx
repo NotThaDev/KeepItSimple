@@ -9,8 +9,8 @@ import { formatAmount } from "@/lib/helpers/currencyHelper";
 import { ExpenseByCategory } from "@/lib/models/Analytics";
 import { formatCategoryLabel } from "@/lib/models/Transaction";
 import { cn } from "@/lib/utils";
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import {
-  BanknoteX,
   ChevronLeft,
   ChevronRight,
   ReceiptText,
@@ -141,19 +141,10 @@ export function TransactionTrackerCard({
             </div>
           </>
         ) : (
-          <div className="flex h-full w-full flex-1 items-center justify-center">
-            <div className="flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl border border-dashed bg-muted/30 px-6 py-8 text-center shadow-sm">
-              <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/15">
-                <BanknoteX className="size-6" />
-              </div>
-              <div className="space-y-1.5">
-                <p className="text-base font-semibold">{emptyTitle}</p>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {emptyDescription}
-                </p>
-              </div>
-            </div>
-          </div>
+          <EmptyWidgetState
+            title={emptyTitle}
+            description={emptyDescription}
+          />
         )}
       </div>
     </DashboardCard>

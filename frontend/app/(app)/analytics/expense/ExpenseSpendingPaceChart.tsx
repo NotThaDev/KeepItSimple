@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import {
   ChartConfig,
@@ -183,9 +184,11 @@ export function ExpenseSpendingPaceChart() {
           </LineChart>
         </ChartContainer>
       ) : (
-        <p className="flex h-[168px] items-center justify-center text-sm text-muted-foreground">
-          No spending recorded to chart this month.
-        </p>
+        <EmptyWidgetState
+          title="No spending yet"
+          description="Daily spending this month will be charted here."
+          className="min-h-[168px]"
+        />
       )}
     </DashboardCard>
   );

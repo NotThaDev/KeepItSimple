@@ -15,9 +15,10 @@ import { getTransactionDataColumns } from "./transactionTable/TransactionColumns
 import { Pocket } from "@/lib/models/Pocket";
 import { useCallback, useMemo, useState } from "react";
 import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import { TransactionDrawerContent } from "./TransactionDrawerContent";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, WalletCards } from "lucide-react";
+import { ArrowLeftRight, Plus, Trash2, WalletCards } from "lucide-react";
 import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { usePathname, useRouter } from "next/navigation";
 import { ConfirmationDialogContent } from "@/components/common/ConfirmationDialogContent";
@@ -160,6 +161,13 @@ export function TransactionPageContent({
           pageIndex={Math.max(filters.page - 1, 0)}
           onPageChange={(pageIndex) => applyFilters({ page: pageIndex + 1 })}
           initialState={{ pagination: { pageSize } }}
+          emptyState={
+            <EmptyWidgetState
+              title="No transactions found"
+              description="Add a transaction or import a file, or try a different period or filter."
+              icon={ArrowLeftRight}
+            />
+          }
           extraContent={
             <div className="flex flex-wrap items-center justify-end gap-2">
               <Dialog
@@ -223,7 +231,7 @@ export function TransactionPageContent({
 
   return (
     <div
-      className={`flex w-full flex-col gap-4 ${pocketsData.length === 0 ? "items-center" : "items-stretch"}`}
+      className={`flex w-full flex-1 flex-col gap-4 ${pocketsData.length === 0 ? "items-center" : "items-stretch"}`}
     >
       <Drawer
         open={open}

@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { PocketDrawerContent } from "./PocketDrawerContent";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 const OPEN_NEW_POCKET_DRAWER_KEY = "kis:open-new-pocket-drawer";
 
@@ -45,8 +46,14 @@ export function PocketPageContent({
   const pockets = pocketDataResponse.data ?? [];
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-4">
+    <div className="flex flex-1 flex-col gap-6">
+      <div
+        className={cn(
+          pockets.length === 0
+            ? "flex flex-1"
+            : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-4",
+        )}
+      >
         <Drawer open={isOpen} onOpenChange={setIsOpen} direction="right">
           {isOpen && (
             <PocketDrawerContent
@@ -58,7 +65,7 @@ export function PocketPageContent({
           )}
 
           {pockets.length === 0 ? (
-            <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center">
+            <div className="flex flex-1 items-center justify-center">
               <EmptyStateCard
                 title="No pockets yet"
                 description="You need to create a pocket before adding transactions."

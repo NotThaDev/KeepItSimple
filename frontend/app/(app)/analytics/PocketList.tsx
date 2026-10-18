@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -13,13 +14,15 @@ const ITEMS_PER_PAGE = 3;
 interface PocketListProps {
   title: string;
   pockets: TransactionPerPocket[];
-  emptyMessage: string;
+  emptyTitle: string;
+  emptyDescription: string;
 }
 
 export function PocketList({
   title,
   pockets,
-  emptyMessage,
+  emptyTitle,
+  emptyDescription,
 }: Readonly<PocketListProps>) {
   const sortedPockets = [...pockets].sort(
     (left, right) => Math.abs(right.total) - Math.abs(left.total),
@@ -52,9 +55,11 @@ export function PocketList({
   return (
     <DashboardCard title={title} icon={Wallet}>
       {sortedPockets.length === 0 ? (
-        <p className="mt-2 flex items-center justify-center text-sm text-muted-foreground">
-          {emptyMessage}
-        </p>
+        <EmptyWidgetState
+          title={emptyTitle}
+          description={emptyDescription}
+          className="mt-2"
+        />
       ) : (
         <div className="mt-2 flex min-h-0 min-w-0 flex-1 flex-col min-h-[180px]">
           <div className="flex flex-1 flex-col gap-4">

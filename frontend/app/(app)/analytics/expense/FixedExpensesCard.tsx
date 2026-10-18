@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import {
   ChartConfig,
@@ -56,9 +57,11 @@ export function FixedExpensesCard() {
   return (
     <DashboardCard title="Fixed vs variable" icon={Pin}>
       {chartData.length === 0 ? (
-        <p className="mt-2 flex h-full min-h-[220px] items-center justify-center text-sm text-muted-foreground">
-          No expenses recorded this month.
-        </p>
+        <EmptyWidgetState
+          title="No expenses yet"
+          description="Fixed and variable expenses this month will appear here."
+          className="mt-2 h-full min-h-[220px]"
+        />
       ) : (
         <div className="mt-2 flex h-full min-h-0 w-full flex-col">
           <div className="flex min-h-0 w-full items-center gap-4">

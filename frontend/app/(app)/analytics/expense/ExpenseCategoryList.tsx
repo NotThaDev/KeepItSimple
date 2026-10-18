@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,9 +58,11 @@ export function ExpenseCategoryList() {
       className="h-auto min-h-[20rem]"
     >
       {sortedCategories.length === 0 ? (
-        <p className="mt-2 flex h-full min-h-[240px] items-center justify-center text-sm text-muted-foreground">
-          No expenses recorded this month to show by category.
-        </p>
+        <EmptyWidgetState
+          title="No expenses yet"
+          description="Expenses recorded this month will appear here by category."
+          className="mt-2 h-full min-h-[240px]"
+        />
       ) : (
         <div className="mt-2 flex min-h-[240px] min-w-0 flex-1 flex-col">
           <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
