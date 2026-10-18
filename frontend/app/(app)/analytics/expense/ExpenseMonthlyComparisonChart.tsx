@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import {
   ChartConfig,
@@ -149,9 +150,11 @@ export function ExpenseMonthlyComparisonChart() {
           </BarChart>
         </ChartContainer>
       ) : (
-        <p className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
-          No yearly spending recorded to compare by month.
-        </p>
+        <EmptyWidgetState
+          title="No spending this year"
+          description="Monthly spending will be compared here once you record expenses."
+          className="h-[280px]"
+        />
       )}
     </DashboardCard>
   );

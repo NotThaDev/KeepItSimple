@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import {
   ChartConfig,
@@ -211,9 +212,11 @@ export function IncomeTrendChart() {
           </BarChart>
         </ChartContainer>
       ) : (
-        <p className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
-          No income recorded this year to chart by month.
-        </p>
+        <EmptyWidgetState
+          title="No income this year"
+          description="Monthly income will be charted here once you record income."
+          className="h-[280px]"
+        />
       )}
     </DashboardCard>
   );

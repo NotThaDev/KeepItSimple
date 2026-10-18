@@ -80,7 +80,8 @@ export function ExpenseAnalyticsView() {
         <PocketList
           title="Expenses by pocket"
           pockets={analytics.expensePerPocket}
-          emptyMessage="No pockets to show for this expense view."
+          emptyTitle="No pockets to show"
+          emptyDescription="Expenses per pocket this month will appear here."
         />
       </div>
       <ExpenseTopTable />

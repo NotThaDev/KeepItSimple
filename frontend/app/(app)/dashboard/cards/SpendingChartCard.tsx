@@ -13,6 +13,7 @@ import {
 import { OverviewAnalytics } from "@/lib/models/Analytics";
 import { AreaChart as AreaChartIcon } from "lucide-react";
 import { getCurrencySymbolFromCode } from "@/lib/helpers/currencyHelper";
+import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 
 interface SpendingChartCardProps {
   analytics: OverviewAnalytics;
@@ -66,94 +67,104 @@ export function SpendingChartCard({
   ]);
   const yAxisMax = getMaxValue(chartValues);
 
+  const hasData = chartValues.some((value) => value !== 0);
+
   return (
     <DashboardCard
       title="Expenses trend"
       icon={AreaChartIcon}
       className="h-auto shrink-0 xl:h-full"
     >
-      <ChartContainer config={chartConfig} className="h-[270px] w-full">
-        <AreaChart
-          accessibilityLayer
-          data={chartData}
-          margin={{ left: 0, right: 0 }}
-        >
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="day"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            tickFormatter={(value) => `${value}`}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tickMargin={8}
-            domain={[0, yAxisMax]}
-          />
-          <ChartTooltip
-            cursor={false}
-            content={
-              <ChartTooltipContent
-                formatter={(value) => [
-                  `${Number(value).toFixed(2)}${getCurrencySymbolFromCode(
-                    analytics.expensesPerPocket[0]?.pocket.currency,
-                  )}`,
-                  undefined,
-                ]}
-              />
-            }
-          />
-          <defs>
-            <linearGradient id="fillThisMonth" x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="5%"
-                stopColor="var(--color-thisMonth)"
-                stopOpacity={0.8}
-              />
-              <stop
-                offset="95%"
-                stopColor="var(--color-thisMonth)"
-                stopOpacity={0.1}
-              />
-            </linearGradient>
-            <linearGradient id="fillLastMonth" x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="5%"
-                stopColor="var(--color-lastMonth)"
-                stopOpacity={0.35}
-              />
-              <stop
-                offset="95%"
-                stopColor="var(--color-lastMonth)"
-                stopOpacity={0.06}
-              />
-            </linearGradient>
-          </defs>
-          <Area
-            dataKey="lastMonth"
-            name="lastMonth"
-            type="monotone"
-            fill="url(#fillLastMonth)"
-            fillOpacity={0.18}
-            stroke="var(--color-lastMonth)"
-            strokeWidth={2}
-            connectNulls
-          />
-          <Area
-            dataKey="thisMonth"
-            name="thisMonth"
-            type="monotone"
-            fill="url(#fillThisMonth)"
-            fillOpacity={0.4}
-            stroke="var(--color-thisMonth)"
-            strokeWidth={2}
-            connectNulls
-          />
-          <ChartLegend content={<ChartLegendContent />} />
-        </AreaChart>
-      </ChartContainer>
+      {hasData ? (
+        <ChartContainer config={chartConfig} className="h-[270px] w-full">
+          <AreaChart
+            accessibilityLayer
+            data={chartData}
+            margin={{ left: 0, right: 0 }}
+          >
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="day"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={(value) => `${value}`}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tickMargin={8}
+              domain={[0, yAxisMax]}
+            />
+            <ChartTooltip
+              cursor={false}
+              content={
+                <ChartTooltipContent
+                  formatter={(value) => [
+                    `${Number(value).toFixed(2)}${getCurrencySymbolFromCode(
+                      analytics.expensesPerPocket[0]?.pocket.currency,
+                    )}`,
+                    undefined,
+                  ]}
+                />
+              }
+            />
+            <defs>
+              <linearGradient id="fillThisMonth" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-thisMonth)"
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-thisMonth)"
+                  stopOpacity={0.1}
+                />
+              </linearGradient>
+              <linearGradient id="fillLastMonth" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-lastMonth)"
+                  stopOpacity={0.35}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-lastMonth)"
+                  stopOpacity={0.06}
+                />
+              </linearGradient>
+            </defs>
+            <Area
+              dataKey="lastMonth"
+              name="lastMonth"
+              type="monotone"
+              fill="url(#fillLastMonth)"
+              fillOpacity={0.18}
+              stroke="var(--color-lastMonth)"
+              strokeWidth={2}
+              connectNulls
+            />
+            <Area
+              dataKey="thisMonth"
+              name="thisMonth"
+              type="monotone"
+              fill="url(#fillThisMonth)"
+              fillOpacity={0.4}
+              stroke="var(--color-thisMonth)"
+              strokeWidth={2}
+              connectNulls
+            />
+            <ChartLegend content={<ChartLegendContent />} />
+          </AreaChart>
+        </ChartContainer>
+      ) : (
+        <EmptyWidgetState
+          className="h-[270px]"
+          title="No expenses yet"
+          description="Your daily spending this month and last month will be charted here."
+        />
+      )}
     </DashboardCard>
   );
 }

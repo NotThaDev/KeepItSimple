@@ -40,9 +40,7 @@ export function PageWrapper({
           {extraContent}
         </div>
       )}
-      <div
-        className={maximizeContent ? "flex min-h-0 flex-1 flex-col" : undefined}
-      >
+      <div className="flex min-h-0 flex-1 flex-col">
         {children}
       </div>
     </div>

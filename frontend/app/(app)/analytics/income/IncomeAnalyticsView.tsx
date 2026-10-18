@@ -87,7 +87,8 @@ export function IncomeAnalyticsView() {
         <PocketList
           title="Income by pocket"
           pockets={analytics.monthlyIncomePerPocket}
-          emptyMessage="No pockets to show for this income view."
+          emptyTitle="No pockets to show"
+          emptyDescription="Income per pocket this month will appear here."
         />
         <ActivePassiveCard />
       </div>
