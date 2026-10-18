@@ -39,8 +39,24 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<Pocket>(entity =>
+        {
+            entity.HasIndex(pocket => pocket.UserId);
+            entity.HasOne<KeepItSimpleUser>()
+                .WithMany()
+                .HasForeignKey(pocket => pocket.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<CategoryRule>(entity =>
         {
+            entity.HasIndex(rule => rule.UserId);
+            entity.HasOne<KeepItSimpleUser>()
+                .WithMany()
+                .HasForeignKey(rule => rule.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.Property(rule => rule.Name).IsRequired();
             entity.Property(rule => rule.Groups)
                 .HasColumnType("jsonb")

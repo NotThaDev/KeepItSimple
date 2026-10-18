@@ -54,6 +54,14 @@ All of them, through a fallback policy in `AuthSetup`: any endpoint without auth
 
 Only `register`, `login`, `refresh` and `logout` are `[AllowAnonymous]`. `refresh` and `logout` have to be anonymous, because they run when the access token may already have expired; the cookie identifies the session there. `AuthorizationCoverageTests` fails if any other action allows anonymous access.
 
+## Who owns what
+
+- Pockets and category rules have an owner (`UserId`, a foreign key to `identity.AspNetUsers`, `Restrict` on delete). Transactions are owned through their pocket.
+- Controllers read the caller's id with `User.GetUserId()` (the JWT `sub`) and pass it to every model method. Each query filters by it.
+- Another user's row answers exactly like a missing one, with 404. Lists and analytics only contain the caller's data. Creating a row sets the owner from the token: `UserId` is `[JsonIgnore]`, so the body can't set it.
+- Import sessions are bound to the user who uploaded the file.
+- `UserId` is still nullable. Rows created before ownership existed have no owner and are hidden from everyone. `POST /api/backfill/owner` assigns all of them to the caller and returns `{ pockets, categoryRules }`. Only the user `ThaSurname` may call it (403 for anyone else), because registration is public. Run it once per environment while signed in, from the browser console: `await fetch('/api/backfill/owner', { method: 'POST' }).then(r => r.json())`. A follow-up migration makes `UserId` required and removes the endpoint.
+
 ## In the UI
 
 The browser only talks to the Next app. `next.config.ts` rewrites `/api/*` to `API_BASE_URL`, so the cookies are first-party and the API needs no CORS.
@@ -77,4 +85,3 @@ The browser only talks to the Next app. `next.config.ts` rewrites `/api/*` to `A
 - Each grace-period refresh leaves one extra active refresh row for the session, until it expires or the next login. The `SessionId` in #149 fixes it.
 - Through the rewrite, the API sees HTTP, so in production behind TLS `Secure` would be off. That needs `UseForwardedHeaders` when we deploy.
 - The proxy dedupes refreshes within one server process. With several instances, only the grace period protects parallel refreshes.
-- Data isn't filtered by the signed-in user yet (plan step 3).

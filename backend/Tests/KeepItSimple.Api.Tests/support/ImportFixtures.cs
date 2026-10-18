@@ -11,6 +11,8 @@ namespace KeepItSimple.Api.Tests.Support;
 /// </summary>
 public static class ImportFixtures
 {
+    public const string UserId = "test-user";
+
     public static string TransactionImportsDirectory { get; } = InitialiseTransactionImports();
 
     /// <summary>Theory source: the same statement in every extension the import accepts.</summary>
@@ -31,7 +33,7 @@ public static class ImportFixtures
     public static AnalyzeResponse Analyze(string fileName)
     {
         using var stream = Open(fileName);
-        return TransactionImporter.Analyze(stream);
+        return TransactionImporter.Analyze(stream, UserId);
     }
 
     public static ColumnMapping Map(int columnIndex, MappableField targetField)
