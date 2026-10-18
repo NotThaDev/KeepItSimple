@@ -42,7 +42,7 @@ public class TokenService(JwtSettings settings)
         };
 
         // Add role claims
-        // #TODO right now we don't have roles in the system.
+        // right now we don't have roles in the system.
         foreach (var role in roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
