@@ -39,16 +39,25 @@ interface TransactionCategorySelectorProps {
   isIncome?: boolean;
   showAll?: boolean;
   onChange: (category: TransactionCategory) => void;
+  // Adds a "clear" item and lets `category` be undefined (e.g. "All categories" in filters).
+  onClear?: () => void;
+  clearLabel?: string;
 }
 
+const CLEAR_ITEM_VALUE = "__clear__";
+
 export function CategorySelector({
-  category = TransactionCategory.Other,
+  category: selectedCategory,
   isIncome = false,
   showAll = false,
   isInvalid,
   className,
   onChange,
+  onClear,
+  clearLabel = "All categories",
 }: Readonly<TransactionCategorySelectorProps>) {
+  const isCleared = onClear !== undefined && selectedCategory === undefined;
+  const category = selectedCategory ?? TransactionCategory.Other;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeGroupId, setActiveGroupId] = useState<string>();
@@ -74,9 +83,12 @@ export function CategorySelector({
     () => filterCategoryGroups(groups, query),
     [groups, query],
   );
+  const initialGroupId = isCleared
+    ? groups[0]?.id
+    : groupIdForCategory(groups, category);
   const activeGroup =
     groups.find((group) => group.id === activeGroupId) ??
-    groups.find((group) => group.id === groupIdForCategory(groups, category)) ??
+    groups.find((group) => group.id === initialGroupId) ??
     groups[0];
   const renderedGroups = isSearching
     ? filteredGroups
@@ -87,8 +99,10 @@ export function CategorySelector({
     !isSearching && activeGroup?.categories.includes(category)
       ? activeGroup.id
       : groupIdForCategory(groups, category);
-  const selectedItemValue = selectItemValue(selectedGroupId, category);
-  const selectionVisible = renderedGroups.some(
+  const selectedItemValue = isCleared
+    ? CLEAR_ITEM_VALUE
+    : selectItemValue(selectedGroupId, category);
+  const selectionVisible = isCleared || renderedGroups.some(
     (group) =>
       group.id === selectedGroupId && group.categories.includes(category),
   );
@@ -96,9 +110,10 @@ export function CategorySelector({
   return (
     <CategorySelect
       groups={groups}
-      value={category}
+      value={isCleared ? undefined : category}
+      clearLabel={clearLabel}
       open={open}
-      onChange={onChange}
+      onChange={(next) => (next ? onChange(next) : onClear?.())}
       isInvalid={isInvalid}
       className={className}
       selectedItemValue={selectedItemValue}
@@ -106,7 +121,7 @@ export function CategorySelector({
         setOpen(nextOpen);
         if (nextOpen) {
           setQuery("");
-          setActiveGroupId(groupIdForCategory(groups, category));
+          setActiveGroupId(initialGroupId);
           return;
         }
         releaseStuckPointerEvents();
@@ -116,7 +131,7 @@ export function CategorySelector({
           position="popper"
           align="start"
           data-vaul-no-drag=""
-          className="w-(--radix-select-trigger-width) max-w-96 min-w-0 p-2 !overflow-hidden [&_[data-radix-select-viewport]]:!h-auto [&_[data-radix-select-viewport]]:!min-w-0 [&_[data-radix-select-viewport]]:!w-full"
+          className="w-(--radix-select-trigger-width) max-w-96 min-w-72 p-2 !overflow-hidden [&_[data-radix-select-viewport]]:!h-auto [&_[data-radix-select-viewport]]:!min-w-0 [&_[data-radix-select-viewport]]:!w-full"
           onPointerDownCapture={(event) => {
             const target = event.target;
             selectingItemRef.current =
@@ -132,6 +147,9 @@ export function CategorySelector({
             selectingItemRef={selectingItemRef}
             onQueryChange={setQuery}
           />
+          {onClear ? (
+            <SelectItem value={CLEAR_ITEM_VALUE}>{clearLabel}</SelectItem>
+          ) : null}
           {selectionVisible ? null : (
             <SelectItem value={selectedItemValue} className="!hidden">
               {formatCategoryLabel(category)}
@@ -164,6 +182,7 @@ function releaseStuckPointerEvents() {
 function CategorySelect({
   groups,
   value,
+  clearLabel,
   open,
   onChange,
   isInvalid,
@@ -174,9 +193,10 @@ function CategorySelect({
   content,
 }: {
   groups: CategoryGroup[];
-  value: TransactionCategory;
+  value?: TransactionCategory;
+  clearLabel?: string;
   open?: boolean;
-  onChange: (category: TransactionCategory) => void;
+  onChange: (category?: TransactionCategory) => void;
   isInvalid?: boolean;
   placeholder?: string;
   className?: string;
@@ -184,10 +204,14 @@ function CategorySelect({
   onOpenChange?: (open: boolean) => void;
   content?: React.ReactNode;
 }) {
-  const colors = CategoryColorMap[value] ?? DEFAULT_CATEGORY_COLORS;
+  const colors = value
+    ? (CategoryColorMap[value] ?? DEFAULT_CATEGORY_COLORS)
+    : undefined;
   const itemValue =
     selectedItemValue ??
-    selectItemValue(groupIdForCategory(groups, value), value);
+    (value
+      ? selectItemValue(groupIdForCategory(groups, value), value)
+      : CLEAR_ITEM_VALUE);
 
   return (
     <Select
@@ -195,6 +219,10 @@ function CategorySelect({
       value={itemValue}
       onOpenChange={onOpenChange}
       onValueChange={(next) => {
+        if (next === CLEAR_ITEM_VALUE) {
+          onChange(undefined);
+          return;
+        }
         const category = categoryFromItemValue(next);
         if (category) {
           onChange(category);
@@ -207,14 +235,16 @@ function CategorySelect({
           "w-full min-w-0 font-normal dark:bg-transparent dark:hover:bg-transparent [&_svg]:text-current *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:truncate",
           className,
         )}
-        style={{
-          backgroundColor: colors.foreground,
-          color: colors.background,
-          borderColor: colors.background,
-        }}
+        style={
+          colors && {
+            backgroundColor: colors.foreground,
+            color: colors.background,
+            borderColor: colors.background,
+          }
+        }
       >
         <SelectValue placeholder={placeholder ?? "Select a Category"}>
-          {formatCategoryLabel(value)}
+          {value ? formatCategoryLabel(value) : clearLabel}
         </SelectValue>
       </SelectTrigger>
       {content ?? (
