@@ -45,7 +45,7 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
             entity.HasOne<KeepItSimpleUser>()
                 .WithMany()
                 .HasForeignKey(pocket => pocket.UserId)
-                .IsRequired(false)
+                .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -55,7 +55,7 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
             entity.HasOne<KeepItSimpleUser>()
                 .WithMany()
                 .HasForeignKey(rule => rule.UserId)
-                .IsRequired(false)
+                .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
             entity.Property(rule => rule.Name).IsRequired();
             entity.Property(rule => rule.Groups)

@@ -60,7 +60,7 @@ Only `register`, `login`, `refresh` and `logout` are `[AllowAnonymous]`. `refres
 - Controllers read the caller's id with `User.GetUserId()` (the JWT `sub`) and pass it to every model method. Each query filters by it.
 - Another user's row answers exactly like a missing one, with 404. Lists and analytics only contain the caller's data. Creating a row sets the owner from the token: `UserId` is `[JsonIgnore]`, so the body can't set it.
 - Import sessions are bound to the user who uploaded the file.
-- `UserId` is still nullable. Rows created before ownership existed have no owner and are hidden from everyone. `POST /api/backfill/owner` assigns all of them to the caller and returns `{ pockets, categoryRules }`. Only the user `ThaSurname` may call it (403 for anyone else), because registration is public. Run it once per environment while signed in, from the browser console: `await fetch('/api/backfill/owner', { method: 'POST' }).then(r => r.json())`. A follow-up migration makes `UserId` required and removes the endpoint.
+- `UserId` is required (`NOT NULL`). Rows created before ownership existed were assigned to their owner by a one-off backfill endpoint, which has since been removed.
 
 ## In the UI
 
