@@ -1,15 +1,12 @@
 "use client";
 
+import { CategorySelector } from "@/components/common/category/selector/CategorySelector";
 import { DateRangePicker } from "@/components/common/DateRangePicker";
 import { parseDateOnly, formatDateOnly } from "@/components/common/DateUtils";
 import { Selection } from "@/components/common/selector/Selection";
 import { Input } from "@/components/ui/input";
 import { Pocket } from "@/lib/models/Pocket";
-import {
-  formatCategoryLabel,
-  TransactionCategory,
-  TransactionListQuery,
-} from "@/lib/models/Transaction";
+import { TransactionListQuery } from "@/lib/models/Transaction";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -56,17 +53,6 @@ export function TransactionFilters({
     [pockets],
   );
 
-  const categoryItems = useMemo(
-    () => [
-      { value: ALL_VALUE, label: "All categories" },
-      ...Object.values(TransactionCategory).map((category) => ({
-        value: category,
-        label: formatCategoryLabel(category),
-      })),
-    ],
-    [],
-  );
-
   const fromDate = useMemo(
     () => (filters.from ? parseDateOnly(filters.from) : undefined),
     [filters.from],
@@ -99,17 +85,12 @@ export function TransactionFilters({
           })
         }
       />
-      <Selection
-        className="w-full shrink-0 sm:w-[180px]"
-        items={categoryItems}
-        value={filters.category ?? ALL_VALUE}
-        placeholder="All categories"
-        onChange={(value) =>
-          onChange({
-            category:
-              value === ALL_VALUE ? undefined : (value as TransactionCategory),
-          })
-        }
+      <CategorySelector
+        className="shrink-0 sm:w-[180px]"
+        showAll
+        category={filters.category}
+        onChange={(category) => onChange({ category })}
+        onClear={() => onChange({ category: undefined })}
       />
       <DateRangePicker
         from={fromDate}
