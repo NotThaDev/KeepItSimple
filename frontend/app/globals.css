@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+/* Short windows (laptops with toolbars): tighter vertical spacing so tall forms fit without scrolling. */
+@custom-variant short (@media (max-height: 800px));
 
 @theme inline {
   --color-background: var(--background);

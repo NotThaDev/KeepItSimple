@@ -4,6 +4,8 @@ import { refreshToken } from "./models/Auth";
 export interface FetchWrapperResponse<T> {
   data?: T;
   error?: string;
+  // The JSON body of a failed response, for endpoints that explain the failure (login lockout, taken registration fields).
+  errorData?: unknown;
   status: number;
 }
 
@@ -97,6 +99,7 @@ async function fetch<T>(
     console.error(`Request to ${fullUrl} failed with status ${response.status}`);
     return {
       error: `Request failed with status ${response.status}`,
+      errorData: await response.json().catch(() => undefined),
       status: response.status,
     };
   }
