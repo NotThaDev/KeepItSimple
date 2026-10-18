@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
+  changeExpiredPassword,
   login,
   LoginResponse,
   register,
@@ -34,6 +35,9 @@ export function LoginPageContent() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // The expired password, kept to prove who is asking; non-null means the form asks for a new password.
+  const [expiredPassword, setExpiredPassword] = useState<string | null>(null);
+  const isExpired = expiredPassword !== null;
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -54,12 +58,14 @@ export function LoginPageContent() {
       else if (!EMAIL_PATTERN.test(email))
         found.email = "Enter a valid email address.";
 
+    }
+    if (isRegister || isExpired) {
       if (!meetsPasswordRules(password)) found.password = "";
     } else if (!password) {
       found.password = "Password is required.";
     }
     return found;
-  }, [username, email, password, isRegister]);
+  }, [username, email, password, isRegister, isExpired]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -68,6 +74,22 @@ export function LoginPageContent() {
     if (Object.keys(invalid).length > 0) return;
 
     setLoading(true);
+    // Narrowed on expiredPassword itself: TS does not narrow through the isExpired boolean.
+    if (expiredPassword !== null) {
+      const changed = await changeExpiredPassword(username, expiredPassword, password);
+      if (changed.error) {
+        setLoading(false);
+        if (changed.newPasswordErrors) {
+          setErrors({ password: changed.newPasswordErrors[0] });
+          return;
+        }
+        toast.error(`Failed to update password: ${changed.error}`);
+        return;
+      }
+      router.push("/");
+      router.refresh();
+      return;
+    }
     // Each response type only adds optional fields, so one variable fits both.
     const response: RegisterResponse & LoginResponse = isRegister
       ? await register(username, email, password)
@@ -75,6 +97,12 @@ export function LoginPageContent() {
 
     if (response.error) {
       setLoading(false);
+      if (response.passwordExpired) {
+        setExpiredPassword(password);
+        setPassword("");
+        setErrors({});
+        return;
+      }
       if (response.retryAfterSeconds !== undefined) {
         setLockedUntil(Date.now() + response.retryAfterSeconds * 1000);
         return;
@@ -113,12 +141,18 @@ export function LoginPageContent() {
     <div className="w-full max-w-sm space-y-8 short:space-y-5">
       <div className="space-y-2 text-center">
         <h1 className="text-4xl font-semibold tracking-tight short:text-3xl">
-          {isRegister ? "Create account" : "Welcome back"}
+          {isRegister
+            ? "Create account"
+            : isExpired
+              ? "Set a new password"
+              : "Welcome back"}
         </h1>
         <p className="text-muted-foreground">
           {isRegister
             ? "Fill in your details to get started."
-            : "Enter your credentials to access your account."}
+            : isExpired
+              ? "Your password has expired. Choose a new one to continue."
+              : "Enter your credentials to access your account."}
         </p>
       </div>
       <form onSubmit={handleSubmit} noValidate>
@@ -129,6 +163,7 @@ export function LoginPageContent() {
               id="username"
               className="h-11 bg-background dark:bg-background"
               autoComplete="username"
+              disabled={isExpired}
               required
               aria-invalid={isInvalid("username")}
               aria-describedby={errors.username ? "username-error" : undefined}
@@ -167,17 +202,21 @@ export function LoginPageContent() {
             </Field>
           )}
           <Field className="relative" data-invalid={isInvalid("password")}>
-            <FieldLabel htmlFor="password">Password</FieldLabel>
+            <FieldLabel htmlFor="password">
+              {isExpired ? "New password" : "Password"}
+            </FieldLabel>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 className="h-11 bg-background pr-10 dark:bg-background"
-                autoComplete={isRegister ? "new-password" : "current-password"}
+                autoComplete={
+                  isRegister || isExpired ? "new-password" : "current-password"
+                }
                 required
                 aria-invalid={isInvalid("password")}
                 aria-describedby={
-                  isRegister
+                  isRegister || isExpired
                     ? "password-rules"
                     : errors.password
                       ? "password-error"
@@ -200,7 +239,7 @@ export function LoginPageContent() {
                 {showPassword ? <EyeOff /> : <Eye />}
               </Button>
             </div>
-            {isRegister && (
+            {(isRegister || isExpired) && (
               <PasswordRequirements id="password-rules" password={password} />
             )}
             <FieldError id="password-error" className={FIELD_ERROR_CLASS}>
@@ -215,23 +254,39 @@ export function LoginPageContent() {
             className="h-11 bg-indigo-600 text-white hover:bg-indigo-700"
             disabled={loading}
           >
-            {isRegister ? "Register" : "Log in"}
+            {isRegister ? "Register" : isExpired ? "Update password" : "Log in"}
           </Button>
-          <p className="text-center text-sm text-muted-foreground">
-            {isRegister
-              ? "Already have an account? "
-              : "Don't have an account? "}
-            <button
-              type="button"
-              className="font-medium text-indigo-600 hover:underline"
-              onClick={() => {
-                setIsRegister(!isRegister);
-                setErrors({});
-              }}
-            >
-              {isRegister ? "Log in" : "Register now"}
-            </button>
-          </p>
+          {isExpired ? (
+            <p className="text-center text-sm text-muted-foreground">
+              <button
+                type="button"
+                className="font-medium text-indigo-600 hover:underline"
+                onClick={() => {
+                  setExpiredPassword(null);
+                  setPassword("");
+                  setErrors({});
+                }}
+              >
+                Back to log in
+              </button>
+            </p>
+          ) : (
+            <p className="text-center text-sm text-muted-foreground">
+              {isRegister
+                ? "Already have an account? "
+                : "Don't have an account? "}
+              <button
+                type="button"
+                className="font-medium text-indigo-600 hover:underline"
+                onClick={() => {
+                  setIsRegister(!isRegister);
+                  setErrors({});
+                }}
+              >
+                {isRegister ? "Log in" : "Register now"}
+              </button>
+            </p>
+          )}
         </FieldGroup>
       </form>
     </div>
