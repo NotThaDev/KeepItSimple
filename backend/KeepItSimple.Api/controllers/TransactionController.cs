@@ -15,14 +15,14 @@ public class TransactionController : ControllerBase
     public async Task<ActionResult<PagedTransactionsResponse>> GetAll(
         [FromQuery] TransactionListQuery query)
     {
-        var transactions = await Transaction.GetPagedAsync(query);
+        var transactions = await Transaction.GetPagedAsync(query, User.GetUserId());
         return Ok(transactions);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<Transaction>> GetById(int id)
     {
-        var transaction = await Transaction.GetByIdAsync(id);
+        var transaction = await Transaction.GetByIdAsync(id, User.GetUserId());
         if (transaction == null)
         {
             return NotFound();
@@ -38,11 +38,11 @@ public class TransactionController : ControllerBase
             return BadRequest("New transaction should not have an ID.");
         }
 
-        var createdTransaction = await Transaction.Update(transaction);
-        // On create this will not happen
+        var createdTransaction = await Transaction.Update(transaction, User.GetUserId());
+        // The pocket doesn't exist or isn't the caller's.
         if (createdTransaction == null)
         {
-            return BadRequest();
+            return NotFound($"Pocket {transaction.PocketId} not found.");
         }
 
         return CreatedAtAction(nameof(GetById), new { id = createdTransaction.Id }, createdTransaction);
@@ -66,7 +66,8 @@ public class TransactionController : ControllerBase
             request.ToPocketId,
             request.Amount,
             request.Date,
-            request.Description);
+            request.Description,
+            User.GetUserId());
 
         if (transfer == null)
         {
@@ -84,7 +85,7 @@ public class TransactionController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] Transaction transaction)
     {
         transaction.Id = id; // Ensure the ID is set to the URL parameter
-        var updatedTransaction = await Transaction.Update(transaction);
+        var updatedTransaction = await Transaction.Update(transaction, User.GetUserId());
         if (updatedTransaction == null)
         {
             return NotFound();
@@ -96,7 +97,7 @@ public class TransactionController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await Transaction.Delete([id]);
+        var deleted = await Transaction.Delete([id], User.GetUserId());
         if (!deleted)
         {
             return NotFound();
@@ -112,7 +113,7 @@ public class TransactionController : ControllerBase
             return BadRequest("At least one id must be provided.");
         }
 
-        var deleted = await Transaction.Delete([.. ids]);
+        var deleted = await Transaction.Delete([.. ids], User.GetUserId());
         if (!deleted)
         {
             return NotFound();
@@ -123,7 +124,13 @@ public class TransactionController : ControllerBase
     [HttpGet("pocket/{pocketId}")]
     public async Task<ActionResult<IEnumerable<Transaction>>> GetByPocketId(int pocketId)
     {
-        var transactions = await Transaction.GetByPocketIdAsync(pocketId);
+        var userId = User.GetUserId();
+        if (await Pocket.GetByIdAsync(pocketId, userId) == null)
+        {
+            return NotFound();
+        }
+
+        var transactions = await Transaction.GetByPocketIdAsync(pocketId, userId);
         return Ok(transactions);
     }
 
@@ -145,7 +152,7 @@ public class TransactionController : ControllerBase
         try
         {
             using var stream = file.OpenReadStream();
-            var result = TransactionImporter.Analyze(stream);
+            var result = TransactionImporter.Analyze(stream, User.GetUserId());
             return Ok(result);
         }
         catch (Exception ex)
@@ -160,8 +167,14 @@ public class TransactionController : ControllerBase
     {
         try
         {
-            var rules = await CategoryRule.GetEnabledOrderedAsync();
-            var result = TransactionImporter.Preview(request, rules);
+            var userId = User.GetUserId();
+            if (await Pocket.GetByIdAsync(request.PocketId, userId) == null)
+            {
+                return NotFound($"Pocket {request.PocketId} not found.");
+            }
+
+            var rules = await CategoryRule.GetEnabledOrderedAsync(userId);
+            var result = TransactionImporter.Preview(request, userId, rules);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)
@@ -185,7 +198,7 @@ public class TransactionController : ControllerBase
 
         try
         {
-            var result = await TransactionImporter.Confirm(request);
+            var result = await TransactionImporter.Confirm(request, User.GetUserId());
             return Ok(result);
         }
         catch (KeyNotFoundException ex)

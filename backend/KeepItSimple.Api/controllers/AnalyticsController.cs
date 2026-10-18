@@ -1,3 +1,4 @@
+using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models.Analytics;
 using Microsoft.AspNetCore.Mvc;
 using static KeepItSimple.Api.Models.Analytics.Analytics;
@@ -11,7 +12,7 @@ public class AnalyticsController : ControllerBase
     [HttpGet("overview")]
     public async Task<ActionResult<OverviewAnalytics>> GetOverview()
     {
-        var overview = await GetOverviewAsync();
+        var overview = await GetOverviewAsync(User.GetUserId());
 
         return Ok(overview);
     }
@@ -19,7 +20,7 @@ public class AnalyticsController : ControllerBase
     [HttpGet("income")]
     public async Task<ActionResult<IncomeAnalytics>> GetIncome([FromQuery] int? month)
     {
-        var income = await GetIncomeAnalyticsAsync(month: month);
+        var income = await GetIncomeAnalyticsAsync(User.GetUserId(), month: month);
 
         return Ok(income);
     }
@@ -27,7 +28,7 @@ public class AnalyticsController : ControllerBase
     [HttpGet("expense")]
     public async Task<ActionResult<ExpenseAnalytics>> GetExpense([FromQuery] int? month)
     {
-        var expense = await GetExpensesAnalyticsAsync(month: month);
+        var expense = await GetExpensesAnalyticsAsync(User.GetUserId(), month: month);
 
         return Ok(expense);
     }
@@ -35,7 +36,7 @@ public class AnalyticsController : ControllerBase
     [HttpGet("saving")]
     public async Task<ActionResult<SavingAnalytics>> GetSaving([FromQuery] int? month)
     {
-        var saving = await GetSavingsAnalyticsAsync(month);
+        var saving = await GetSavingsAnalyticsAsync(User.GetUserId(), month);
 
         return Ok(saving);
     }

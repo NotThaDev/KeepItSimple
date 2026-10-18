@@ -12,6 +12,8 @@ End-to-end conversation between UI and API: **define groups → match transactio
 
 Users configure simple categorization rules. No expression language. **Groups replace parentheses.**
 
+Rules belong to the user who created them. Lists, sort order, preview and apply only use the caller's rules and the transactions in the caller's pockets.
+
 - Each group is a parenthesized set of conditions.
 - Each condition after the first has its own `logic` (`And` or `Or`). The group is evaluated left to right, so `A OR B AND C` means `(A OR B) AND C`.
 - Between groups, one `groupLogic` (`And` or `Or`) applies to the whole rule.

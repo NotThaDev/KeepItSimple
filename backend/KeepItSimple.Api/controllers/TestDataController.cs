@@ -24,6 +24,8 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
             return NotFound();
         }
 
+        var userId = User.GetUserId();
+
         var result = await KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
             var now = DateTime.UtcNow.Date;
@@ -42,7 +44,7 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
 
             // Keep the endpoint idempotent by replacing any prior seeded pocket.
             var existingSeedPockets = await dbContext.Pockets
-                .Where(p => p.Name == SeedPocketName && p.Currency == "EUR")
+                .Where(p => p.Name == SeedPocketName && p.Currency == "EUR" && p.UserId == userId)
                 .ToListAsync();
 
             if (existingSeedPockets.Count > 0)
@@ -65,7 +67,8 @@ public class TestDataController(IWebHostEnvironment environment) : ControllerBas
             {
                 Balance = SeedPocketInitialBalance,
                 Currency = "EUR",
-                Name = SeedPocketName
+                Name = SeedPocketName,
+                UserId = userId
             };
 
             dbContext.Pockets.Add(pocket);

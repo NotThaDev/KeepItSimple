@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using KeepItSimple.Api.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,32 +10,37 @@ public class Pocket
     public decimal Balance { get; set; }
     public string Currency { get; set; } = "EUR";
     public string Name { get; set; } = string.Empty;
+
+    // Owner. Nullable until the backfill has assigned the existing rows; never sent to or read from the client.
+    [JsonIgnore]
+    public string? UserId { get; set; }
     public ICollection<Transaction> Transactions { get; set; } = [];
 
-    public static Task<List<Pocket>> GetAllAsync()
+    public static Task<List<Pocket>> GetAllAsync(string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            return await dbContext.Pockets.OrderBy(p => p.Id).ToListAsync();
+            return await dbContext.Pockets.Where(p => p.UserId == userId).OrderBy(p => p.Id).ToListAsync();
         });
     }
 
-    public static Task<Pocket?> GetByIdAsync(int id)
+    public static Task<Pocket?> GetByIdAsync(int id, string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var pocket = await dbContext.Pockets.FindAsync(id);
+            var pocket = await dbContext.Pockets.FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
             return pocket;
         });
     }
 
-    public static Task<Pocket?> Update(Pocket pocket)
+    public static Task<Pocket?> Update(Pocket pocket, string userId)
     {
         if (pocket.Id == 0)
         {
             // Create
             return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
             {
+                pocket.UserId = userId;
                 dbContext.Pockets.Add(pocket);
                 await dbContext.SaveChangesAsync();
                 return (Pocket?)pocket;
@@ -44,7 +50,7 @@ public class Pocket
         // Update
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var existingPocket = await dbContext.Pockets.FindAsync(pocket.Id);
+            var existingPocket = await dbContext.Pockets.FirstOrDefaultAsync(p => p.Id == pocket.Id && p.UserId == userId);
             if (existingPocket == null)
             {
                 return null;
@@ -59,11 +65,11 @@ public class Pocket
         });
     }
 
-    public static Task<bool> Delete(int id)
+    public static Task<bool> Delete(int id, string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var pocket = await dbContext.Pockets.FindAsync(id);
+            var pocket = await dbContext.Pockets.FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
             if (pocket == null)
             {
                 return false;
@@ -81,6 +87,22 @@ public class Pocket
             dbContext.Pockets.Remove(pocket);
             await dbContext.SaveChangesAsync();
             return true;
+        });
+    }
+
+    // shortcut: one-off backfill for rows created before pockets had an owner; removed once UserId is required.
+    public static Task<int> AssignUnownedAsync(string userId)
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
+        {
+            var unowned = await dbContext.Pockets.Where(p => p.UserId == null).ToListAsync();
+            foreach (var pocket in unowned)
+            {
+                pocket.UserId = userId;
+            }
+
+            await dbContext.SaveChangesAsync();
+            return unowned.Count;
         });
     }
 }

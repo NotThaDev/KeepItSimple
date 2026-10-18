@@ -36,6 +36,8 @@ backend/
 | Analytics | `/api/analytics` | Aggregations over transactions |
 | Auth | `/api/auth` | Register, login, refresh, logout ([Accounts.md](./docs/Accounts.md)) |
 
+Pockets and category rules belong to a user, and transactions belong to them through their pocket. Every endpoint only sees the caller's data ([Accounts.md](./docs/Accounts.md#who-owns-what)). `POST /api/backfill/owner` is a one-off for rows created before that.
+
 Persistence goes through `KeepItSimpleDbContext`; app code typically uses the static `KeepItSimpleContext` helper to open a scoped DbContext.
 
 ## Transaction import
