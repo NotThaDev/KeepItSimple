@@ -19,7 +19,7 @@ public class RegisterTests
 
     private static AuthController NewController() => NewControllerWithUsers().Controller;
 
-    private static (AuthController Controller, UserManager<KeepItSimpleUser> Users) NewControllerWithUsers()
+    private static (AuthController Controller, KeepItSimpleUserManager Users) NewControllerWithUsers()
     {
         // Same password rules as appsettings.Development.json.
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
@@ -29,6 +29,7 @@ public class RegisterTests
             ["Identity:Password:RequireLowercase"] = "true",
             ["Identity:Password:RequireUppercase"] = "true",
             ["Identity:Password:RequireNonAlphanumeric"] = "true",
+            ["Identity:Password:ExpirationDays"] = "182",
         }).Build();
 
         var services = new ServiceCollection();
@@ -40,7 +41,7 @@ public class RegisterTests
         var provider = services.BuildServiceProvider();
 
         var jwtSettings = new JwtSettings { Key = new string('k', 32), Issuer = "test", Audience = "test", ExpiryMinutes = 15, RefreshExpiryDays = 14 };
-        var users = provider.GetRequiredService<UserManager<KeepItSimpleUser>>();
+        var users = provider.GetRequiredService<KeepItSimpleUserManager>();
         var controller = new AuthController(
             users,
             provider.GetRequiredService<SignInManager<KeepItSimpleUser>>(),
@@ -147,4 +148,80 @@ public class RegisterTests
     }
 
     private static ClaimsPrincipal SignedIn(string userId) => new(new ClaimsIdentity([new Claim("sub", userId)], "test"));
+
+    [Fact]
+    public async Task Login_rejects_expired_password_without_tokens()
+    {
+        var (controller, users) = NewControllerWithUsers();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+        var user = (await users.FindByNameAsync("Tha"))!;
+        user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
+        await users.UpdateAsync(user);
+
+        var result = await controller.Login(new LoginRequest(Password, Username: "Tha"));
+
+        var status = Assert.IsType<StatusCodeResult>(result);
+        Assert.Equal(StatusCodes.Status403Forbidden, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangePassword_rejects_the_same_password()
+    {
+        var (controller, users) = NewControllerWithUsers();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+        var user = (await users.FindByNameAsync("Tha"))!;
+        user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
+        await users.UpdateAsync(user);
+
+        var result = await controller.ChangePassword(new("Tha", Password, Password));
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.True(await users.CheckPasswordAsync(user, Password));
+    }
+
+    [Fact]
+    public async Task ChangePassword_rejects_a_wrong_current_password()
+    {
+        var (controller, users) = NewControllerWithUsers();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+        var user = (await users.FindByNameAsync("Tha"))!;
+        user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
+        await users.UpdateAsync(user);
+
+        var result = await controller.ChangePassword(new("Tha", "Wr0ng!pass", "N3wpwd!xyz"));
+
+        Assert.IsType<UnauthorizedResult>(result);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_sets_PasswordChangedAt()
+    {
+        var (controller, users) = NewControllerWithUsers();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+        var user = (await users.FindByNameAsync("Tha"))!;
+        user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
+        await users.UpdateAsync(user);
+
+        var result = await users.ChangePasswordAsync(user, Password, "N3wpwd!xyz");
+
+        Assert.True(result.Succeeded);
+        Assert.True(DateTime.UtcNow - user.PasswordChangedAt < TimeSpan.FromMinutes(1));
+        Assert.False(users.IsPasswordExpired(user));
+    }
+
+    [Fact]
+    public async Task Failed_ChangePasswordAsync_keeps_PasswordChangedAt()
+    {
+        var (controller, users) = NewControllerWithUsers();
+        await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
+        var user = (await users.FindByNameAsync("Tha"))!;
+        var previous = DateTime.UtcNow.AddDays(-200);
+        user.PasswordChangedAt = previous;
+        await users.UpdateAsync(user);
+
+        var result = await users.ChangePasswordAsync(user, "Wr0ng!pass", "N3wpwd!xyz");
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(previous, user.PasswordChangedAt);
+    }
 }

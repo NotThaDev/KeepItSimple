@@ -12,6 +12,7 @@ public class AuthorizationCoverageTests
     [
         "AuthController.Register",
         "AuthController.Login",
+        "AuthController.ChangePassword",
         "AuthController.Refresh",
         "AuthController.Logout",
     ];
