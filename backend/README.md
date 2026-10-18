@@ -34,6 +34,7 @@ backend/
 | Transactions | `/api/transactions` | CRUD, filter by pocket, and file import |
 | Category rules | `/api/category-rules` | User-defined categorization (groups = parentheses) |
 | Analytics | `/api/analytics` | Aggregations over transactions |
+| Auth | `/api/auth` | Register, login, refresh, logout ([Accounts.md](./docs/Accounts.md)) |
 
 Persistence goes through `KeepItSimpleDbContext`; app code typically uses the static `KeepItSimpleContext` helper to open a scoped DbContext.
 

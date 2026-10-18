@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import { BRANDING } from "./Branding";
 import { NavUser } from "./NavUser";
 import { getRouteForPath } from "./RouteDefinition";
-
 export function MobileHeader() {
   const pathname = usePathname();
   const title = getRouteForPath(pathname)?.title ?? BRANDING.name;

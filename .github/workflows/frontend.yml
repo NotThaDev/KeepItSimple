@@ -76,6 +76,8 @@ jobs:
       - name: Build frontend
         run: bun run build
         working-directory: ./frontend
+        env:
+          API_BASE_URL: http://localhost:5264
 
   CI:
     name: Frontend / CI
