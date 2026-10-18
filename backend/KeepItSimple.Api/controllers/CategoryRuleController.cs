@@ -1,4 +1,5 @@
 using KeepItSimple.Api.dtos.CategoryRule;
+using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,13 +12,13 @@ public class CategoryRuleController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CategoryRule>>> GetAll()
     {
-        return Ok(await CategoryRule.GetAllAsync());
+        return Ok(await CategoryRule.GetAllAsync(User.GetUserId()));
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<CategoryRule>> GetById(int id)
     {
-        var rule = await CategoryRule.GetByIdAsync(id);
+        var rule = await CategoryRule.GetByIdAsync(id, User.GetUserId());
         if (rule is null)
         {
             return NotFound();
@@ -36,7 +37,7 @@ public class CategoryRuleController : ControllerBase
 
         try
         {
-            var created = await CategoryRule.CreateAsync(rule);
+            var created = await CategoryRule.CreateAsync(rule, User.GetUserId());
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
         catch (ArgumentException ex)
@@ -51,7 +52,7 @@ public class CategoryRuleController : ControllerBase
         rule.Id = id;
         try
         {
-            var updated = await CategoryRule.UpdateAsync(rule);
+            var updated = await CategoryRule.UpdateAsync(rule, User.GetUserId());
             if (updated is null)
             {
                 return NotFound();
@@ -68,7 +69,7 @@ public class CategoryRuleController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await CategoryRule.DeleteAsync(id);
+        var deleted = await CategoryRule.DeleteAsync(id, User.GetUserId());
         if (!deleted)
         {
             return NotFound();
@@ -85,7 +86,7 @@ public class CategoryRuleController : ControllerBase
             return BadRequest("At least one id must be provided.");
         }
 
-        await CategoryRule.ReorderAsync(request.Ids);
+        await CategoryRule.ReorderAsync(request.Ids, User.GetUserId());
         return NoContent();
     }
 
@@ -93,7 +94,7 @@ public class CategoryRuleController : ControllerBase
     public async Task<ActionResult<IEnumerable<CategoryRuleApplyPreviewItem>>> Preview(
         [FromBody] RulePreviewRequest? request)
     {
-        var changes = await CategoryRule.PreviewAsync(request);
+        var changes = await CategoryRule.PreviewAsync(request, User.GetUserId());
         return Ok(changes);
     }
 
@@ -106,7 +107,7 @@ public class CategoryRuleController : ControllerBase
             return BadRequest("At least one transaction id must be provided.");
         }
 
-        var updatedCount = await CategoryRule.ApplyAsync(request.TransactionIds);
+        var updatedCount = await CategoryRule.ApplyAsync(request.TransactionIds, User.GetUserId());
         return Ok(new ApplyCategoryRulesResponse { UpdatedCount = updatedCount });
     }
 }

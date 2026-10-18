@@ -79,12 +79,13 @@ public async Task<ActionResult<Pocket>> GetById(int id)
 - `ArgumentException` from the model becomes `BadRequest(ex.Message)`. Missing rows become `NotFound`. Delete returns `NoContent`. Create returns `CreatedAtAction`.
 - Keep request-shape checks in the action (empty id list, same pocket on both sides of a transfer). Domain checks (`Validate`, matching, normalization) stay on the model or a helper.
 
-Existing prefixes: `/api/pocket`, `/api/transactions`, `/api/category-rules`, `/api/analytics`. `TestDataController` is `#if DEBUG` and returns `NotFound` outside Development.
+Existing prefixes: `/api/pocket`, `/api/transactions`, `/api/category-rules`, `/api/analytics`.
 
 ## Models
 
 Entities are active records in `models/`. Properties are the columns. Static methods load and save through `KeepItSimpleContext.Context.WithDbContextAsync`. Do not open a context any other way.
 
+- Data belongs to a user. `Pocket` and `CategoryRule` have `UserId` (`[JsonIgnore]`). `Transaction` is owned through `Pocket`. Every static method that reads or writes owned data takes `string userId` (the last required parameter, before optional ones) and filters by it: `FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId)`, and `t.Pocket!.UserId == userId` for transactions. Never use `FindAsync` on them. Create sets `UserId` from the parameter. Update never copies it from the body. Another user's row returns null/false, the same as a missing one. Controllers pass `User.GetUserId()` (`helpers/ClaimsPrincipalExtensions`).
 - `Id == 0` (or null on `Transaction`) means create. Copy incoming fields onto the tracked row on update.
 - Call `Normalize` and `Validate` on the entity before `SaveChangesAsync` when the domain has those methods.
 - Put the enum on the entity file when only that entity uses it (`TransactionCategory` on `Transaction`, `RuleLogic` / `RuleField` / `RuleOperator` beside `CategoryRule`).

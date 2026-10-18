@@ -71,7 +71,7 @@ public class AnalyzeTests
         using var stream = ImportFixtures.Open(ExcelFixtureGenerator.NoHeaderFile);
 
         var exception = Assert.Throws<InvalidOperationException>(
-            () => TransactionImporter.Analyze(stream));
+            () => TransactionImporter.Analyze(stream, ImportFixtures.UserId));
 
         Assert.Contains("No header row found", exception.Message);
     }

@@ -17,35 +17,35 @@ public class Transaction
     [JsonIgnore]
     public Pocket? Pocket { get; set; }
 
-    public static Task<List<Transaction>> GetAllAsync()
+    public static Task<List<Transaction>> GetAllAsync(string userId)
     {
-        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext => await dbContext.Transactions.OrderByDescending(t => t.Date).ToListAsync());
+        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext => await dbContext.Transactions.Where(t => t.Pocket!.UserId == userId).OrderByDescending(t => t.Date).ToListAsync());
     }
 
-    public static Task<PagedTransactionsResponse> GetPagedAsync(TransactionListQuery query)
+    public static Task<PagedTransactionsResponse> GetPagedAsync(TransactionListQuery query, string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(dbContext =>
         {
-            var result = TransactionQuery.Apply(dbContext.Transactions.AsNoTracking(), query);
+            var result = TransactionQuery.Apply(dbContext.Transactions.AsNoTracking().Where(t => t.Pocket!.UserId == userId), query);
             return Task.FromResult(result);
         });
     }
 
-    public static Task<List<Transaction>> GetByPocketIdAsync(int pocketId)
+    public static Task<List<Transaction>> GetByPocketIdAsync(int pocketId, string userId)
     {
-        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext => await dbContext.Transactions.Where(t => t.PocketId == pocketId).OrderByDescending(t => t.Date).ToListAsync());
+        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext => await dbContext.Transactions.Where(t => t.PocketId == pocketId && t.Pocket!.UserId == userId).OrderByDescending(t => t.Date).ToListAsync());
     }
 
-    public static Task<Transaction?> GetByIdAsync(int id)
+    public static Task<Transaction?> GetByIdAsync(int id, string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var expense = await dbContext.Transactions.FindAsync(id);
+            var expense = await dbContext.Transactions.FirstOrDefaultAsync(t => t.Id == id && t.Pocket!.UserId == userId);
             return expense;
         });
     }
 
-    public static Task<Transaction?> Update(Transaction expense)
+    public static Task<Transaction?> Update(Transaction expense, string userId)
     {
         if (!expense.Id.HasValue)
         {
@@ -53,7 +53,7 @@ public class Transaction
             return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
             {
                 var pocketId = expense.PocketId;
-                var pocket = await dbContext.Pockets.FindAsync(pocketId);
+                var pocket = await dbContext.Pockets.FirstOrDefaultAsync(p => p.Id == pocketId && p.UserId == userId);
                 if (pocket == null)
                 {
                     return null;
@@ -73,7 +73,7 @@ public class Transaction
         // Update
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var existingExpense = await dbContext.Transactions.FindAsync(expense.Id);
+            var existingExpense = await dbContext.Transactions.FirstOrDefaultAsync(t => t.Id == expense.Id && t.Pocket!.UserId == userId);
             if (existingExpense == null)
             {
                 return null;
@@ -86,7 +86,7 @@ public class Transaction
 
             if (targetPocketId == currentPocketId)
             {
-                var pocket = await dbContext.Pockets.FindAsync(currentPocketId);
+                var pocket = await dbContext.Pockets.FirstOrDefaultAsync(p => p.Id == currentPocketId && p.UserId == userId);
                 if (pocket == null)
                 {
                     return null;
@@ -97,8 +97,8 @@ public class Transaction
             }
             else
             {
-                var previousPocket = await dbContext.Pockets.FindAsync(currentPocketId);
-                var newPocket = await dbContext.Pockets.FindAsync(targetPocketId);
+                var previousPocket = await dbContext.Pockets.FirstOrDefaultAsync(p => p.Id == currentPocketId && p.UserId == userId);
+                var newPocket = await dbContext.Pockets.FirstOrDefaultAsync(p => p.Id == targetPocketId && p.UserId == userId);
                 if (previousPocket == null || newPocket == null)
                 {
                     return null;
@@ -122,35 +122,27 @@ public class Transaction
 
     }
 
-    public static Task<bool> Delete(List<int> ids)
+    public static Task<bool> Delete(List<int> ids, string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            // First, verify that all expenses exist
-            foreach (var id in ids)
+            // Distinct: a repeated id would otherwise revert its amount twice.
+            var distinctIds = ids.Distinct().ToList();
+            var expenses = await dbContext.Transactions
+                .Include(t => t.Pocket)
+                .Where(t => t.Id.HasValue && distinctIds.Contains(t.Id.Value) && t.Pocket!.UserId == userId)
+                .ToListAsync();
+
+            // All or nothing: one missing (or another user's) id deletes nothing.
+            if (expenses.Count != distinctIds.Count)
             {
-                var expense = await dbContext.Transactions.FindAsync(id);
-                if (expense is null)
-                {
-                    return false;
-                }
+                return false;
             }
 
-            // If all expenses exist, proceed with deletion
-            foreach (var id in ids)
+            foreach (var expense in expenses)
             {
-                var expense = await dbContext.Transactions.FindAsync(id);
-
-                // We are already checking that the expense exists, but just in case.
-                if (expense is null)
-                {
-                    continue;
-                }
-
-                var pocket = await dbContext.Pockets.FindAsync(expense.PocketId);
                 // Revert the transaction: subtract the signed amount (negative for expenses, positive for income).
-                pocket?.Balance -= expense.Amount;
-
+                expense.Pocket!.Balance -= expense.Amount;
                 dbContext.Transactions.Remove(expense);
             }
 
@@ -164,7 +156,8 @@ public class Transaction
         int toPocketId,
         decimal amount,
         DateTime date,
-        string? description)
+        string? description,
+        string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
@@ -174,8 +167,8 @@ public class Transaction
                 return ((Transaction, Transaction)?)null;
             }
 
-            var fromPocket = await dbContext.Pockets.FindAsync(fromPocketId);
-            var toPocket = await dbContext.Pockets.FindAsync(toPocketId);
+            var fromPocket = await dbContext.Pockets.FirstOrDefaultAsync(p => p.Id == fromPocketId && p.UserId == userId);
+            var toPocket = await dbContext.Pockets.FirstOrDefaultAsync(p => p.Id == toPocketId && p.UserId == userId);
             if (fromPocket == null || toPocket == null)
             {
                 return null;

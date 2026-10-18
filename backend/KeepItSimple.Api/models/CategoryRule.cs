@@ -16,6 +16,10 @@ public class CategoryRule
     public bool Enabled { get; set; } = true;
     public int SortOrder { get; set; }
 
+    // Owner; never sent to or read from the client.
+    [JsonIgnore]
+    public string UserId { get; set; } = string.Empty;
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public Transaction.TransactionCategory TargetCategory { get; set; }
 
@@ -24,29 +28,33 @@ public class CategoryRule
 
     public List<CategoryRuleGroup> Groups { get; set; } = [];
 
-    public static Task<List<CategoryRule>> GetAllAsync()
-    {
-        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
-            await dbContext.CategoryRules.OrderBy(rule => rule.SortOrder).ThenBy(rule => rule.Id).ToListAsync());
-    }
-
-    public static Task<List<CategoryRule>> GetEnabledOrderedAsync()
+    public static Task<List<CategoryRule>> GetAllAsync(string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
             await dbContext.CategoryRules
-                .Where(rule => rule.Enabled)
+                .Where(rule => rule.UserId == userId)
                 .OrderBy(rule => rule.SortOrder)
                 .ThenBy(rule => rule.Id)
                 .ToListAsync());
     }
 
-    public static Task<CategoryRule?> GetByIdAsync(int id)
+    public static Task<List<CategoryRule>> GetEnabledOrderedAsync(string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
-            await dbContext.CategoryRules.FindAsync(id));
+            await dbContext.CategoryRules
+                .Where(rule => rule.Enabled && rule.UserId == userId)
+                .OrderBy(rule => rule.SortOrder)
+                .ThenBy(rule => rule.Id)
+                .ToListAsync());
     }
 
-    public static Task<CategoryRule> CreateAsync(CategoryRule rule)
+    public static Task<CategoryRule?> GetByIdAsync(int id, string userId)
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
+            await dbContext.CategoryRules.FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId));
+    }
+
+    public static Task<CategoryRule> CreateAsync(CategoryRule rule, string userId)
     {
         rule.Normalize();
         rule.Validate();
@@ -54,9 +62,11 @@ public class CategoryRule
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
             var maxOrder = await dbContext.CategoryRules
+                .Where(r => r.UserId == userId)
                 .Select(existing => (int?)existing.SortOrder)
                 .MaxAsync();
             rule.Id = 0;
+            rule.UserId = userId;
             rule.SortOrder = (maxOrder ?? -1) + 1;
             dbContext.CategoryRules.Add(rule);
             await dbContext.SaveChangesAsync();
@@ -64,14 +74,15 @@ public class CategoryRule
         });
     }
 
-    public static Task<CategoryRule?> UpdateAsync(CategoryRule rule)
+    public static Task<CategoryRule?> UpdateAsync(CategoryRule rule, string userId)
     {
         rule.Normalize();
         rule.Validate();
 
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var existing = await dbContext.CategoryRules.FindAsync(rule.Id);
+            var existing = await dbContext.CategoryRules
+                .FirstOrDefaultAsync(r => r.Id == rule.Id && r.UserId == userId);
             if (existing is null)
             {
                 return null;
@@ -87,11 +98,12 @@ public class CategoryRule
         });
     }
 
-    public static Task<bool> DeleteAsync(int id)
+    public static Task<bool> DeleteAsync(int id, string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var existing = await dbContext.CategoryRules.FindAsync(id);
+            var existing = await dbContext.CategoryRules
+                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId);
             if (existing is null)
             {
                 return false;
@@ -103,11 +115,11 @@ public class CategoryRule
         });
     }
 
-    public static Task ReorderAsync(IReadOnlyList<int> ids)
+    public static Task ReorderAsync(IReadOnlyList<int> ids, string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var rules = await dbContext.CategoryRules.ToListAsync();
+            var rules = await dbContext.CategoryRules.Where(r => r.UserId == userId).ToListAsync();
             var byId = rules.ToDictionary(rule => rule.Id);
             for (var index = 0; index < ids.Count; index++)
             {
@@ -122,18 +134,18 @@ public class CategoryRule
         });
     }
 
-    public static Task<List<CategoryRuleApplyPreviewItem>> PreviewAsync(RulePreviewRequest? request)
+    public static Task<List<CategoryRuleApplyPreviewItem>> PreviewAsync(RulePreviewRequest? request, string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
             var rules = await dbContext.CategoryRules
-                .Where(rule => rule.Enabled)
+                .Where(rule => rule.Enabled && rule.UserId == userId)
                 .OrderBy(rule => rule.SortOrder)
                 .ThenBy(rule => rule.Id)
                 .ToListAsync();
 
             var transactions = await TransactionQuery.Filter(
-                    dbContext.Transactions.AsNoTracking(),
+                    dbContext.Transactions.AsNoTracking().Where(t => t.Pocket!.UserId == userId),
                     new TransactionListQuery
                     {
                         PocketId = request?.PocketId,
@@ -148,18 +160,19 @@ public class CategoryRule
         });
     }
 
-    public static Task<int> ApplyAsync(IReadOnlyList<int> transactionIds)
+    public static Task<int> ApplyAsync(IReadOnlyList<int> transactionIds, string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
             var rules = await dbContext.CategoryRules
-                .Where(rule => rule.Enabled)
+                .Where(rule => rule.Enabled && rule.UserId == userId)
                 .OrderBy(rule => rule.SortOrder)
                 .ThenBy(rule => rule.Id)
                 .ToListAsync();
 
             var transactions = await dbContext.Transactions
-                .Where(transaction => transaction.Id.HasValue && transactionIds.Contains(transaction.Id.Value))
+                .Where(transaction => transaction.Id.HasValue && transactionIds.Contains(transaction.Id.Value)
+                    && transaction.Pocket!.UserId == userId)
                 .ToListAsync();
 
             var updated = 0;

@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using ExcelDataReader;
 using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace KeepItSimple.Api.Helpers;
 
@@ -144,7 +145,7 @@ public static class TransactionImporter
             ["cash"] = Transaction.TransactionCategory.Withdraw,
         };
 
-    public static AnalyzeResponse Analyze(Stream fileStream)
+    public static AnalyzeResponse Analyze(Stream fileStream, string userId)
     {
         // Ensure the .xls can be parsed by ExcelDataReader
         EnsureEncodingsRegistered();
@@ -164,6 +165,7 @@ public static class TransactionImporter
             Columns = columns,
             Rows = rows,
             CreatedAt = DateTime.UtcNow,
+            UserId = userId,
         };
 
         return new AnalyzeResponse
@@ -338,9 +340,9 @@ public static class TransactionImporter
     /// <see cref="PreviewResponse.Errors"/> instead of aborting the whole preview.
     /// Nothing is written to the database.
     /// </summary>
-    public static PreviewResponse Preview(TransactionImportPreviewRequest request, IReadOnlyList<CategoryRule>? rules = null)
+    public static PreviewResponse Preview(TransactionImportPreviewRequest request, string userId, IReadOnlyList<CategoryRule>? rules = null)
     {
-        if (!Sessions.TryGetValue(request.SessionId, out var session))
+        if (!Sessions.TryGetValue(request.SessionId, out var session) || session.UserId != userId)
         {
             throw new KeyNotFoundException("Import session expired or not found. Re-upload the file.");
         }
@@ -384,11 +386,11 @@ public static class TransactionImporter
     /// pocket, updates its balance, and discards the import session. Draft ids are ignored
     /// so callers cannot overwrite existing rows; <c>PocketId</c> always comes from the request.
     /// </summary>
-    public static Task<ConfirmResponse> Confirm(ConfirmRequest request)
+    public static Task<ConfirmResponse> Confirm(ConfirmRequest request, string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
-            var pocket = await dbContext.Pockets.FindAsync(request.PocketId) ?? throw new KeyNotFoundException($"Pocket {request.PocketId} not found.");
+            var pocket = await dbContext.Pockets.FirstOrDefaultAsync(p => p.Id == request.PocketId && p.UserId == userId) ?? throw new KeyNotFoundException($"Pocket {request.PocketId} not found.");
             var saved = new List<Transaction>();
 
             foreach (var draft in request.Transactions)
@@ -405,7 +407,10 @@ public static class TransactionImporter
             await dbContext.SaveChangesAsync();
 
             // Session no longer needed
-            Sessions.TryRemove(request.SessionId, out _);
+            if (Sessions.TryGetValue(request.SessionId, out var session) && session.UserId == userId)
+            {
+                Sessions.TryRemove(request.SessionId, out _);
+            }
 
             return new ConfirmResponse
             {
@@ -642,6 +647,7 @@ public static class TransactionImporter
         public required List<ExcelColumn> Columns { get; init; }
         public required List<Dictionary<int, string>> Rows { get; init; }
         public required DateTime CreatedAt { get; init; }
+        public required string UserId { get; init; }
     }
 
     public class ExcelColumn

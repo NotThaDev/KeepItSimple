@@ -88,7 +88,13 @@ namespace KeepItSimple.Api.Migrations
                     b.Property<int>("TargetCategory")
                         .HasColumnType("integer");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("CategoryRules");
                 });
@@ -176,7 +182,13 @@ namespace KeepItSimple.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Pockets");
                 });
@@ -349,6 +361,24 @@ namespace KeepItSimple.Api.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("KeepItSimple.Api.Models.CategoryRule", b =>
+                {
+                    b.HasOne("KeepItSimple.Api.Models.KeepItSimpleUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("KeepItSimple.Api.Models.Pocket", b =>
+                {
+                    b.HasOne("KeepItSimple.Api.Models.KeepItSimpleUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

@@ -1,3 +1,4 @@
+using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,14 +11,14 @@ public class PocketController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Pocket>>> GetAll()
     {
-        var pockets = await Pocket.GetAllAsync();
+        var pockets = await Pocket.GetAllAsync(User.GetUserId());
         return Ok(pockets);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<Pocket>> GetById(int id)
     {
-        var pocket = await Pocket.GetByIdAsync(id);
+        var pocket = await Pocket.GetByIdAsync(id, User.GetUserId());
         if (pocket == null)
         {
             return NotFound();
@@ -33,7 +34,7 @@ public class PocketController : ControllerBase
             return BadRequest("New pocket should not have an ID.");
         }
 
-        var createdPocket = await Pocket.Update(pocket);
+        var createdPocket = await Pocket.Update(pocket, User.GetUserId());
         // On create this will not happen
         if (createdPocket == null)
         {
@@ -47,7 +48,7 @@ public class PocketController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] Pocket pocket)
     {
         pocket.Id = id; // Ensure the ID is set to the URL parameter
-        var updatedPocket = await Pocket.Update(pocket);
+        var updatedPocket = await Pocket.Update(pocket, User.GetUserId());
         if (updatedPocket == null)
         {
             return NotFound();
@@ -59,7 +60,7 @@ public class PocketController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await Pocket.Delete(id);
+        var deleted = await Pocket.Delete(id, User.GetUserId());
         if (!deleted)
         {
             return NotFound();

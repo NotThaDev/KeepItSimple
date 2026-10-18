@@ -60,6 +60,8 @@ sequenceDiagram
 
 ## Step by step
 
+The upload session belongs to the user who sent the file. `pocketId` must be one of the caller's pockets: preview and confirm answer 404 for someone else's session or pocket.
+
 ### 1. File → columns (`analyze`)
 
 ```mermaid

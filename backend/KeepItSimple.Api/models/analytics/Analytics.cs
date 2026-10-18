@@ -6,10 +6,10 @@ namespace KeepItSimple.Api.Models.Analytics;
 
 public static class Analytics
 {
-    public static async Task<OverviewAnalytics> GetOverviewAsync()
+    public static async Task<OverviewAnalytics> GetOverviewAsync(string userId)
     {
-        var transactionsTask = Transaction.GetAllAsync();
-        var pocketsTask = Pocket.GetAllAsync();
+        var transactionsTask = Transaction.GetAllAsync(userId);
+        var pocketsTask = Pocket.GetAllAsync(userId);
         await Task.WhenAll(transactionsTask, pocketsTask);
 
         return BuildOverview(transactionsTask.Result, pocketsTask.Result, DateTime.UtcNow);
@@ -108,10 +108,10 @@ public static class Analytics
         };
     }
 
-    public static async Task<ExpenseAnalytics> GetExpensesAnalyticsAsync(int? pocketId = null, int? month = null)
+    public static async Task<ExpenseAnalytics> GetExpensesAnalyticsAsync(string userId, int? pocketId = null, int? month = null)
     {
-        var pockets = await Pocket.GetAllAsync();
-        var transactions = pocketId is null ? await Transaction.GetAllAsync() : await Transaction.GetByPocketIdAsync(pocketId.Value);
+        var pockets = await Pocket.GetAllAsync(userId);
+        var transactions = pocketId is null ? await Transaction.GetAllAsync(userId) : await Transaction.GetByPocketIdAsync(pocketId.Value, userId);
         var calendarNow = DateTime.UtcNow;
         return BuildExpenseAnalytics(transactions, pockets, ResolveAnalyticsNow(month, calendarNow), calendarNow);
     }
@@ -237,10 +237,10 @@ public static class Analytics
         };
     }
 
-    public static async Task<IncomeAnalytics> GetIncomeAnalyticsAsync(int? pocketId = null, int? month = null)
+    public static async Task<IncomeAnalytics> GetIncomeAnalyticsAsync(string userId, int? pocketId = null, int? month = null)
     {
-        var pockets = await Pocket.GetAllAsync();
-        var transactions = pocketId is null ? await Transaction.GetAllAsync() : await Transaction.GetByPocketIdAsync(pocketId.Value);
+        var pockets = await Pocket.GetAllAsync(userId);
+        var transactions = pocketId is null ? await Transaction.GetAllAsync(userId) : await Transaction.GetByPocketIdAsync(pocketId.Value, userId);
         var calendarNow = DateTime.UtcNow;
         return BuildIncomeAnalytics(transactions, pockets, ResolveAnalyticsNow(month, calendarNow), calendarNow);
     }
@@ -330,10 +330,10 @@ public static class Analytics
         };
     }
 
-    public static async Task<SavingAnalytics> GetSavingsAnalyticsAsync(int? month = null)
+    public static async Task<SavingAnalytics> GetSavingsAnalyticsAsync(string userId, int? month = null)
     {
-        var transactions = await Transaction.GetAllAsync();
-        var pockets = await Pocket.GetAllAsync();
+        var transactions = await Transaction.GetAllAsync(userId);
+        var pockets = await Pocket.GetAllAsync(userId);
         var currency = pockets.FirstOrDefault()?.Currency;
         var calendarNow = DateTime.UtcNow;
         return BuildSavingAnalytics(transactions, ResolveAnalyticsNow(month, calendarNow), currency ?? "EUR", calendarNow);

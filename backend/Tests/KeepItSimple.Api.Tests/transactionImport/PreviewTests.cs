@@ -131,7 +131,7 @@ public class PreviewTests
             Mapping = ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Description, MappableField.Amount, MappableField.Ignore),
         };
 
-        Assert.Throws<KeyNotFoundException>(() => TransactionImporter.Preview(request));
+        Assert.Throws<KeyNotFoundException>(() => TransactionImporter.Preview(request, ImportFixtures.UserId));
     }
 
     /// <summary>
@@ -165,7 +165,7 @@ public class PreviewTests
         stream.Write(Encoding.UTF8.GetBytes(csv));
         stream.Position = 0;
 
-        var analyzed = TransactionImporter.Analyze(stream);
+        var analyzed = TransactionImporter.Analyze(stream, ImportFixtures.UserId);
         var response = Preview(
             analyzed,
             ImportFixtures.MapInOrder(1, MappableField.Date, MappableField.Description, MappableField.Amount));
@@ -326,6 +326,6 @@ public class PreviewTests
             PocketId = PocketId,
             Mapping = mapping,
             DefaultCategory = defaultCategory,
-        }, rules);
+        }, ImportFixtures.UserId, rules);
     }
 }
