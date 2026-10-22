@@ -3,7 +3,12 @@ import type { NextRequest } from "next/server";
 
 const ACCESS_COOKIE = "kis_access";
 const REFRESH_COOKIE = "kis_refresh";
-const PUBLIC_PATHS = ["/login", "/confirm-email"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/confirm-email",
+  "/forgot-password",
+  "/reset-password",
+];
 
 // Prefetches and parallel page loads can find the same expired token at the same time.
 // shortcut: dedupes within one server process only; across instances the API's grace window covers it.

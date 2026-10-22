@@ -118,3 +118,34 @@ export async function resendConfirmation(
 ): Promise<FetchWrapperResponse<void>> {
   return await post<void>("/api/auth/resend-confirmation", { username }, false);
 }
+
+// Always succeeds, so it does not reveal whether the email is registered.
+export async function forgotPassword(
+  email: string,
+): Promise<FetchWrapperResponse<void>> {
+  return await post<void>("/api/auth/forgot-password", { email }, false);
+}
+
+export interface ResetPasswordResponse extends FetchWrapperResponse<void> {
+  // 400 ValidationProblemDetails: why the new password was rejected.
+  newPasswordErrors?: string[];
+}
+
+// A bad or used link answers 400 with a plain text body, so newPasswordErrors stays undefined.
+export async function resetPassword(
+  userId: string,
+  token: string,
+  newPassword: string,
+): Promise<ResetPasswordResponse> {
+  const response = await post<void>(
+    "/api/auth/reset-password",
+    { userId, token, newPassword },
+    false,
+  );
+  if (response.status === 400) {
+    const problem = response.errorData as
+      { errors?: { newPassword?: string[] } } | undefined;
+    return { ...response, newPasswordErrors: problem?.errors?.newPassword };
+  }
+  return response;
+}

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { confirmEmail } from "@/lib/models/Auth";
 
@@ -21,6 +22,8 @@ export function ConfirmEmailContent({
   );
   // StrictMode runs effects twice in development; the link is single-use, so send it once.
   const sent = useRef(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!userId || !token || sent.current) return;
@@ -28,7 +31,9 @@ export function ConfirmEmailContent({
     confirmEmail(userId, token).then((response) => {
       setState(response.error ? "failed" : "confirmed");
     });
-  }, [userId, token]);
+    // Drop the token from the address bar and history; it stays in props.
+    router.replace(pathname);
+  }, [userId, token, router, pathname]);
 
   return (
     <div className="w-full max-w-sm space-y-8 short:space-y-5">

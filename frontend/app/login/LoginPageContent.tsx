@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
@@ -215,9 +216,19 @@ export function LoginPageContent() {
             </Field>
           )}
           <Field className="relative" data-invalid={isInvalid("password")}>
-            <FieldLabel htmlFor="password">
-              {isExpired ? "New password" : "Password"}
-            </FieldLabel>
+            <div className="flex items-center justify-between gap-2">
+              <FieldLabel htmlFor="password">
+                {isExpired ? "New password" : "Password"}
+              </FieldLabel>
+              {!isRegister && !isExpired && (
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-indigo-600 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              )}
+            </div>
             <div className="relative">
               <Input
                 id="password"
