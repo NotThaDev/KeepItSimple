@@ -52,6 +52,27 @@ Because the queue lives in Postgres, notifications survive an API restart.
 
 Channels are singletons. A channel that needs the database or other scoped services goes through `KeepItSimpleContext`, not constructor injection.
 
+## Email channel
+
+- Sent over SMTP with MailKit (`EmailChannel`). Messages are HTML.
+- Settings live in the `Email` section:
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `Host` | `""` | SMTP host. Empty means every email fails with `Email:Host is not configured.` |
+| `Port` | 587 | SMTP port |
+| `UseSsl` | false | `true` uses SSL on connect; `false` uses STARTTLS when available |
+| `Username` | `""` | SMTP login. Empty means no authentication |
+| `Password` | `""` | SMTP password. Keep it out of committed files |
+| `FromAddress` | `no-reply@keepitsimple.local` | Sender address |
+| `FromName` | `KeepItSimple` | Sender display name |
+
+- Development: the API sends to Mailpit (docker compose service `mailpit`, SMTP `localhost:1025`).
+  Open the inbox at http://localhost:8025. No real email leaves the machine.
+- Production: set `Email__Host`, `Email__Port`, `Email__UseSsl`, `Email__Username`, `Email__Password` as environment variables. Never commit secrets.
+- Templates live in `EmailTemplates`. Names and links are HTML-encoded.
+- Features call `NotificationService.SendEmailConfirmationAsync` and `NotificationService.SendPasswordForgotAsync`.
+
 ## Limits
 
 - Delivery is at least once: if the channel sends but marking the row `Sent` fails, the row is retried and sent again.
