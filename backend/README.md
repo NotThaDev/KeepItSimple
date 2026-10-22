@@ -36,7 +36,7 @@ backend/
 | Transactions | `/api/transactions` | CRUD, filter by pocket, and file import |
 | Category rules | `/api/category-rules` | User-defined categorization (groups = parentheses) |
 | Analytics | `/api/analytics` | Aggregations over transactions |
-| Auth | `/api/auth` | Register with email confirmation, confirm email, login, refresh, logout ([Accounts.md](./docs/Accounts.md)) |
+| Auth | `/api/auth` | Register with email confirmation, confirm email, login, refresh, logout, password reset by email ([Accounts.md](./docs/Accounts.md)) |
 | Notifications | — | Background delivery of user notifications ([Notifications.md](./docs/Notifications.md)) |
 
 Pockets and category rules belong to a user, and transactions belong to them through their pocket. Every endpoint only sees the caller's data ([Accounts.md](./docs/Accounts.md#who-owns-what)).
