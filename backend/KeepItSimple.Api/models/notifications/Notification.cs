@@ -38,6 +38,15 @@ public class Notification
         });
     }
 
+    public static Task<bool> HasRecentAsync(string userId, NotificationChannelType channel, TimeSpan window)
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(dbContext =>
+        {
+            var since = DateTime.UtcNow - window;
+            return dbContext.Notifications.AnyAsync(n => n.UserId == userId && n.Channel == channel && n.CreatedAt >= since);
+        });
+    }
+
     // shortcut: assumes a single API instance; with several, claim rows with FOR UPDATE SKIP LOCKED.
     public static Task<List<Notification>> GetDueAsync(int batchSize)
     {

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace KeepItSimple.Api.Tests.Auth;
 
@@ -19,7 +20,7 @@ public class RegisterTests
 
     private static AuthController NewController() => NewControllerWithUsers().Controller;
 
-    private static (AuthController Controller, KeepItSimpleUserManager Users) NewControllerWithUsers()
+    internal static (AuthController Controller, KeepItSimpleUserManager Users) NewControllerWithUsers()
     {
         // Same password rules as appsettings.Development.json.
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
@@ -45,7 +46,8 @@ public class RegisterTests
         var controller = new AuthController(
             users,
             provider.GetRequiredService<SignInManager<KeepItSimpleUser>>(),
-            new TokenService(jwtSettings));
+            new TokenService(jwtSettings),
+            Options.Create(new FrontendSettings()));
         return (controller, users);
     }
 
@@ -155,6 +157,7 @@ public class RegisterTests
         var (controller, users) = NewControllerWithUsers();
         await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
         var user = (await users.FindByNameAsync("Tha"))!;
+        user.EmailConfirmed = true;
         user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
         await users.UpdateAsync(user);
 
@@ -170,6 +173,7 @@ public class RegisterTests
         var (controller, users) = NewControllerWithUsers();
         await controller.Register(new RegisterRequest("Tha", "tha@example.com", Password));
         var user = (await users.FindByNameAsync("Tha"))!;
+        user.EmailConfirmed = true;
         user.PasswordChangedAt = DateTime.UtcNow.AddDays(-200);
         await users.UpdateAsync(user);
 
