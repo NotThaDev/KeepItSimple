@@ -1,17 +1,21 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using KeepItSimple.Api.Dtos.Auth;
 using KeepItSimple.Api.Models;
 using KeepItSimple.Api.Models.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
+using KeepItSimple.Api.Models.Notifications;
 
 namespace KeepItSimple.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(KeepItSimpleUserManager userManager, SignInManager<KeepItSimpleUser> signInManager, TokenService tokenManager) : ControllerBase
+public class AuthController(KeepItSimpleUserManager userManager, SignInManager<KeepItSimpleUser> signInManager, TokenService tokenManager, IOptions<FrontendSettings> frontendOptions) : ControllerBase
 {
     [HttpPost("register")]
     [AllowAnonymous]
@@ -52,7 +56,63 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
             return BadRequest("Failed to create user.");
         }
 
+        await SendConfirmationEmail(user);
         return Ok();
+    }
+
+    [HttpPost("confirm-email")]
+    [AllowAnonymous]
+    public async Task<ActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request)
+    {
+        const string message = "Invalid or expired confirmation link.";
+        var user = string.IsNullOrEmpty(request.UserId) ? null : await userManager.FindByIdAsync(request.UserId);
+        if (user == null)
+        {
+            return BadRequest(message);
+        }
+
+        // Idempotent: the page may post twice (React StrictMode, refresh).
+        if (user.EmailConfirmed)
+        {
+            return NoContent();
+        }
+
+        string token;
+        try
+        {
+            token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.Token));
+        }
+        catch (FormatException)
+        {
+            return BadRequest(message);
+        }
+
+        var result = await userManager.ConfirmEmailAsync(user, token);
+        return result.Succeeded ? NoContent() : BadRequest(message);
+    }
+
+    // Always 204, so the response does not reveal whether the account exists.
+    [HttpPost("resend-confirmation")]
+    [AllowAnonymous]
+    public async Task<ActionResult> ResendConfirmation([FromBody] ResendConfirmationRequest request)
+    {
+        var user = string.IsNullOrEmpty(request.Username) ? null : await userManager.FindByNameAsync(request.Username);
+        // One email per minute per user, so the endpoint cannot be used to flood an inbox.
+        if (user != null && !user.EmailConfirmed && !await Notification.HasRecentAsync(user.Id, NotificationChannelType.Email, TimeSpan.FromMinutes(1)))
+        {
+            await SendConfirmationEmail(user);
+        }
+
+        return NoContent();
+    }
+
+    private async Task SendConfirmationEmail(KeepItSimpleUser user)
+    {
+        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        // Identity tokens contain '+' and '/', so they are Base64Url-encoded for the query string.
+        var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+        var link = $"{frontendOptions.Value.BaseUrl.TrimEnd('/')}/confirm-email?userId={Uri.EscapeDataString(user.Id)}&token={encoded}";
+        await NotificationService.SendEmailConfirmationAsync(user, link);
     }
 
     [HttpPost("login")]
@@ -83,6 +143,12 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
         if (failure != null)
         {
             return failure;
+        }
+
+        // Checked after the password, so a wrong password stays a plain 401 and keeps Identity's lockout counting.
+        if (!user.EmailConfirmed)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new LoginErrorResponse("email_not_confirmed"));
         }
 
         // No tokens: the frontend turns the login form into a "set a new password" form.
