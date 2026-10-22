@@ -46,6 +46,7 @@ backend/
     helpers/              # pure logic, queries, importer, DbContext access, service setup
     models/               # entities and their static persistence methods
       analytics/          # aggregation types and Analytics static methods
+      notifications/      # Notification outbox entity, NotificationService, channels
     Migrations/           # EF Core; do not edit migrations that already shipped
     Program.cs
   Tests/KeepItSimple.Api.Tests/
@@ -95,6 +96,8 @@ Entities are active records in `models/`. Properties are the columns. Static met
 - Schema changes get a new EF Core migration. Do not edit a migration that is already in the tree.
 
 Analytics lives in `models/analytics/`. `Analytics` is a static class: `Get*Async` loads through the entities, `Build*` is pure and takes the lists plus a `DateTime`. Tests call `Build*`.
+
+Notifications live in `models/notifications/` ([docs/Notifications.md](../../../backend/docs/Notifications.md)). Features call the static `NotificationService` to queue a message; never send from a controller directly. `NotificationDispatcher` (a `BackgroundService` in `helpers/`) delivers queued rows. A channel implements `INotificationChannel` and is registered as a singleton in `NotificationSetup`.
 
 ## DTOs and helpers
 

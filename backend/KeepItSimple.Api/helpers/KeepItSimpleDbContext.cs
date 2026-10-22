@@ -2,6 +2,7 @@
 using System.Text.Json;
 using KeepItSimple.Api.Models;
 using KeepItSimple.Api.Models.Auth;
+using KeepItSimple.Api.Models.Notifications;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
     public DbSet<Pocket> Pockets => Set<Pocket>();
     public DbSet<CategoryRule> CategoryRules => Set<CategoryRule>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,6 +39,20 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
                 .HasForeignKey(token => token.UserId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasIndex(notification => new { notification.Status, notification.NextAttemptAt });
+            entity.HasIndex(notification => notification.UserId);
+            entity.HasOne<KeepItSimpleUser>()
+                .WithMany()
+                .HasForeignKey(notification => notification.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(notification => notification.Recipient).IsRequired();
+            entity.Property(notification => notification.Subject).IsRequired();
+            entity.Property(notification => notification.Body).IsRequired();
         });
 
         modelBuilder.Entity<Pocket>(entity =>
