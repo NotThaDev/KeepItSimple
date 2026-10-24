@@ -11,6 +11,7 @@ It is a Next.js app. It talks to the API and has these areas:
 | 💸 | Transactions | `/transactions` | Movements, categories, filters, and file import |
 | 🏷️ | Category rules | `/transactions/rules` | Rules that categorize movements imported from a bank account, with preview and apply |
 | 👛 | Pockets | `/pockets` | Accounts, balances, and currencies |
+| ✉️ | Confirm email | `/confirm-email` | Confirms the email address from the link sent after registration |
 
 Home (`/`) redirects to the dashboard.
 

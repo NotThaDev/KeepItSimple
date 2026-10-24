@@ -48,11 +48,22 @@ sequenceDiagram
   API-->>Browser: 401, all sessions of the user revoked
 ```
 
+## Email confirmation
+
+- `POST register` queues a confirmation email (`NotificationManager`, email channel). The background dispatcher sends it; the body is cleared once sent, since it holds the link.
+- Link: `{Frontend:BaseUrl}/confirm-email?userId=...&token=...`. The token is Identity's email confirmation token, Base64Url-encoded for the query string. Identity's default lifetime is 1 day.
+- `POST confirm-email` `{ userId, token }`: 204 when confirmed, 400 for a bad or expired link. Idempotent: an already confirmed user gets 204.
+- `POST login` with the right password but an unconfirmed email: **403** `{ "code": "email_not_confirmed" }`. A wrong password stays 401, and wrong passwords count toward the lockout. An expired password keeps its bare 403.
+- `POST resend-confirmation` `{ username }`: always 204, so it does not reveal whether the account exists. Sends at most one email per minute per user.
+- Migration `ConfirmExistingUsersEmail` marks existing accounts confirmed, so they are not locked out.
+- `Frontend:BaseUrl` is required (production: `Frontend__BaseUrl`, the public web address); the API refuses to start without an absolute URL.
+- The check is done in `Login` after the password, not with Identity's `SignIn.RequireConfirmedEmail`: that option rejects before the password is checked, which would bypass lockout counting.
+
 ## Which endpoints need a token
 
 All of them, through a fallback policy in `AuthSetup`: any endpoint without authorization metadata requires a signed-in user, so new controllers are protected by default.
 
-Only `register`, `login`, `refresh` and `logout` are `[AllowAnonymous]`. `refresh` and `logout` have to be anonymous, because they run when the access token may already have expired; the cookie identifies the session there. `AuthorizationCoverageTests` fails if any other action allows anonymous access.
+Only `register`, `login`, `refresh`, `logout`, `change-password`, `confirm-email` and `resend-confirmation` are `[AllowAnonymous]`. `refresh` and `logout` have to be anonymous, because they run when the access token may already have expired; the cookie identifies the session there. `AuthorizationCoverageTests` fails if any other action allows anonymous access.
 
 ## Who owns what
 
