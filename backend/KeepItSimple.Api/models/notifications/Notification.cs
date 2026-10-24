@@ -10,6 +10,8 @@ public class Notification
     [JsonIgnore]
     public string? UserId { get; set; }
     public NotificationChannelType Channel { get; set; }
+    // Where the channel delivers: an email address for Email, later a phone number, device token or user id.
+    // Captured when queued, so a later change on the user does not redirect it.
     public string Recipient { get; set; } = "";
     public string Subject { get; set; } = "";
     public string Body { get; set; } = "";
