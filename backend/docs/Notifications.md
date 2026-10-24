@@ -1,11 +1,11 @@
 # Notifications
 
-Features notify a user through one entry point, `NotificationService`, without knowing how the message is delivered.
+Features notify a user through one entry point, `NotificationManager`, without knowing how the message is delivered.
 Delivery happens in the background, so a slow or failing channel never blocks a request.
 
 ```mermaid
 flowchart LR
-  Feature[Feature code] -->|NotificationService.SendAsync| Table[(Notifications table)]
+  Feature[Feature code] -->|NotificationManager.SendAsync| Table[(Notifications table)]
   Dispatcher[NotificationDispatcher<br/>BackgroundService] -->|polls due rows| Table
   Dispatcher -->|by Channel| Channel[INotificationChannel]
   Channel --> User[User]
@@ -13,7 +13,7 @@ flowchart LR
 
 ## How it works
 
-1. A feature calls `NotificationService.SendAsync(userId, channel, recipient, subject, body)`.
+1. A feature calls `NotificationManager.SendAsync(userId, channel, recipient, subject, body)`.
    It validates the channel and recipient and stores a `Pending` row in `Notifications` (an outbox). Nothing is sent yet.
 2. `NotificationDispatcher` wakes every `PollIntervalSeconds`, loads up to `BatchSize` pending rows whose `NextAttemptAt` has passed,
    and hands each one to the `INotificationChannel` registered for its `Channel`.
@@ -48,7 +48,7 @@ Because the queue lives in Postgres, notifications survive an API restart.
 1. Add a value to `NotificationChannelType` (never 0).
 2. Implement `INotificationChannel` in `models/notifications/`. Throw on failure; the dispatcher handles retries.
 3. Register it in `NotificationSetup.AddKeepItSimpleNotifications` with `services.AddSingleton<INotificationChannel, YourChannel>()`.
-4. Add a typed method on `NotificationService` for each message the features send.
+4. Add a typed method on `NotificationManager` for each message the features send.
 
 Channels are singletons. A channel that needs the database or other scoped services goes through `KeepItSimpleContext`, not constructor injection.
 

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace KeepItSimple.Api.Helpers;
+namespace KeepItSimple.Api.BackgroundServices;
 
 // Polls the notifications table and hands each due row to its channel. Relies on KeepItSimpleContext.InitContext running before app.Run().
 public class NotificationDispatcher(IEnumerable<INotificationChannel> channels, IOptions<NotificationSettings> options, ILogger<NotificationDispatcher> logger) : BackgroundService

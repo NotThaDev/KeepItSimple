@@ -16,6 +16,7 @@ backend/
 ├── README.md                 ← this file
 ├── docs/                     ← feature notes
 ├── KeepItSimple.Api/
+│   ├── backgroundServices/   ← long-running background services (NotificationDispatcher)
 │   ├── controllers/          ← HTTP endpoints
 │   ├── dtos/                 ← import + category-rule request / response types
 │   ├── helpers/              ← TransactionImporter, CategoryRuleMatcher, DB access, currency
