@@ -50,7 +50,7 @@ sequenceDiagram
 
 ## Email confirmation
 
-- `POST register` queues a confirmation email (`NotificationService`, email channel). The background dispatcher sends it; the body is cleared once sent, since it holds the link.
+- `POST register` queues a confirmation email (`NotificationManager`, email channel). The background dispatcher sends it; the body is cleared once sent, since it holds the link.
 - Link: `{Frontend:BaseUrl}/confirm-email?userId=...&token=...`. The token is Identity's email confirmation token, Base64Url-encoded for the query string. Identity's default lifetime is 1 day.
 - `POST confirm-email` `{ userId, token }`: 204 when confirmed, 400 for a bad or expired link. Idempotent: an already confirmed user gets 204.
 - `POST login` with the right password but an unconfirmed email: **403** `{ "code": "email_not_confirmed" }`. A wrong password stays 401, and wrong passwords count toward the lockout. An expired password keeps its bare 403.
