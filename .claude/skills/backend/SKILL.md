@@ -41,11 +41,13 @@ backend/
   README.md                 # overview of the API, domains, and how to run it
   docs/                     # feature notes
   KeepItSimple.Api/
+    backgroundServices/   # every long-running BackgroundService (NotificationDispatcher)
     controllers/          # HTTP only
     dtos/<Domain>/        # request and response types that are not the entity
     helpers/              # pure logic, queries, importer, DbContext access, service setup
     models/               # entities and their static persistence methods
       analytics/          # aggregation types and Analytics static methods
+      notifications/      # Notification outbox entity, NotificationManager, channels
     Migrations/           # EF Core; do not edit migrations that already shipped
     Program.cs
   Tests/KeepItSimple.Api.Tests/
@@ -53,7 +55,7 @@ backend/
     support/              # fixtures and the xUnit framework wrapper
 ```
 
-Folders on disk are lowercase (`controllers`, `models`, `helpers`, `dtos`). Namespaces stay as they already are: `KeepItSimple.Api.Controllers`, `KeepItSimple.Api.Models`, `KeepItSimple.Api.Helpers`, and `KeepItSimple.Api.dtos.<Domain>`.
+Folders on disk are lowercase (`backgroundServices`, `controllers`, `models`, `helpers`, `dtos`). Namespaces stay as they already are: `KeepItSimple.Api.BackgroundServices`, `KeepItSimple.Api.Controllers`, `KeepItSimple.Api.Models`, `KeepItSimple.Api.Helpers`, and `KeepItSimple.Api.dtos.<Domain>`.
 
 One public type per file. The file name is the type name. Use a file-scoped namespace. Nullable reference types are on.
 
@@ -95,6 +97,8 @@ Entities are active records in `models/`. Properties are the columns. Static met
 - Schema changes get a new EF Core migration. Do not edit a migration that is already in the tree.
 
 Analytics lives in `models/analytics/`. `Analytics` is a static class: `Get*Async` loads through the entities, `Build*` is pure and takes the lists plus a `DateTime`. Tests call `Build*`.
+
+Notifications live in `models/notifications/` ([docs/Notifications.md](../../../backend/docs/Notifications.md)). Features call the static `NotificationManager` to queue a message; never send from a controller directly. `NotificationDispatcher` (a `BackgroundService` in `backgroundServices/`) delivers queued rows. Any service that keeps running in the background goes in `backgroundServices/`, never in `helpers/`. A channel implements `INotificationChannel` and is registered as a singleton in `NotificationSetup`.
 
 ## DTOs and helpers
 
