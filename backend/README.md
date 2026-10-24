@@ -7,7 +7,7 @@ ASP.NET Core Web API (`net10`) that powers KeepItSimple: pockets, transactions, 
 - **ASP.NET Core** + controllers
 - **EF Core** + **PostgreSQL** (Npgsql)
 - **Swagger** in Development
-- **Docker Compose** at repo root for Postgres
+- **Docker Compose** at repo root for Postgres and Mailpit (dev email inbox at http://localhost:8025)
 
 ## Layout
 

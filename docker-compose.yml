@@ -20,5 +20,12 @@ services:
     ports:
       - "5050:80"
 
+  mailpit:
+    image: axllent/mailpit
+    container_name: keepitsimple-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
 volumes:
   pgdata:
