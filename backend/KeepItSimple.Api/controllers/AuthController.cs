@@ -77,12 +77,8 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
             return NoContent();
         }
 
-        string token;
-        try
-        {
-            token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.Token));
-        }
-        catch (FormatException)
+        var token = DecodeToken(request.Token);
+        if (token == null)
         {
             return BadRequest(message);
         }
@@ -109,10 +105,84 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
     private async Task SendConfirmationEmail(KeepItSimpleUser user)
     {
         var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        await NotificationManager.SendEmailConfirmationAsync(user, BuildLink("confirm-email", user, token));
+    }
+
+    // Always 204, so the response does not reveal whether the email is registered.
+    // shortcut: known and unknown emails differ in response time; add constant-time padding if enumeration matters.
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        var user = string.IsNullOrWhiteSpace(request.Email) ? null : await userManager.FindByEmailAsync(request.Email);
+        // One email per minute per user, so the endpoint cannot be used to flood an inbox.
+        if (user != null && !await Notification.HasRecentAsync(user.Id, NotificationChannelType.Email, TimeSpan.FromMinutes(1)))
+        {
+            var token = await userManager.GeneratePasswordResetTokenAsync(user);
+            await NotificationManager.SendPasswordForgotAsync(user, BuildLink("reset-password", user, token));
+        }
+
+        return NoContent();
+    }
+
+    // Anonymous because the user has no password to sign in with. The reset token is the proof of inbox ownership.
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        const string message = "Invalid or expired reset link.";
+        var user = string.IsNullOrEmpty(request.UserId) ? null : await userManager.FindByIdAsync(request.UserId);
+        if (user == null)
+        {
+            return BadRequest(message);
+        }
+
+        var token = DecodeToken(request.Token);
+        // Token first: otherwise the same-password check below would let anyone test passwords without lockout.
+        if (token == null || !await userManager.VerifyUserTokenAsync(user, userManager.Options.Tokens.PasswordResetTokenProvider, UserManager<KeepItSimpleUser>.ResetPasswordTokenPurpose, token))
+        {
+            return BadRequest(message);
+        }
+
+        // Reusing the current password would restart the expiration clock without changing anything.
+        if (await userManager.CheckPasswordAsync(user, request.NewPassword))
+        {
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["newPassword"] = ["Choose a password different from the current one."] }));
+        }
+
+        // A reset proves the user owns the inbox, so it also lifts a lockout and confirms the email; set here so it is saved in the same write as the password.
+        user.AccessFailedCount = 0;
+        user.LockoutEnd = null;
+        user.EmailConfirmed = true;
+        var result = await userManager.ResetPasswordAsync(user, token, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            var errors = new Dictionary<string, string[]> { ["newPassword"] = [.. result.Errors.Select(e => e.Description)] };
+            return BadRequest(new ValidationProblemDetails(errors));
+        }
+
+        // Refresh tokens end now; access tokens already issued live until they expire (JwtSettings:ExpiryMinutes).
+        await RefreshToken.RevokeAllAsync(user.Id);
+        return NoContent();
+    }
+
+    private string BuildLink(string path, KeepItSimpleUser user, string token)
+    {
         // Identity tokens contain '+' and '/', so they are Base64Url-encoded for the query string.
         var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-        var link = $"{frontendOptions.Value.BaseUrl.TrimEnd('/')}/confirm-email?userId={Uri.EscapeDataString(user.Id)}&token={encoded}";
-        await NotificationManager.SendEmailConfirmationAsync(user, link);
+        return $"{frontendOptions.Value.BaseUrl.TrimEnd('/')}/{path}?userId={Uri.EscapeDataString(user.Id)}&token={encoded}";
+    }
+
+    private static string? DecodeToken(string token)
+    {
+        try
+        {
+            return Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
     }
 
     [HttpPost("login")]

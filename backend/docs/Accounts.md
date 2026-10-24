@@ -59,11 +59,26 @@ sequenceDiagram
 - `Frontend:BaseUrl` is required (production: `Frontend__BaseUrl`, the public web address); the API refuses to start without an absolute URL.
 - The check is done in `Login` after the password, not with Identity's `SignIn.RequireConfirmedEmail`: that option rejects before the password is checked, which would bypass lockout counting.
 
+## Forgot password
+
+- `POST forgot-password` `{ email }`: always 204, so it does not reveal whether the email is registered. Sends at most one email per minute per user.
+- Link: `{Frontend:BaseUrl}/reset-password?userId=...&token=...`. The token is Identity's password reset token, Base64Url-encoded. Lifetime is 1 day. It is single use: a reset changes the security stamp, so the same token fails after it is used.
+- `POST reset-password` `{ userId, token, newPassword }`:
+  - 204 when the password is reset;
+  - 400 with `"Invalid or expired reset link."` for a bad or expired link;
+  - 400 `ValidationProblemDetails` keyed `newPassword` when the password breaks the rules (the token is not used up).
+- On success:
+  - restarts the password expiration clock (`PasswordChangedAt`);
+  - revokes every refresh token of the user, so other sessions end once their access token expires (`JwtSettings:ExpiryMinutes`);
+  - lifts a lockout and confirms the email, since the reset proves the user owns the inbox (saved in the same write as the password);
+  - rejects the current password as the new one (400 `newPassword`), checked only after the token is verified so it is no password oracle;
+  - does not sign the user in: the user logs in with the new password.
+
 ## Which endpoints need a token
 
 All of them, through a fallback policy in `AuthSetup`: any endpoint without authorization metadata requires a signed-in user, so new controllers are protected by default.
 
-Only `register`, `login`, `refresh`, `logout`, `change-password`, `confirm-email` and `resend-confirmation` are `[AllowAnonymous]`. `refresh` and `logout` have to be anonymous, because they run when the access token may already have expired; the cookie identifies the session there. `AuthorizationCoverageTests` fails if any other action allows anonymous access.
+Only `register`, `login`, `refresh`, `logout`, `change-password`, `confirm-email`, `resend-confirmation`, `forgot-password` and `reset-password` are `[AllowAnonymous]`. `refresh` and `logout` have to be anonymous, because they run when the access token may already have expired; the cookie identifies the session there. `AuthorizationCoverageTests` fails if any other action allows anonymous access.
 
 ## Who owns what
 
