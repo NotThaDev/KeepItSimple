@@ -71,7 +71,7 @@ Channels are singletons. A channel that needs the database or other scoped servi
   Open the inbox at http://localhost:8025. No real email leaves the machine.
 - Production: set `Email__Host`, `Email__Port`, `Email__UseSsl`, `Email__Username`, `Email__Password` as environment variables. Never commit secrets.
 - Templates live in `EmailTemplates`. Names and links are HTML-encoded.
-- Features call `NotificationService.SendEmailConfirmationAsync` and `NotificationService.SendPasswordForgotAsync`.
+- Features call `NotificationManager.SendEmailConfirmationAsync` and `NotificationManager.SendPasswordForgotAsync`.
 
 ## Limits
 

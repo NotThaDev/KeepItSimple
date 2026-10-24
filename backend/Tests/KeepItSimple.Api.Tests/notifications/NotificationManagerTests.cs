@@ -6,14 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KeepItSimple.Api.Tests.Notifications;
 
-public class NotificationServiceTests
+public class NotificationManagerTests
 {
     [Fact]
     public async Task SendEmailConfirmationAsync_queues_a_pending_email()
     {
         var user = new KeepItSimpleUser { Id = TestApp.NewUserId(), UserName = "tha", Email = "tha@example.com" };
 
-        await NotificationService.SendEmailConfirmationAsync(user, "https://x.test/confirm");
+        await NotificationManager.SendEmailConfirmationAsync(user, "https://x.test/confirm");
 
         var notification = await KeepItSimpleContext.Context.WithDbContextAsync(db =>
             db.Notifications.SingleAsync(n => n.UserId == user.Id));
@@ -28,13 +28,13 @@ public class NotificationServiceTests
     {
         var user = new KeepItSimpleUser { Id = TestApp.NewUserId(), UserName = "tha", Email = null };
 
-        await Assert.ThrowsAsync<ArgumentException>(() => NotificationService.SendEmailConfirmationAsync(user, "https://x.test/confirm"));
+        await Assert.ThrowsAsync<ArgumentException>(() => NotificationManager.SendEmailConfirmationAsync(user, "https://x.test/confirm"));
     }
 
     [Fact]
     public async Task SendAsync_with_unknown_channel_throws()
     {
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            NotificationService.SendAsync(TestApp.NewUserId(), (NotificationChannelType)0, "tha@example.com", "Subject", "Body"));
+            NotificationManager.SendAsync(TestApp.NewUserId(), (NotificationChannelType)0, "tha@example.com", "Subject", "Body"));
     }
 }
