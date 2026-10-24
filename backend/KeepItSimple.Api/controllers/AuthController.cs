@@ -112,7 +112,7 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
         // Identity tokens contain '+' and '/', so they are Base64Url-encoded for the query string.
         var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
         var link = $"{frontendOptions.Value.BaseUrl.TrimEnd('/')}/confirm-email?userId={Uri.EscapeDataString(user.Id)}&token={encoded}";
-        await NotificationService.SendEmailConfirmationAsync(user, link);
+        await NotificationManager.SendEmailConfirmationAsync(user, link);
     }
 
     [HttpPost("login")]
