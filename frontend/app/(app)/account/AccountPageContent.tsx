@@ -1,12 +1,29 @@
+"use client";
+
+import { useEffect } from "react";
+import { toast } from "sonner";
 import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
+import type { FetchWrapperResponse } from "@/lib/fetchWrapper";
 import type { User } from "@/lib/models/Auth";
+import type { Session } from "@/lib/models/Session";
 import { ProfileCard } from "./profile/ProfileCard";
+import { SessionsCard } from "./sessions/SessionsCard";
 
 interface AccountPageContentProps {
   user: User | null;
+  sessionsResponse: FetchWrapperResponse<Session[]>;
 }
 
-export function AccountPageContent({ user }: Readonly<AccountPageContentProps>) {
+export function AccountPageContent({
+  user,
+  sessionsResponse,
+}: Readonly<AccountPageContentProps>) {
+  useEffect(() => {
+    if (sessionsResponse.error) {
+      toast.error(`Failed to load sessions: ${sessionsResponse.error}`);
+    }
+  }, [sessionsResponse.error]);
+
   if (!user) {
     return (
       <EmptyStateCard
@@ -19,6 +36,7 @@ export function AccountPageContent({ user }: Readonly<AccountPageContentProps>) 
   return (
     <div className="flex w-full max-w-2xl flex-col gap-4">
       <ProfileCard user={user} />
+      <SessionsCard sessions={sessionsResponse.data ?? []} />
     </div>
   );
 }

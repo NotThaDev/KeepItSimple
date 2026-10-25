@@ -64,12 +64,19 @@ namespace KeepItSimple.Api.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime>("SessionCreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
 
                     b.Property<string>("UserId")
                         .IsRequired()

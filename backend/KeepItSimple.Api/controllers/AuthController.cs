@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using KeepItSimple.Api.Dtos.Auth;
+using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models.Auth;
 using KeepItSimple.Api.Models.Notifications;
 using KeepItSimple.Api.Models;
@@ -203,7 +204,7 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
             return StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        var (refreshToken, _, sessionId) = await RefreshToken.CreateAsync(user.Id, tokenManager.RefreshLifetime);
+        var (refreshToken, _, sessionId) = await RefreshToken.CreateAsync(user.Id, tokenManager.RefreshLifetime, UserAgent());
         return await BuildAuthResponse(user, refreshToken, sessionId);
     }
 
@@ -238,7 +239,7 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
 
         await RefreshToken.RevokeAllAsync(user.Id);
 
-        var (refreshToken, _, sessionId) = await RefreshToken.CreateAsync(user.Id, tokenManager.RefreshLifetime);
+        var (refreshToken, _, sessionId) = await RefreshToken.CreateAsync(user.Id, tokenManager.RefreshLifetime, UserAgent());
         return await BuildAuthResponse(user, refreshToken, sessionId);
     }
 
@@ -280,6 +281,45 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
         return Ok(new UserResponse(user.Id, user.UserName, user.Email, pictureUpdatedAt?.Ticks));
     }
 
+    [HttpGet("sessions")]
+    public async Task<ActionResult<List<SessionResponse>>> Sessions()
+    {
+        if (!TryGetCurrentSession(out var current))
+        {
+            return Unauthorized();
+        }
+
+        return Ok(SessionList.Build(await RefreshToken.GetActiveAsync(User.GetUserId()), current));
+    }
+
+    [HttpDelete("sessions/{sessionId:guid}")]
+    public async Task<ActionResult> EndSession(Guid sessionId)
+    {
+        if (!TryGetCurrentSession(out var current))
+        {
+            return Unauthorized();
+        }
+
+        if (sessionId == current)
+        {
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["sessionId"] = ["Use Log out to end this device's session."] }));
+        }
+
+        return await RefreshToken.RevokeSessionAsync(User.GetUserId(), sessionId) == 0 ? NotFound() : NoContent();
+    }
+
+    [HttpDelete("sessions")]
+    public async Task<ActionResult> EndOtherSessions()
+    {
+        if (!TryGetCurrentSession(out var current))
+        {
+            return Unauthorized();
+        }
+
+        await RefreshToken.RevokeOtherSessionsAsync(User.GetUserId(), current);
+        return NoContent();
+    }
+
     [HttpPost("logout")]
     [AllowAnonymous]
     public async Task<ActionResult> Logout()
@@ -291,6 +331,15 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
 
         ClearAuthCookies();
         return NoContent();
+    }
+
+    private bool TryGetCurrentSession(out Guid sessionId) =>
+        Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sid), out sessionId);
+
+    private string? UserAgent()
+    {
+        var agent = Request.Headers.UserAgent.ToString();
+        return string.IsNullOrEmpty(agent) ? null : agent;
     }
 
     private async Task SendConfirmationEmail(KeepItSimpleUser user)

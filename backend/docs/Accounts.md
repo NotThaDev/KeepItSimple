@@ -26,6 +26,9 @@ The JWT is read from the `Authorization: Bearer` header when there is one; this 
   - **Rotated less than 10 s ago, and its successor is still active** (grace period): a new row and cookies are issued. Parallel requests that found the same expired token (prefetches, several tabs) don't log the user out.
   - **Rotated earlier** (reuse): 401 and **that session is revoked** (all rows of its `SessionId`). Only the attacker or the real user can hold the newer token, and the server can't tell which, so both have to log in again. The user's other sessions stay.
 - `POST logout`: revokes the whole session of the cookie's row and clears both cookies. Always 204, even without a cookie.
+- `GET sessions`: the caller's active sessions, newest `lastUsedAt` first: `{ id, userAgent, createdAt, lastUsedAt, current }`.
+- `DELETE sessions/{sessionId}`: ends one of the caller's other sessions. 204; 404 when the caller has no active session with that id; 400 (`sessionId`) for the current session (use `logout`).
+- `DELETE sessions`: ends every session of the caller except the current one. 204.
 - Login and a valid refresh also delete the user's expired rows. Revoked rows stay until they expire: a reused token is only caught while its row exists.
 - `GET me`: the signed-in user (`UserResponse`: `id`, `userName`, `email`, `pictureVersion`), read from the JWT's `sub` claim. `pictureVersion` is the ticks of the picture's last update, null without a picture. Returns 401 when that user no longer exists.
 
@@ -52,6 +55,7 @@ sequenceDiagram
 - Each login creates a `SessionId` (Guid). Every refresh row of that login carries it, and rotation copies it to the new row. The access token has it in the `sid` claim.
 - `JwtBearerEvents.OnTokenValidated` (`AuthSetup`) rejects a token whose `sid` is missing or has no active row (`RefreshToken.IsSessionActiveAsync`). A revoked session therefore stops on its next API request, not when the access token expires.
 - Trade-off: the JWT is no longer stateless. Every authenticated request runs one indexed query on `RefreshTokens.SessionId`.
+- `UserAgent` and `SessionCreatedAt` are set at login and copied on rotation like `SessionId`. `lastUsedAt` in the sessions list is the `CreatedAt` of the newest row, i.e. the last refresh, so it lags real use by up to the access-token lifetime.
 - Logout ends the whole session. A replayed token ends that session only. Change password and reset password end every session of the user.
 - Tokens issued before this change have no `sid`: they get one 401, and the user logs in again.
 
