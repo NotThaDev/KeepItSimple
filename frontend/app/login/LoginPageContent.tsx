@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
@@ -60,7 +61,6 @@ export function LoginPageContent() {
       if (!email.trim()) found.email = "Email is required.";
       else if (!EMAIL_PATTERN.test(email))
         found.email = "Enter a valid email address.";
-
     }
     if (isRegister || isExpired) {
       if (!meetsPasswordRules(password)) found.password = "";
@@ -215,9 +215,11 @@ export function LoginPageContent() {
             </Field>
           )}
           <Field className="relative" data-invalid={isInvalid("password")}>
-            <FieldLabel htmlFor="password">
-              {isExpired ? "New password" : "Password"}
-            </FieldLabel>
+            <div className="flex items-center justify-between gap-2">
+              <FieldLabel htmlFor="password">
+                {isExpired ? "New password" : "Password"}
+              </FieldLabel>
+            </div>
             <div className="relative">
               <Input
                 id="password"
@@ -258,6 +260,16 @@ export function LoginPageContent() {
             <FieldError id="password-error" className={FIELD_ERROR_CLASS}>
               {errors.password}
             </FieldError>
+            {!isRegister && !isExpired && (
+              <div className="text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-indigo-600 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            )}
           </Field>
           {lockedUntil !== null && !isRegister && (
             <LockoutNotice until={lockedUntil} onExpire={clearLockout} />
