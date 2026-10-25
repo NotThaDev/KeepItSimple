@@ -27,6 +27,11 @@ This file is the overview. Notes for a complex screen live in `docs/`.
 - **Recharts** for the charts
 - **TanStack Table** for the lists
 
+## Conventions
+
+- Inside a component, write handlers as arrow functions: `const onSave = async () => { ... };`, not `async function onSave() { ... }`.
+- Use `useCallback` only when something compares the function between renders: a `useEffect`/`useMemo` dependency array, a prop of a `React.memo` child, or a context value. Everywhere else it adds code and a deps array to keep right, and saves nothing: the function is still created on every render, and a plain child re-renders with its parent anyway.
+
 ## Run
 
 From the `frontend` folder:

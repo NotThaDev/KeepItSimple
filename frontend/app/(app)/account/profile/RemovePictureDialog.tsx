@@ -17,10 +17,10 @@ export function RemovePictureDialog({
 }: Readonly<RemovePictureDialogProps>) {
   const [open, setOpen] = useState(false);
 
-  async function onConfirm() {
+  const onConfirm = async () => {
     await onRemove();
     setOpen(false);
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

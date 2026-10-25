@@ -32,7 +32,7 @@ export function ProfileCard({ user }: Readonly<ProfileCardProps>) {
   const name = user.userName ?? "Account";
   const hasPicture = Boolean(user.pictureVersion);
 
-  async function onFileChange(event: ChangeEvent<HTMLInputElement>) {
+  const onFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) {
@@ -59,9 +59,9 @@ export function ProfileCard({ user }: Readonly<ProfileCardProps>) {
     } finally {
       setBusy(false);
     }
-  }
+  };
 
-  async function onRemove() {
+  const onRemove = async () => {
     setBusy(true);
     try {
       const response = await deleteProfilePicture();
@@ -74,7 +74,7 @@ export function ProfileCard({ user }: Readonly<ProfileCardProps>) {
     } finally {
       setBusy(false);
     }
-  }
+  };
 
   return (
     <Card>
