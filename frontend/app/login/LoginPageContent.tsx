@@ -61,7 +61,6 @@ export function LoginPageContent() {
       if (!email.trim()) found.email = "Email is required.";
       else if (!EMAIL_PATTERN.test(email))
         found.email = "Enter a valid email address.";
-
     }
     if (isRegister || isExpired) {
       if (!meetsPasswordRules(password)) found.password = "";
@@ -220,14 +219,6 @@ export function LoginPageContent() {
               <FieldLabel htmlFor="password">
                 {isExpired ? "New password" : "Password"}
               </FieldLabel>
-              {!isRegister && !isExpired && (
-                <Link
-                  href="/forgot-password"
-                  className="text-sm font-medium text-indigo-600 hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              )}
             </div>
             <div className="relative">
               <Input
@@ -269,6 +260,16 @@ export function LoginPageContent() {
             <FieldError id="password-error" className={FIELD_ERROR_CLASS}>
               {errors.password}
             </FieldError>
+            {!isRegister && !isExpired && (
+              <div className="text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-indigo-600 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            )}
           </Field>
           {lockedUntil !== null && !isRegister && (
             <LockoutNotice until={lockedUntil} onExpire={clearLockout} />
