@@ -156,7 +156,7 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
             return BadRequest(new ValidationProblemDetails(errors));
         }
 
-        // Refresh tokens end now; access tokens already issued live until they expire (JwtSettings:ExpiryMinutes).
+        // Refresh tokens end now; access tokens already issued stop on their next request.
         await RefreshToken.RevokeAllAsync(user.Id);
         return NoContent();
     }
@@ -203,8 +203,8 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
             return StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        var (refreshToken, _) = await RefreshToken.CreateAsync(user.Id, tokenManager.RefreshLifetime);
-        return await BuildAuthResponse(user, refreshToken);
+        var (refreshToken, _, sessionId) = await RefreshToken.CreateAsync(user.Id, tokenManager.RefreshLifetime);
+        return await BuildAuthResponse(user, refreshToken, sessionId);
     }
 
     // Anonymous so an expired password (which gets no tokens) can be changed too; the current password proves who is asking.
@@ -238,8 +238,8 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
 
         await RefreshToken.RevokeAllAsync(user.Id);
 
-        var (refreshToken, _) = await RefreshToken.CreateAsync(user.Id, tokenManager.RefreshLifetime);
-        return await BuildAuthResponse(user, refreshToken);
+        var (refreshToken, _, sessionId) = await RefreshToken.CreateAsync(user.Id, tokenManager.RefreshLifetime);
+        return await BuildAuthResponse(user, refreshToken, sessionId);
     }
 
     // Anonymous because it runs when the access token has expired.
@@ -262,7 +262,7 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
             return Unauthorized();
         }
 
-        return await BuildAuthResponse(user, rotated!.Value.Token);
+        return await BuildAuthResponse(user, rotated!.Value.Token, rotated.Value.SessionId);
     }
 
     [HttpGet("me")]
@@ -332,10 +332,10 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
     }
 
     // Both tokens travel as HttpOnly cookies, so page scripts never see them; the response has no body.
-    private async Task<ActionResult> BuildAuthResponse(KeepItSimpleUser user, string refreshToken)
+    private async Task<ActionResult> BuildAuthResponse(KeepItSimpleUser user, string refreshToken, Guid sessionId)
     {
         var roles = await userManager.GetRolesAsync(user);
-        var (accessToken, _) = tokenManager.CreateToken(user, roles);
+        var (accessToken, _) = tokenManager.CreateToken(user, roles, sessionId);
         // The access cookie goes away 30s before the JWT expires, so the proxy refreshes before the API would reject it.
         Response.Cookies.Append(TokenService.AccessCookieName, accessToken, tokenManager.AuthCookieOptions(Request.IsHttps, tokenManager.AccessLifetime - TimeSpan.FromSeconds(30)));
         Response.Cookies.Append(RefreshToken.CookieName, refreshToken, tokenManager.AuthCookieOptions(Request.IsHttps, tokenManager.RefreshLifetime));

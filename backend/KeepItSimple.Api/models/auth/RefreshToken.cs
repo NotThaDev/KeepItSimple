@@ -15,6 +15,8 @@ public class RefreshToken
 
     public int Id { get; set; }
     public string UserId { get; set; } = string.Empty;
+    // Shared by every row of one login, across rotations: logout and replay end the session by this id.
+    public Guid SessionId { get; set; }
     public string TokenHash { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
@@ -31,29 +33,27 @@ public class RefreshToken
 
     public static string Hash(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 
-    public static Task<(string Token, DateTime ExpiresAt)> CreateAsync(string userId, TimeSpan lifetime)
+    public static Task<(string Token, DateTime ExpiresAt, Guid SessionId)> CreateAsync(string userId, TimeSpan lifetime)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
             var now = DateTime.UtcNow;
-            // One session per user: logging in elsewhere ends the other browsers' sessions.
-            await RevokeAllAsync(dbContext, userId, now);
             await DeleteExpiredAsync(dbContext, userId, now);
-            var (token, row) = NewRow(userId, lifetime, now);
+            var (token, row) = NewRow(userId, Guid.NewGuid(), lifetime, now);
             dbContext.RefreshTokens.Add(row);
             await dbContext.SaveChangesAsync();
-            return (token, row.ExpiresAt);
+            return (token, row.ExpiresAt, row.SessionId);
         });
     }
 
     /// <summary>
     /// Swaps a valid token for a new one. Returns null when the token is unknown, expired, revoked or replayed.
-    /// A replayed (already rotated) token revokes every session of that user, unless it was rotated within the grace period.
+    /// A replayed (already rotated) token revokes that session (other sessions of the user stay), unless it was rotated within the grace period.
     /// </summary>
-    public static Task<(string UserId, string Token, DateTime ExpiresAt)?> RotateAsync(string token, TimeSpan lifetime)
+    public static Task<(string UserId, string Token, DateTime ExpiresAt, Guid SessionId)?> RotateAsync(string token, TimeSpan lifetime)
     {
         var hash = Hash(token);
-        return KeepItSimpleContext.Context.WithDbContextAsync<(string, string, DateTime)?>(async dbContext =>
+        return KeepItSimpleContext.Context.WithDbContextAsync<(string, string, DateTime, Guid)?>(async dbContext =>
         {
             var now = DateTime.UtcNow;
             var row = await dbContext.RefreshTokens.SingleOrDefaultAsync(t => t.TokenHash == hash);
@@ -72,7 +72,7 @@ public class RefreshToken
                 return null;
             }
 
-            var (newToken, newRow) = NewRow(row.UserId, lifetime, now);
+            var (newToken, newRow) = NewRow(row.UserId, row.SessionId, lifetime, now);
             // One transaction: a parallel refresh blocks on the row lock and then sees both the revoke and the new row.
             await using var transaction = await dbContext.Database.BeginTransactionAsync();
             var claimed = await dbContext.RefreshTokens
@@ -93,34 +93,54 @@ public class RefreshToken
             dbContext.RefreshTokens.Add(newRow);
             await dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
-            return (row.UserId, newToken, newRow.ExpiresAt);
+            return (row.UserId, newToken, newRow.ExpiresAt, row.SessionId);
         });
     }
 
-    // shortcut: each grace hit leaves one more active row for this session; it expires or dies at the next login.
-    private static async Task<(string, string, DateTime)?> GraceRotateAsync(KeepItSimpleDbContext dbContext, RefreshToken row, TimeSpan lifetime, DateTime now)
+    // shortcut: each grace hit leaves one more active row for this session; they share the SessionId, expire on their own and never count as another session.
+    private static async Task<(string, string, DateTime, Guid)?> GraceRotateAsync(KeepItSimpleDbContext dbContext, RefreshToken row, TimeSpan lifetime, DateTime now)
     {
-        // The successor must still be active, so a replay can't revive a session ended by logout or a login elsewhere.
+        // The successor must still be active, so a replay can't revive a session ended by logout.
         var successorActive = await dbContext.RefreshTokens
             .AnyAsync(t => t.TokenHash == row.ReplacedByHash && t.RevokedAt == null && t.ExpiresAt > now);
         if (!row.IsInGracePeriod(now) || !successorActive)
         {
-            await RevokeAllAsync(dbContext, row.UserId, now);
+            // The session is compromised; the user's other sessions stay.
+            await RevokeSessionAsync(dbContext, row.SessionId, now);
             return null;
         }
 
-        var (token, newRow) = NewRow(row.UserId, lifetime, now);
+        var (token, newRow) = NewRow(row.UserId, row.SessionId, lifetime, now);
         dbContext.RefreshTokens.Add(newRow);
         await dbContext.SaveChangesAsync();
-        return (row.UserId, token, newRow.ExpiresAt);
+        return (row.UserId, token, newRow.ExpiresAt, row.SessionId);
     }
 
     public static Task<int> RevokeAsync(string token)
     {
         var hash = Hash(token);
+        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
+        {
+            var sessionId = await dbContext.RefreshTokens
+                .Where(t => t.TokenHash == hash)
+                .Select(t => (Guid?)t.SessionId)
+                .SingleOrDefaultAsync();
+            return sessionId == null ? 0 : await RevokeSessionAsync(dbContext, sessionId.Value, DateTime.UtcNow);
+        });
+    }
+
+    // Read on every API request (AuthSetup), so it stays one indexed query.
+    public static Task<bool> IsSessionActiveAsync(Guid sessionId)
+    {
         return KeepItSimpleContext.Context.WithDbContextAsync(dbContext => dbContext.RefreshTokens
-            .Where(t => t.TokenHash == hash && t.RevokedAt == null)
-            .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, DateTime.UtcNow)));
+            .AnyAsync(t => t.SessionId == sessionId && t.RevokedAt == null && t.ExpiresAt > DateTime.UtcNow));
+    }
+
+    private static Task<int> RevokeSessionAsync(KeepItSimpleDbContext dbContext, Guid sessionId, DateTime now)
+    {
+        return dbContext.RefreshTokens
+            .Where(t => t.SessionId == sessionId && t.RevokedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, now));
     }
 
     public static Task<int> RevokeAllAsync(string userId)
@@ -143,12 +163,13 @@ public class RefreshToken
             .ExecuteDeleteAsync();
     }
 
-    private static (string Token, RefreshToken Row) NewRow(string userId, TimeSpan lifetime, DateTime now)
+    private static (string Token, RefreshToken Row) NewRow(string userId, Guid sessionId, TimeSpan lifetime, DateTime now)
     {
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         return (token, new RefreshToken
         {
             UserId = userId,
+            SessionId = sessionId,
             TokenHash = Hash(token),
             CreatedAt = now,
             ExpiresAt = now.Add(lifetime),
