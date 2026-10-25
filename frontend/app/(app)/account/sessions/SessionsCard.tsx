@@ -26,7 +26,7 @@ export function SessionsCard({ sessions }: Readonly<SessionsCardProps>) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
-  async function onRevoke(id: string) {
+  const onRevoke = async (id: string) => {
     setBusy(true);
     try {
       const response = await revokeSession(id);
@@ -39,9 +39,9 @@ export function SessionsCard({ sessions }: Readonly<SessionsCardProps>) {
     } finally {
       setBusy(false);
     }
-  }
+  };
 
-  async function onRevokeOthers() {
+  const onRevokeOthers = async () => {
     setBusy(true);
     try {
       const response = await revokeOtherSessions();
@@ -54,7 +54,7 @@ export function SessionsCard({ sessions }: Readonly<SessionsCardProps>) {
     } finally {
       setBusy(false);
     }
-  }
+  };
 
   return (
     <Card>

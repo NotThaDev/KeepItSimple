@@ -17,10 +17,10 @@ export function RevokeOthersDialog({
 }: Readonly<RevokeOthersDialogProps>) {
   const [open, setOpen] = useState(false);
 
-  async function onConfirm() {
+  const onConfirm = async () => {
     await onRevokeOthers();
     setOpen(false);
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
