@@ -1,5 +1,6 @@
 using KeepItSimple.Api.BackgroundServices;
-using KeepItSimple.Api.Models.Notifications;
+using KeepItSimple.Api.Models.Notifications.Channels;
+using KeepItSimple.Api.Settings;
 
 namespace KeepItSimple.Api.Helpers;
 

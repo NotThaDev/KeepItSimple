@@ -44,10 +44,12 @@ backend/
     backgroundServices/   # every long-running BackgroundService (NotificationDispatcher)
     controllers/          # HTTP only
     dtos/<Domain>/        # request and response types that are not the entity
-    helpers/              # pure logic, queries, importer, DbContext access, service setup
+    helpers/              # pure logic, queries, importer, templates, DbContext access, service setup
     models/               # entities and their static persistence methods
       analytics/          # aggregation types and Analytics static methods
-      notifications/      # Notification outbox entity, NotificationManager, channels
+      notifications/      # Notification outbox entity, NotificationManager
+        channels/         # one INotificationChannel implementation per channel (EmailChannel)
+    settings/             # options classes bound from appsettings (JwtSettings, EmailSettings, ...)
     Migrations/           # EF Core; do not edit migrations that already shipped
     Program.cs
   Tests/KeepItSimple.Api.Tests/
@@ -98,7 +100,9 @@ Entities are active records in `models/`. Properties are the columns. Static met
 
 Analytics lives in `models/analytics/`. `Analytics` is a static class: `Get*Async` loads through the entities, `Build*` is pure and takes the lists plus a `DateTime`. Tests call `Build*`.
 
-Notifications live in `models/notifications/` ([docs/Notifications.md](../../../backend/docs/Notifications.md)). Features call the static `NotificationManager` to queue a message; never send from a controller directly. `NotificationDispatcher` (a `BackgroundService` in `backgroundServices/`) delivers queued rows. Any service that keeps running in the background goes in `backgroundServices/`, never in `helpers/`. A channel implements `INotificationChannel` and is registered as a singleton in `NotificationSetup`.
+Notifications live in `models/notifications/` ([docs/Notifications.md](../../../backend/docs/Notifications.md)). Features call the static `NotificationManager.Enqueue*Async` methods to queue a message; never send from a controller directly. Queued rows go out on the dispatcher's next poll, not immediately. `NotificationDispatcher` (a `BackgroundService` in `backgroundServices/`) delivers queued rows. Any service that keeps running in the background goes in `backgroundServices/`, never in `helpers/`. A channel implements `INotificationChannel` in `models/notifications/channels/` and is registered as a singleton in `NotificationSetup`. Message templates (`EmailTemplates`) are pure helpers in `helpers/`.
+
+Every class bound from configuration (`*Settings`) lives in `settings/` (namespace `KeepItSimple.Api.Settings`), not beside the feature that reads it. Register it in that feature's `*Setup` helper.
 
 ## DTOs and helpers
 

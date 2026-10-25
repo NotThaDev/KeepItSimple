@@ -1,9 +1,11 @@
+using KeepItSimple.Api.Helpers;
+using KeepItSimple.Api.Settings;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
-namespace KeepItSimple.Api.Models.Notifications;
+namespace KeepItSimple.Api.Models.Notifications.Channels;
 
 public class EmailChannel(IOptions<EmailSettings> options) : INotificationChannel
 {

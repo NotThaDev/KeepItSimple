@@ -1,4 +1,4 @@
-namespace KeepItSimple.Api.Models.Notifications;
+namespace KeepItSimple.Api.Settings;
 
 // Secrets come from environment variables (Email__Password, ...) or user-secrets, never from committed files.
 public class EmailSettings

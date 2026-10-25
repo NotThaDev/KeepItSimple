@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace KeepItSimple.Api.Models.Notifications;
+namespace KeepItSimple.Api.Helpers;
 
 public static class EmailTemplates
 {

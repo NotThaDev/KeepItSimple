@@ -5,7 +5,7 @@ Delivery happens in the background, so a slow or failing channel never blocks a 
 
 ```mermaid
 flowchart LR
-  Feature[Feature code] -->|NotificationManager.SendAsync| Table[(Notifications table)]
+  Feature[Feature code] -->|NotificationManager.EnqueueAsync| Table[(Notifications table)]
   Dispatcher[NotificationDispatcher<br/>BackgroundService] -->|polls due rows| Table
   Dispatcher -->|by Channel| Channel[INotificationChannel]
   Channel --> User[User]
@@ -13,8 +13,9 @@ flowchart LR
 
 ## How it works
 
-1. A feature calls `NotificationManager.SendAsync(userId, channel, recipient, subject, body)`.
-   It validates the channel and recipient and stores a `Pending` row in `Notifications` (an outbox). Nothing is sent yet.
+1. A feature calls `NotificationManager.EnqueueAsync(userId, channel, recipient, subject, body)`.
+   It validates the channel and recipient and stores a `Pending` row in `Notifications` (an outbox). Nothing is sent yet:
+   the message goes out on the dispatcher's next poll, so up to `PollIntervalSeconds` later.
 2. `NotificationDispatcher` wakes every `PollIntervalSeconds`, loads up to `BatchSize` pending rows whose `NextAttemptAt` has passed,
    and hands each one to the `INotificationChannel` registered for its `Channel`.
 3. Success marks the row `Sent` and clears its body (bodies can hold live tokens, such as confirmation links).
@@ -46,7 +47,7 @@ Because the queue lives in Postgres, notifications survive an API restart.
 ## Adding a channel
 
 1. Add a value to `NotificationChannelType` (never 0).
-2. Implement `INotificationChannel` in `models/notifications/`. Throw on failure; the dispatcher handles retries.
+2. Implement `INotificationChannel` in `models/notifications/channels/`. Throw on failure; the dispatcher handles retries.
 3. Register it in `NotificationSetup.AddKeepItSimpleNotifications` with `services.AddSingleton<INotificationChannel, YourChannel>()`.
 4. Add a typed method on `NotificationManager` for each message the features send.
 
@@ -70,8 +71,9 @@ Channels are singletons. A channel that needs the database or other scoped servi
 - Development: the API sends to Mailpit (docker compose service `mailpit`, SMTP `localhost:1025`).
   Open the inbox at http://localhost:8025. No real email leaves the machine.
 - Production: set `Email__Host`, `Email__Port`, `Email__UseSsl`, `Email__Username`, `Email__Password` as environment variables. Never commit secrets.
-- Templates live in `EmailTemplates`. Names and links are HTML-encoded.
-- Features call `NotificationManager.SendEmailConfirmationAsync` and `NotificationManager.SendPasswordForgotAsync`.
+- Templates live in `EmailTemplates` (`helpers/`). Names and links are HTML-encoded.
+- Features call `NotificationManager.EnqueueEmailConfirmationAsync` and `NotificationManager.EnqueuePasswordForgotAsync`.
+- Settings classes (`NotificationSettings`, `EmailSettings`) live in `settings/`.
 
 ## Limits
 

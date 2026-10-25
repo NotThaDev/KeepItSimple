@@ -1,11 +1,12 @@
+using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models;
 
 namespace KeepItSimple.Api.Models.Notifications;
 
-// The single entry point features call: it only queues; NotificationDispatcher delivers in the background.
+// The single entry point features call. It only queues: NotificationDispatcher sends on its next poll (Notifications:PollIntervalSeconds).
 public static class NotificationManager
 {
-    public static Task SendAsync(string? userId, NotificationChannelType channel, string recipient, string subject, string body)
+    public static Task EnqueueAsync(string? userId, NotificationChannelType channel, string recipient, string subject, string body)
     {
         if (!Enum.IsDefined(channel))
         {
@@ -27,13 +28,13 @@ public static class NotificationManager
         });
     }
 
-    public static Task SendEmailConfirmationAsync(KeepItSimpleUser user, string confirmationLink) =>
-        SendEmailAsync(user, EmailTemplates.EmailConfirmation, confirmationLink);
+    public static Task EnqueueEmailConfirmationAsync(KeepItSimpleUser user, string confirmationLink) =>
+        EnqueueEmailAsync(user, EmailTemplates.EmailConfirmation, confirmationLink);
 
-    public static Task SendPasswordForgotAsync(KeepItSimpleUser user, string resetLink) =>
-        SendEmailAsync(user, EmailTemplates.PasswordForgot, resetLink);
+    public static Task EnqueuePasswordForgotAsync(KeepItSimpleUser user, string resetLink) =>
+        EnqueueEmailAsync(user, EmailTemplates.PasswordForgot, resetLink);
 
-    private static Task SendEmailAsync(KeepItSimpleUser user, Func<string, string, (string Subject, string Body)> template, string link)
+    private static Task EnqueueEmailAsync(KeepItSimpleUser user, Func<string, string, (string Subject, string Body)> template, string link)
     {
         if (string.IsNullOrWhiteSpace(user.Email))
         {
@@ -41,6 +42,6 @@ public static class NotificationManager
         }
 
         var (subject, body) = template(user.UserName ?? user.Email, link);
-        return SendAsync(user.Id, NotificationChannelType.Email, user.Email, subject, body);
+        return EnqueueAsync(user.Id, NotificationChannelType.Email, user.Email, subject, body);
     }
 }

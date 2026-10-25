@@ -19,8 +19,9 @@ backend/
 │   ├── backgroundServices/   ← long-running background services (NotificationDispatcher)
 │   ├── controllers/          ← HTTP endpoints
 │   ├── dtos/                 ← import + category-rule request / response types
-│   ├── helpers/              ← TransactionImporter, CategoryRuleMatcher, DB access, currency
+│   ├── helpers/              ← TransactionImporter, CategoryRuleMatcher, EmailTemplates, DB access, currency
 │   ├── models/               ← domain entities (Active Record style)
+│   ├── settings/             ← options bound from appsettings (JWT, email, notifications, ...)
 │   ├── Migrations/
 │   └── Program.cs
 └── Tests/

@@ -1,4 +1,4 @@
-namespace KeepItSimple.Api.Models.Notifications;
+namespace KeepItSimple.Api.Settings;
 
 public class NotificationSettings
 {

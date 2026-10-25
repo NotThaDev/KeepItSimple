@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using KeepItSimple.Api.Settings;
 using Microsoft.IdentityModel.Tokens;
 
 namespace KeepItSimple.Api.Models.Auth;

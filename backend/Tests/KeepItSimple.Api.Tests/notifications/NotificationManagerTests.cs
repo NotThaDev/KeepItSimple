@@ -9,11 +9,11 @@ namespace KeepItSimple.Api.Tests.Notifications;
 public class NotificationManagerTests
 {
     [Fact]
-    public async Task SendEmailConfirmationAsync_queues_a_pending_email()
+    public async Task EnqueueEmailConfirmationAsync_queues_a_pending_email()
     {
         var user = new KeepItSimpleUser { Id = TestApp.NewUserId(), UserName = "tha", Email = "tha@example.com" };
 
-        await NotificationManager.SendEmailConfirmationAsync(user, "https://x.test/confirm");
+        await NotificationManager.EnqueueEmailConfirmationAsync(user, "https://x.test/confirm");
 
         var notification = await KeepItSimpleContext.Context.WithDbContextAsync(db =>
             db.Notifications.SingleAsync(n => n.UserId == user.Id));
@@ -24,17 +24,17 @@ public class NotificationManagerTests
     }
 
     [Fact]
-    public async Task SendEmailConfirmationAsync_without_email_throws()
+    public async Task EnqueueEmailConfirmationAsync_without_email_throws()
     {
         var user = new KeepItSimpleUser { Id = TestApp.NewUserId(), UserName = "tha", Email = null };
 
-        await Assert.ThrowsAsync<ArgumentException>(() => NotificationManager.SendEmailConfirmationAsync(user, "https://x.test/confirm"));
+        await Assert.ThrowsAsync<ArgumentException>(() => NotificationManager.EnqueueEmailConfirmationAsync(user, "https://x.test/confirm"));
     }
 
     [Fact]
-    public async Task SendAsync_with_unknown_channel_throws()
+    public async Task EnqueueAsync_with_unknown_channel_throws()
     {
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            NotificationManager.SendAsync(TestApp.NewUserId(), (NotificationChannelType)0, "tha@example.com", "Subject", "Body"));
+            NotificationManager.EnqueueAsync(TestApp.NewUserId(), (NotificationChannelType)0, "tha@example.com", "Subject", "Body"));
     }
 }
