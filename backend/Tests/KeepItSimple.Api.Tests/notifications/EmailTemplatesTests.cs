@@ -29,4 +29,12 @@ public class EmailTemplatesTests
 
         Assert.Contains("https://x.test/reset?t=abc", body);
     }
+
+    [Fact]
+    public void Templates_reference_the_embedded_logo()
+    {
+        // EmailChannel only attaches the logo when the body points at it.
+        Assert.Contains($"cid:{EmailTemplates.LogoContentId}", EmailTemplates.EmailConfirmation("tha", "https://x.test").Body);
+        Assert.Contains($"cid:{EmailTemplates.LogoContentId}", EmailTemplates.PasswordForgot("tha", "https://x.test").Body);
+    }
 }
