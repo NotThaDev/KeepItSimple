@@ -17,6 +17,7 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
     public DbSet<CategoryRule> CategoryRules => Set<CategoryRule>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<ProfilePicture> ProfilePictures => Set<ProfilePicture>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,6 +39,16 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
                 .WithMany()
                 .HasForeignKey(token => token.UserId)
                 .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ProfilePicture>(entity =>
+        {
+            entity.HasKey(picture => picture.UserId);
+            entity.Property(picture => picture.ContentType).HasMaxLength(32).IsRequired();
+            entity.HasOne<KeepItSimpleUser>()
+                .WithOne()
+                .HasForeignKey<ProfilePicture>(picture => picture.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

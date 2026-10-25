@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   SidebarMenu,
@@ -20,14 +20,20 @@ import {
 } from "../ui/dropdown-menu";
 import { CircleUserRound, EllipsisVertical, LogOut } from "lucide-react";
 import { ThemeButton } from "../common/themeSelector/ThemeButton";
+import { profilePictureUrl } from "@/lib/models/Auth";
 import { useUserIdentityContext } from "@/stores/userIdentity";
 
 interface UserMenuContentProps {
   name: string;
   email: string;
+  pictureUrl?: string;
 }
 
-function UserMenuContent({ name, email }: Readonly<UserMenuContentProps>) {
+function UserMenuContent({
+  name,
+  email,
+  pictureUrl,
+}: Readonly<UserMenuContentProps>) {
   const { logout } = useUserIdentityContext();
 
   return (
@@ -36,6 +42,7 @@ function UserMenuContent({ name, email }: Readonly<UserMenuContentProps>) {
         <div className="flex items-center justify-between gap-2 px-1 py-1.5">
           <div className="flex items-center gap-2 text-left text-sm">
             <Avatar className="h-8 w-8 rounded-lg">
+              <AvatarImage src={pictureUrl} alt="" />
               <AvatarFallback className="rounded-lg">
                 {name.charAt(0)}
               </AvatarFallback>
@@ -77,6 +84,7 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
   const { user } = useUserIdentityContext();
   const name = user?.userName ?? "Account";
   const email = user?.email ?? "";
+  const pictureUrl = profilePictureUrl(user);
 
   if (compact) {
     return (
@@ -88,7 +96,8 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
             className="rounded-lg"
             aria-label="Open user menu"
           >
-            <Avatar className="h-8 w-8 rounded-lg grayscale">
+            <Avatar className="h-8 w-8 rounded-lg">
+              <AvatarImage src={pictureUrl} alt="" />
               <AvatarFallback className="rounded-lg">
                 {name.charAt(0)}
               </AvatarFallback>
@@ -101,7 +110,7 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
           align="end"
           sideOffset={4}
         >
-          <UserMenuContent name={name} email={email} />
+          <UserMenuContent name={name} email={email} pictureUrl={pictureUrl} />
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -116,7 +125,8 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg grayscale">
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarImage src={pictureUrl} alt="" />
                 <AvatarFallback className="rounded-lg">
                   {name.charAt(0)}
                 </AvatarFallback>
@@ -133,7 +143,7 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
             align="end"
             sideOffset={4}
           >
-            <UserMenuContent name={name} email={email} />
+            <UserMenuContent name={name} email={email} pictureUrl={pictureUrl} />
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

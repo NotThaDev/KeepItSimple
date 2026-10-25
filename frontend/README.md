@@ -11,7 +11,7 @@ It is a Next.js app. It talks to the API and has these areas:
 | 💸 | Transactions | `/transactions` | Movements, categories, filters, and file import |
 | 🏷️ | Category rules | `/transactions/rules` | Rules that categorize movements imported from a bank account, with preview and apply |
 | 👛 | Pockets | `/pockets` | Accounts, balances, and currencies |
-| 👤 | Account | `/account` | Username and email of the signed-in user; opened from the user menu |
+| 👤 | Account | `/account` | Username, email and profile picture of the signed-in user; opened from the user menu |
 | ✉️ | Confirm email | `/confirm-email` | Confirms the email address from the link sent after registration |
 | 🔑 | Forgot password | `/forgot-password` | Sends a link to reset the password; the reply is the same whether or not the email is registered |
 | 🔑 | Reset password | `/reset-password` | Sets a new password from the emailed link; the link is single-use and works for one day |

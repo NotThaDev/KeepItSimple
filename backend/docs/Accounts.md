@@ -28,7 +28,7 @@ The JWT is read from the `Authorization: Bearer` header when there is one; this 
   - **Rotated earlier** (reuse): 401 and **every active session of that user is revoked**. Only the attacker or the real user can hold the newer token, and the server can't tell which, so both have to log in again.
 - `POST logout`: revokes the cookie's row and clears both cookies. Always 204, even without a cookie.
 - Login and a valid refresh also delete the user's expired rows. Revoked rows stay until they expire: a reused token is only caught while its row exists.
-- `GET me`: the signed-in user (`UserResponse`), read from the JWT's `sub` claim. Returns 401 when that user no longer exists.
+- `GET me`: the signed-in user (`UserResponse`: `id`, `userName`, `email`, `pictureVersion`), read from the JWT's `sub` claim. `pictureVersion` is the ticks of the picture's last update, null without a picture. Returns 401 when that user no longer exists.
 
 ```mermaid
 sequenceDiagram
@@ -47,6 +47,13 @@ sequenceDiagram
   Browser->>API: POST refresh with stolen R1, 10 s later
   API-->>Browser: 401, all sessions of the user revoked
 ```
+
+## Profile picture (`/api/account/picture`)
+
+- `PUT`: multipart form with one `file`. At most 1 MB; the type comes from the file's first bytes (PNG, JPEG or WebP), not from the client's Content-Type. Replaces the previous picture. 400 with `ValidationProblemDetails` (`file`) otherwise.
+- `GET`: the caller's picture, or 404. Cached for a year (`private, immutable`): the UI adds `?v=<pictureVersion>`, so a new upload gets a new URL.
+- `DELETE`: removes it. Always 204.
+- Stored as bytes in `ProfilePictures` (one row per user, deleted with the user). The UI shrinks the image to 256×256 before uploading, so rows stay small.
 
 ## Email confirmation
 

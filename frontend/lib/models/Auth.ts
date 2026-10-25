@@ -4,6 +4,14 @@ export interface User {
   id: string;
   userName?: string;
   email?: string;
+  pictureVersion?: number | null;
+}
+
+// The version in the URL changes on every upload, so the browser can cache each picture for good.
+export function profilePictureUrl(user: User | null): string | undefined {
+  return user?.pictureVersion
+    ? `/api/account/picture?v=${user.pictureVersion}`
+    : undefined;
 }
 
 export interface LoginResponse extends FetchWrapperResponse<void> {
