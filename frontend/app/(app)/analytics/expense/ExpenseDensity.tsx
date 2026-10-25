@@ -77,9 +77,9 @@ export function ExpenseDensity() {
       <TooltipProvider>
         <div className="mt-2 flex min-h-0 flex-1 flex-col items-center justify-center gap-3">
           <div
-            className="grid w-fit gap-1.5"
+            className="grid w-full max-w-fit gap-1.5"
             style={{
-              gridTemplateColumns: `auto repeat(7, ${CELL_WIDTH}px)`,
+              gridTemplateColumns: `auto repeat(7, minmax(0, ${CELL_WIDTH}px))`,
             }}
           >
             <span />
@@ -154,7 +154,7 @@ function WeekRow({
           return (
             <span
               key={`empty-${weekIndex}-${dayIndex}`}
-              style={{ height: `${CELL_HEIGHT}px`, width: `${CELL_WIDTH}px` }}
+              style={{ height: `${CELL_HEIGHT}px` }}
             />
           );
         }
@@ -176,7 +176,7 @@ function WeekRow({
                 style={{
                   ...getHeatStyle(amount, maxAmount, HEAT_STOPS),
                   height: `${CELL_HEIGHT}px`,
-                  width: `${CELL_WIDTH}px`,
+                  width: "100%",
                 }}
                 aria-label={`${format(cellDate, "d MMMM")}: ${formatAmount(amount, currency)}`}
               />

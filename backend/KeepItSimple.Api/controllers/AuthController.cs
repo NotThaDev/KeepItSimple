@@ -103,12 +103,6 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
         return NoContent();
     }
 
-    private async Task SendConfirmationEmail(KeepItSimpleUser user)
-    {
-        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
-        await NotificationManager.EnqueueEmailConfirmationAsync(user, BuildLink("confirm-email", user, token));
-    }
-
     // Always 204, so the response does not reveal whether the email is registered.
     // shortcut: known and unknown emails differ in response time; add constant-time padding if enumeration matters.
     [HttpPost("forgot-password")]
@@ -165,25 +159,6 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
         // Refresh tokens end now; access tokens already issued live until they expire (JwtSettings:ExpiryMinutes).
         await RefreshToken.RevokeAllAsync(user.Id);
         return NoContent();
-    }
-
-    private string BuildLink(string path, KeepItSimpleUser user, string token)
-    {
-        // Identity tokens contain '+' and '/', so they are Base64Url-encoded for the query string.
-        var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-        return $"{frontendOptions.Value.BaseUrl.TrimEnd('/')}/{path}?userId={Uri.EscapeDataString(user.Id)}&token={encoded}";
-    }
-
-    private static string? DecodeToken(string token)
-    {
-        try
-        {
-            return Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
-        }
-        catch (FormatException)
-        {
-            return null;
-        }
     }
 
     [HttpPost("login")]
@@ -315,6 +290,31 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
 
         ClearAuthCookies();
         return NoContent();
+    }
+
+    private async Task SendConfirmationEmail(KeepItSimpleUser user)
+    {
+        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        await NotificationManager.EnqueueEmailConfirmationAsync(user, BuildLink("confirm-email", user, token));
+    }
+
+    private string BuildLink(string path, KeepItSimpleUser user, string token)
+    {
+        // Identity tokens contain '+' and '/', so they are Base64Url-encoded for the query string.
+        var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+        return $"{frontendOptions.Value.BaseUrl.TrimEnd('/')}/{path}?userId={Uri.EscapeDataString(user.Id)}&token={encoded}";
+    }
+
+    private static string? DecodeToken(string token)
+    {
+        try
+        {
+            return Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
     }
 
     private async Task<ActionResult?> CheckPassword(KeepItSimpleUser user, string password)

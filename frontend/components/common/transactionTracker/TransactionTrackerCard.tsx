@@ -79,7 +79,7 @@ export function TransactionTrackerCard({
       icon={Icon}
       className={cn("min-h-[20rem] flex-1 xl:min-h-0", className)}
     >
-      <div className="flex h-full min-h-0 w-full gap-4">
+      <div className="flex h-full min-h-0 w-full justify-center gap-4 sm:justify-start">
         {sortedCategories.length > 0 ? (
           <>
             <TransactionPieChart
@@ -87,7 +87,7 @@ export function TransactionTrackerCard({
               currency={currency}
               label={centerLabel}
             />
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <div className="hidden min-h-0 min-w-0 flex-1 flex-col sm:flex">
               <p className="mb-3 shrink-0 text-sm text-muted-foreground">
                 {listTitle}
               </p>
@@ -141,10 +141,7 @@ export function TransactionTrackerCard({
             </div>
           </>
         ) : (
-          <EmptyWidgetState
-            title={emptyTitle}
-            description={emptyDescription}
-          />
+          <EmptyWidgetState title={emptyTitle} description={emptyDescription} />
         )}
       </div>
     </DashboardCard>
