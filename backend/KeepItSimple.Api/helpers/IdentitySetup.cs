@@ -12,9 +12,15 @@ namespace KeepItSimple.Api.Helpers;
 public static class IdentitySetup
 {
     private const string _passwordSection = "Identity:Password";
+    private const string _frontendSection = "Frontend";
     public static IServiceCollection AddKeepItSimpleIdentity(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<PasswordExpirationSettings>(configuration.GetSection(_passwordSection));
+        // Fails at startup instead of emailing links that point nowhere.
+        services.AddOptions<FrontendSettings>()
+            .Bind(configuration.GetSection(_frontendSection))
+            .Validate(settings => Uri.TryCreate(settings.BaseUrl, UriKind.Absolute, out _), "Frontend:BaseUrl must be an absolute URL.")
+            .ValidateOnStart();
 
         _ = services.AddIdentity<KeepItSimpleUser, IdentityRole>(options =>
             {
@@ -26,7 +32,8 @@ public static class IdentitySetup
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             })
             .AddUserManager<KeepItSimpleUserManager>()
-            .AddEntityFrameworkStores<KeepItSimpleDbContext>();
+            .AddEntityFrameworkStores<KeepItSimpleDbContext>()
+            .AddDefaultTokenProviders();
 
         return services;
     }

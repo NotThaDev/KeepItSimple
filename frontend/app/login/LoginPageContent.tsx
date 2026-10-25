@@ -19,6 +19,7 @@ import {
   register,
   RegisterResponse,
 } from "@/lib/models/Auth";
+import { EmailNotConfirmedNotice } from "./EmailNotConfirmedNotice";
 import { LockoutNotice } from "./LockoutNotice";
 import { PasswordRequirements } from "./PasswordRequirements";
 import { EMAIL_PATTERN, meetsPasswordRules } from "./utils";
@@ -44,6 +45,8 @@ export function LoginPageContent() {
   // Epoch ms when the account lockout ends; null when not locked.
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const clearLockout = useCallback(() => setLockedUntil(null), []);
+  // Set when the password is right but the email is not confirmed yet.
+  const [unconfirmed, setUnconfirmed] = useState(false);
   const isInvalid = (field: FormField) => errors[field] !== undefined;
 
   const clearError = useCallback((field: FormField) => {
@@ -101,6 +104,10 @@ export function LoginPageContent() {
 
     if (response.error) {
       setLoading(false);
+      if (response.emailNotConfirmed) {
+        setUnconfirmed(true);
+        return;
+      }
       if (response.passwordExpired) {
         setExpiredPassword(password);
         setPassword("");
@@ -126,14 +133,15 @@ export function LoginPageContent() {
       return;
     }
 
-    // Registering sets no cookies, so log in right away instead of bouncing back to /login.
+    // The account must confirm its email before it can log in.
     if (isRegister) {
-      const loginResponse = await login(username, password);
-      if (loginResponse.error) {
-        setLoading(false);
-        toast.error(`Failed to log in: ${loginResponse.error}`);
-        return;
-      }
+      setLoading(false);
+      setIsRegister(false);
+      setPassword("");
+      setErrors({});
+      setUnconfirmed(true);
+      toast.success("Account created. Check your inbox to confirm your email.");
+      return;
     }
 
     router.push("/");
@@ -177,6 +185,7 @@ export function LoginPageContent() {
                 clearError("username");
                 // The lockout belongs to the account that was typed.
                 clearLockout();
+                setUnconfirmed(false);
               }}
             />
             <FieldError id="username-error" className={FIELD_ERROR_CLASS}>
@@ -253,6 +262,9 @@ export function LoginPageContent() {
           {lockedUntil !== null && !isRegister && (
             <LockoutNotice until={lockedUntil} onExpire={clearLockout} />
           )}
+          {unconfirmed && !isRegister && (
+            <EmailNotConfirmedNotice username={username} />
+          )}
           <Button
             type="submit"
             className="h-11 bg-indigo-600 text-white hover:bg-indigo-700"
@@ -285,6 +297,7 @@ export function LoginPageContent() {
                 onClick={() => {
                   setIsRegister(!isRegister);
                   setErrors({});
+                  setUnconfirmed(false);
                 }}
               >
                 {isRegister ? "Log in" : "Register now"}
