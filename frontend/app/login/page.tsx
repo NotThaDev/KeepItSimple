@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { BRANDING } from "@/components/sidebar/Branding";
 import { MoneyBackground } from "./MoneyBackground";
 import { LoginPageContent } from "./LoginPageContent";
 import { ShowcasePanel } from "./ShowcasePanel";
+
+export const metadata: Metadata = { title: "Login" };
 
 export default function LoginPage() {
   return (

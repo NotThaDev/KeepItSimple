@@ -3,9 +3,12 @@ import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: { template: "KeepItSimple | %s", default: "KeepItSimple" },
+};
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,

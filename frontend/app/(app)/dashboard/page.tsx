@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
 import { PageWrapper } from "@/components/common/pageContainer/PageWrapper";
 import { getOverview } from "@/lib/models/Analytics";
@@ -6,6 +7,8 @@ import { WalletCards } from "lucide-react";
 import { TransactionTrackerCard } from "@/components/common/transactionTracker/TransactionTrackerCard";
 import { SpendingChartCard } from "./cards/SpendingChartCard";
 import { TotalBalanceCard } from "./cards/TotalBalanceCard";
+
+export const metadata: Metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
   const [pocketsResponse, analyticsResponse] = await Promise.all([
