@@ -1,5 +1,6 @@
-using KeepItSimple.Api.Models;
 using KeepItSimple.Api.Models.Auth;
+using KeepItSimple.Api.Models;
+using KeepItSimple.Api.Settings;
 using Microsoft.AspNetCore.Identity;
 
 namespace KeepItSimple.Api.Helpers;

@@ -1,5 +1,6 @@
 using KeepItSimple.Api.BackgroundServices;
-using KeepItSimple.Api.Models.Notifications;
+using KeepItSimple.Api.Models.Notifications.Channels;
+using KeepItSimple.Api.Settings;
 
 namespace KeepItSimple.Api.Helpers;
 
@@ -10,10 +11,13 @@ namespace KeepItSimple.Api.Helpers;
 public static class NotificationSetup
 {
     private const string _notificationsSection = "Notifications";
+    private const string _emailSection = "Email";
     public static IServiceCollection AddKeepItSimpleNotifications(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<NotificationSettings>(configuration.GetSection(_notificationsSection));
-        // Channels register here as singletons: services.AddSingleton<INotificationChannel, ...>().
+        services.Configure<EmailSettings>(configuration.GetSection(_emailSection));
+        // Channels are singletons; one registration per channel.
+        services.AddSingleton<INotificationChannel, EmailChannel>();
         services.AddHostedService<NotificationDispatcher>();
         return services;
     }

@@ -1,4 +1,6 @@
+using KeepItSimple.Api.Models.Notifications.Channels;
 using KeepItSimple.Api.Models.Notifications;
+using KeepItSimple.Api.Settings;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

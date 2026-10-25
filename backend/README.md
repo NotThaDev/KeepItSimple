@@ -7,7 +7,7 @@ ASP.NET Core Web API (`net10`) that powers KeepItSimple: pockets, transactions, 
 - **ASP.NET Core** + controllers
 - **EF Core** + **PostgreSQL** (Npgsql)
 - **Swagger** in Development
-- **Docker Compose** at repo root for Postgres
+- **Docker Compose** at repo root for Postgres and Mailpit (dev email inbox at http://localhost:8025)
 
 ## Layout
 
@@ -19,8 +19,9 @@ backend/
 │   ├── backgroundServices/   ← long-running background services (NotificationDispatcher)
 │   ├── controllers/          ← HTTP endpoints
 │   ├── dtos/                 ← import + category-rule request / response types
-│   ├── helpers/              ← TransactionImporter, CategoryRuleMatcher, DB access, currency
+│   ├── helpers/              ← TransactionImporter, CategoryRuleMatcher, EmailTemplates, DB access, currency
 │   ├── models/               ← domain entities (Active Record style)
+│   ├── settings/             ← options bound from appsettings (JWT, email, notifications, ...)
 │   ├── Migrations/
 │   └── Program.cs
 └── Tests/

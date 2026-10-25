@@ -1,3 +1,4 @@
+using KeepItSimple.Api.Settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
