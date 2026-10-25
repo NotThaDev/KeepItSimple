@@ -24,6 +24,8 @@ public class EmailChannel(IOptions<EmailSettings> options) : INotificationChanne
         message.Body = new BodyBuilder { HtmlBody = notification.Body }.ToMessageBody();
 
         using var client = new SmtpClient();
+        // Let's Encrypt dropped OCSP, so revocation checks fail on macOS; the chain and host name are still validated.
+        client.CheckCertificateRevocation = false;
         await client.ConnectAsync(settings.Host, settings.Port, settings.UseSsl ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTlsWhenAvailable, cancellationToken);
         if (!string.IsNullOrEmpty(settings.Username))
         {
