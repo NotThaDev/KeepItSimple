@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,9 +52,11 @@ function UserMenuContent({ name, email }: Readonly<UserMenuContentProps>) {
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <DropdownMenuItem>
-          <CircleUserRound />
-          Account
+        <DropdownMenuItem asChild>
+          <Link href="/account">
+            <CircleUserRound />
+            Account
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />

@@ -1,6 +1,7 @@
 import {
   ArrowDownUp,
   ChartNoAxesCombined,
+  CircleUserRound,
   LayoutDashboard,
   List,
   ListFilter,
@@ -56,6 +57,14 @@ export const routes: RouteDefinition[] = [
   },
 ];
 
+// Reached from the user menu, not the sidebar; listed so the mobile header and tab title know it.
+export const accountRoute: RouteDefinition = {
+  label: "Account",
+  title: "Account",
+  href: "/account",
+  icon: CircleUserRound,
+};
+
 function flattenRoutes(items: RouteDefinition[]): RouteDefinition[] {
   return items.flatMap((route) =>
     route.children?.length ? flattenRoutes(route.children) : [route],
@@ -83,7 +92,9 @@ export function isRouteActive(pathname: string, route: RouteDefinition) {
 }
 
 export function getRouteForPath(pathname: string) {
-  const all = flattenRoutes(routes).filter((route) => route.href);
+  const all = [...flattenRoutes(routes), accountRoute].filter(
+    (route) => route.href,
+  );
   const exact = all.find((route) => pathname === route.href);
   if (exact) {
     return exact;
