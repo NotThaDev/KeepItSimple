@@ -2,14 +2,15 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using KeepItSimple.Api.Dtos.Auth;
-using KeepItSimple.Api.Models;
 using KeepItSimple.Api.Models.Auth;
+using KeepItSimple.Api.Models.Notifications;
+using KeepItSimple.Api.Models;
+using KeepItSimple.Api.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
-using KeepItSimple.Api.Models.Notifications;
 
 namespace KeepItSimple.Api.Controllers;
 
@@ -112,7 +113,7 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
         // Identity tokens contain '+' and '/', so they are Base64Url-encoded for the query string.
         var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
         var link = $"{frontendOptions.Value.BaseUrl.TrimEnd('/')}/confirm-email?userId={Uri.EscapeDataString(user.Id)}&token={encoded}";
-        await NotificationManager.SendEmailConfirmationAsync(user, link);
+        await NotificationManager.EnqueueEmailConfirmationAsync(user, link);
     }
 
     [HttpPost("login")]

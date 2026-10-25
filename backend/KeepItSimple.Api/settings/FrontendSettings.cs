@@ -1,4 +1,4 @@
-namespace KeepItSimple.Api.Models.Auth;
+namespace KeepItSimple.Api.Settings;
 
 public class FrontendSettings
 {
