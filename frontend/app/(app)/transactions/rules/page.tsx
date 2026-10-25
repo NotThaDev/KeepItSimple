@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { PageWrapper } from "@/components/common/pageContainer/PageWrapper";
 import { getCategoryRules } from "@/lib/models/CategoryRule";
 import { getPockets } from "@/lib/models/Pocket";
 import { RulesPageContent } from "./RulesPageContent";
+
+export const metadata: Metadata = { title: "Category rules" };
 
 export default async function RulesPage() {
   const [rules, pockets] = await Promise.all([

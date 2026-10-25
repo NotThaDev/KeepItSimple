@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import {
   AnalyticsProvider,
   loadAnalytics,
@@ -7,6 +8,8 @@ import {
 import { PageWrapper } from "@/components/common/pageContainer/PageWrapper";
 import { AnalyticsPageContent } from "./AnalyticsPageContent";
 import { AnalyticsViewSelector } from "./AnalyticsViewSelector";
+
+export const metadata: Metadata = { title: "Analytics" };
 
 export default async function AnalyticsPage({
   searchParams,
