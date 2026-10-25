@@ -276,7 +276,8 @@ public class AuthController(KeepItSimpleUserManager userManager, SignInManager<K
             return Unauthorized();
         }
 
-        return Ok(new UserResponse(user.Id, user.UserName, user.Email));
+        var pictureUpdatedAt = await ProfilePicture.GetUpdatedAtAsync(user.Id);
+        return Ok(new UserResponse(user.Id, user.UserName, user.Email, pictureUpdatedAt?.Ticks));
     }
 
     [HttpPost("logout")]

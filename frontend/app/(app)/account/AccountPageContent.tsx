@@ -1,6 +1,6 @@
 import { EmptyStateCard } from "@/components/common/emptyState/EmptyStateCard";
 import type { User } from "@/lib/models/Auth";
-import { ProfileCard } from "./ProfileCard";
+import { ProfileCard } from "./profile/ProfileCard";
 
 interface AccountPageContentProps {
   user: User | null;
