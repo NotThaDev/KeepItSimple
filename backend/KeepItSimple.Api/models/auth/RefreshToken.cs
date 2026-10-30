@@ -20,6 +20,7 @@ public class RefreshToken
     public string TokenHash { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
+    // Set only by rotation; an ended session (logout, password change, replay) deletes its rows instead.
     public DateTime? RevokedAt { get; set; }
     // Set when the token was rotated. Seeing a rotated token again means it was stolen and replayed.
     public string? ReplacedByHash { get; set; }
@@ -106,7 +107,7 @@ public class RefreshToken
         if (!row.IsInGracePeriod(now) || !successorActive)
         {
             // The session is compromised; the user's other sessions stay.
-            await RevokeSessionAsync(dbContext, row.SessionId, now);
+            await DeleteSessionAsync(dbContext, row.SessionId);
             return null;
         }
 
@@ -125,7 +126,7 @@ public class RefreshToken
                 .Where(t => t.TokenHash == hash)
                 .Select(t => (Guid?)t.SessionId)
                 .SingleOrDefaultAsync();
-            return sessionId == null ? 0 : await RevokeSessionAsync(dbContext, sessionId.Value, DateTime.UtcNow);
+            return sessionId == null ? 0 : await DeleteSessionAsync(dbContext, sessionId.Value);
         });
     }
 
@@ -136,26 +137,22 @@ public class RefreshToken
             .AnyAsync(t => t.SessionId == sessionId && t.RevokedAt == null && t.ExpiresAt > DateTime.UtcNow));
     }
 
-    private static Task<int> RevokeSessionAsync(KeepItSimpleDbContext dbContext, Guid sessionId, DateTime now)
+    // An ended session leaves no rows: a token of it is then unknown and gets a 401, like a revoked one did.
+    private static Task<int> DeleteSessionAsync(KeepItSimpleDbContext dbContext, Guid sessionId)
     {
         return dbContext.RefreshTokens
-            .Where(t => t.SessionId == sessionId && t.RevokedAt == null)
-            .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, now));
+            .Where(t => t.SessionId == sessionId)
+            .ExecuteDeleteAsync();
     }
 
     public static Task<int> RevokeAllAsync(string userId)
     {
-        return KeepItSimpleContext.Context.WithDbContextAsync(dbContext => RevokeAllAsync(dbContext, userId, DateTime.UtcNow));
+        return KeepItSimpleContext.Context.WithDbContextAsync(dbContext => dbContext.RefreshTokens
+            .Where(t => t.UserId == userId)
+            .ExecuteDeleteAsync());
     }
 
-    private static Task<int> RevokeAllAsync(KeepItSimpleDbContext dbContext, string userId, DateTime now)
-    {
-        return dbContext.RefreshTokens
-            .Where(t => t.UserId == userId && t.RevokedAt == null)
-            .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, now));
-    }
-
-    // Only expired rows: revoked ones that are still unexpired must stay, they are how a replayed stolen token gets caught.
+    // Only expired rows: rotated ones that are still unexpired must stay, they are how a replayed stolen token gets caught.
     private static Task<int> DeleteExpiredAsync(KeepItSimpleDbContext dbContext, string userId, DateTime now)
     {
         return dbContext.RefreshTokens
