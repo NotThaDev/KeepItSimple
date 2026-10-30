@@ -22,14 +22,14 @@ The JWT is read from the `Authorization: Bearer` header when there is one; this 
   - 5 wrong passwords lock the account for 15 minutes (`IdentitySetup`). While locked, every attempt, even with the right password, gets **423 Locked** with `LockoutResponse { retryAfterSeconds }`. Seconds rather than an end timestamp, so the client's countdown doesn't depend on its clock. This tells a caller the username exists, but only after 5 failed tries on it; an unknown username stays a plain 401.
 - `POST refresh`: no body; reads `kis_refresh`.
   - **Valid**: in one transaction, the row is revoked and points at its replacement (`ReplacedByHash`), and the new row is inserted. Both cookies are set again.
-  - **Unknown, expired or revoked** (for example after logout): 401, and both cookies are cleared.
+  - **Unknown or expired** (for example after logout, which deletes the rows): 401, and both cookies are cleared.
   - **Rotated less than 10 s ago, and its successor is still active** (grace period): a new row and cookies are issued. Parallel requests that found the same expired token (prefetches, several tabs) don't log the user out.
-  - **Rotated earlier** (reuse): 401 and **that session is revoked** (all rows of its `SessionId`). Only the attacker or the real user can hold the newer token, and the server can't tell which, so both have to log in again. The user's other sessions stay.
-- `POST logout`: revokes the whole session of the cookie's row and clears both cookies. Always 204, even without a cookie.
+  - **Rotated earlier** (reuse): 401 and **that session ends** (all rows of its `SessionId` are deleted). Only the attacker or the real user can hold the newer token, and the server can't tell which, so both have to log in again. The user's other sessions stay.
+- `POST logout`: deletes every row of the cookie's session and clears both cookies. Always 204, even without a cookie.
 - `GET sessions`: the caller's active sessions, newest `lastUsedAt` first: `{ id, userAgent, createdAt, lastUsedAt, current }`.
-- `DELETE sessions/{sessionId}`: ends one of the caller's other sessions. 204; 404 when the caller has no active session with that id; 400 (`sessionId`) for the current session (use `logout`).
-- `DELETE sessions`: ends every session of the caller except the current one. 204.
-- Login and a valid refresh also delete the user's expired rows. Revoked rows stay until they expire: a reused token is only caught while its row exists.
+- `DELETE sessions/{sessionId}`: ends (deletes) one of the caller's other sessions. 204; 404 when the caller has no session with that id; 400 (`sessionId`) for the current session (use `logout`).
+- `DELETE sessions`: ends (deletes) every session of the caller except the current one. 204.
+- Login and a valid refresh also delete the user's expired rows. `RevokedAt` only marks a rotated row; rotated rows stay until they expire, because a reused token is only caught while its row exists. Ending a session (logout, replay, password change or reset, the sessions page) deletes its rows instead, so a token of it is simply unknown.
 - `GET me`: the signed-in user (`UserResponse`: `id`, `userName`, `email`, `pictureVersion`), read from the JWT's `sub` claim. `pictureVersion` is the ticks of the picture's last update, null without a picture. Returns 401 when that user no longer exists.
 
 ```mermaid
@@ -47,7 +47,7 @@ sequenceDiagram
   API-->>Next: 204 + new cookies (R1 replaced by R2)
   Next-->>Browser: page rendered with the new token + Set-Cookie
   Browser->>API: POST refresh with stolen R1, 10 s later
-  API-->>Browser: 401, that session revoked
+  API-->>Browser: 401, that session ended
 ```
 
 ## Sessions
@@ -87,7 +87,7 @@ sequenceDiagram
   - 400 `ValidationProblemDetails` keyed `newPassword` when the password breaks the rules (the token is not used up).
 - On success:
   - restarts the password expiration clock (`PasswordChangedAt`);
-  - revokes every session of the user, so they stop on their next request;
+  - deletes every session of the user, so they stop on their next request;
   - lifts a lockout and confirms the email, since the reset proves the user owns the inbox (saved in the same write as the password);
   - rejects the current password as the new one (400 `newPassword`), checked only after the token is verified so it is no password oracle;
   - does not sign the user in: the user logs in with the new password.
