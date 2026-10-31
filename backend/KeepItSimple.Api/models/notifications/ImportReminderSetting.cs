@@ -105,13 +105,12 @@ public class ImportReminderSetting
         });
     }
 
-    public static Task<List<ImportReminderSetting>> GetDueAsync(DateTime nowUtc, int batchSize)
+    public static Task<List<ImportReminderSetting>> GetDueAsync(DateTime nowUtc)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(dbContext =>
             dbContext.ImportReminderSettings.AsNoTracking()
                 .Where(s => s.Enabled && s.NextRunAt != null && s.NextRunAt <= nowUtc)
                 .OrderBy(s => s.NextRunAt)
-                .Take(batchSize)
                 .ToListAsync());
     }
 
