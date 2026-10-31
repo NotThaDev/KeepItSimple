@@ -30,4 +30,23 @@ public class NotificationController : ControllerBase
         }
         return NoContent();
     }
+
+    [HttpGet("settings/import-reminder")]
+    public async Task<ActionResult<ImportReminderSetting>> GetImportReminder()
+    {
+        return Ok(await ImportReminderSetting.GetAsync(User.GetUserId()) ?? new ImportReminderSetting());
+    }
+
+    [HttpPut("settings/import-reminder")]
+    public async Task<ActionResult<ImportReminderSetting>> SaveImportReminder([FromBody] ImportReminderSetting setting)
+    {
+        try
+        {
+            return Ok(await ImportReminderSetting.UpsertAsync(setting, User.GetUserId()));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }
