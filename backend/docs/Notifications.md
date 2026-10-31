@@ -44,6 +44,7 @@ Because the queue lives in Postgres, notifications survive an API restart.
 | `MaxAttempts` | 5 | Attempts before a row is `Failed` |
 | `RetryBaseSeconds` | 30 | First retry delay; doubles on each attempt |
 | `InAppRetentionDays` | 30 | In-app notifications older than this are deleted, read or not |
+| `ReminderPollSeconds` | 60 | How often `ReminderScheduler` looks for due import reminders |
 
 ## Adding a channel
 
@@ -91,3 +92,15 @@ Channels are singletons. A channel that needs the database or other scoped servi
 - Delivery is at least once: if the channel sends but marking the row `Sent` fails, the row is retried and sent again.
 - The dispatcher assumes a single API instance. With several instances, rows must be claimed with `FOR UPDATE SKIP LOCKED` to avoid double sends.
 - The dispatcher starts with `app.Run()` and relies on `KeepItSimpleContext.InitContext` having run before it.
+
+## Import reminder
+
+A user can ask to be reminded to import transactions, daily, weekly or monthly, at a chosen time in their time zone.
+
+- Settings (one row per user, table `ImportReminderSettings`): `enabled`, `frequency` (`Daily`, `Weekly`, `Monthly`), `dayOfWeek` (weekly only), `dayOfMonth` 1 to 28 (monthly only), `timeOfDay`, `timeZone` (IANA id), `sendEmail`, `message` (max 500 characters; empty uses the default text).
+- Endpoints: `GET /api/notifications/settings/import-reminder` (returns defaults when none is saved) and `PUT /api/notifications/settings/import-reminder` (400 with the reason when invalid).
+- `ReminderSchedule.NextRunUtc` computes the next run strictly after a given instant. A time that does not exist on DST day (clocks jump forward) runs one hour later. An ambiguous time (clocks go back) uses the standard offset.
+- `ReminderScheduler` (a `BackgroundService`) polls every `ReminderPollSeconds`, loads due settings and queues the reminder: always an in-app notification, plus an email when `sendEmail` is on and the email is confirmed. The email links to `<Frontend:BaseUrl>/transactions`.
+- `NextRunAt` is advanced before the reminder is queued, so delivery is at most once: a crash in between skips one reminder instead of sending it twice.
+- If the API was down across several runs, the user gets one reminder for the catch-up, then the next regular run.
+

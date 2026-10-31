@@ -37,6 +37,18 @@ public static class NotificationManager
     public static Task EnqueuePasswordForgotAsync(KeepItSimpleUser user, string resetLink) =>
         EnqueueEmailAsync(user, EmailTemplates.PasswordForgot, resetLink);
 
+    public static async Task EnqueueImportReminderAsync(KeepItSimpleUser user, ImportReminderSetting setting, string link)
+    {
+        await EnqueueInAppAsync(user.Id, EmailTemplates.ImportReminderTitle, setting.Message ?? EmailTemplates.DefaultReminderBody);
+        if (!setting.SendEmail || !user.EmailConfirmed || string.IsNullOrWhiteSpace(user.Email))
+        {
+            return;
+        }
+
+        var (subject, body) = EmailTemplates.ImportReminder(user.UserName ?? user.Email, setting.Message, link);
+        await EnqueueAsync(user.Id, NotificationChannelType.Email, user.Email, subject, body);
+    }
+
     private static Task EnqueueEmailAsync(KeepItSimpleUser user, Func<string, string, (string Subject, string Body)> template, string link)
     {
         if (string.IsNullOrWhiteSpace(user.Email))
