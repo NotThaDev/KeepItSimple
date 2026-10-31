@@ -1,5 +1,6 @@
 using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Models;
+using KeepItSimple.Api.Models.Notifications;
 using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Tests.Support;
 using static KeepItSimple.Api.Helpers.TransactionImporter;
@@ -138,6 +139,19 @@ public class OwnershipTests
         };
 
         Assert.Throws<KeyNotFoundException>(() => TransactionImporter.Preview(request, stranger));
+    }
+
+    [Fact]
+    public async Task InAppNotification_other_user_cannot_list_or_mark_read()
+    {
+        var owner = TestApp.NewUserId();
+        var stranger = TestApp.NewUserId();
+        await InAppNotification.CreateAsync(owner, "private", "body");
+        var id = (await InAppNotification.ListAsync(false, owner)).Single().Id;
+
+        Assert.Empty(await InAppNotification.ListAsync(false, stranger));
+        Assert.False(await InAppNotification.MarkReadAsync(id, stranger));
+        Assert.Single(await InAppNotification.ListAsync(false, owner));
     }
 
     private static CategoryRule NewRule(string name) => new()
