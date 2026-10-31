@@ -1,10 +1,7 @@
 using KeepItSimple.Api.Helpers;
-using KeepItSimple.Api.Models;
 using KeepItSimple.Api.Models.Notifications;
 using KeepItSimple.Api.Settings;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace KeepItSimple.Api.BackgroundServices;
@@ -41,20 +38,17 @@ public class ReminderScheduler(IOptions<NotificationSettings> options, IOptions<
     private async Task RunDueAsync(CancellationToken ct)
     {
         var now = DateTime.UtcNow;
-        while (true)
-        {
-            var due = await ImportReminderSetting.GetDueAsync(now, _settings.BatchSize);
-            if (due.Count == 0)
-            {
-                break;
-            }
 
-            var ids = due.Select(s => s.UserId).ToList();
+        // shortcut: loads every due row at once, fine while due reminders per tick stay in the thousands; page by Id if that grows.
+        var due = await ImportReminderSetting.GetDueAsync(now);
+        foreach (var batch in due.Chunk(_settings.BatchSize))
+        {
+            var ids = batch.Select(s => s.UserId).ToList();
             var users = await KeepItSimpleContext.Context.WithDbContextAsync(db =>
                 db.Users.AsNoTracking().Where(u => ids.Contains(u.Id)).ToListAsync());
             var byId = users.ToDictionary(u => u.Id);
 
-            foreach (var setting in due)
+            foreach (var setting in batch)
             {
                 if (!byId.TryGetValue(setting.UserId, out var user))
                 {
@@ -67,6 +61,7 @@ public class ReminderScheduler(IOptions<NotificationSettings> options, IOptions<
                 {
                     nextRun = ReminderSchedule.NextRunUtc(setting, now);
                 }
+
                 // A time zone the host no longer knows would stay due forever and block every row behind it.
                 catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException or InvalidOperationException)
                 {
