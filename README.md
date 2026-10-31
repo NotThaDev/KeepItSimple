@@ -42,6 +42,7 @@ The goal is a single app you can update in seconds and read at a glance: where s
 | 🏷️ | **Category rules** | After an import, rules set the category from the description, amount, pocket, or current category, so the same shop or transfer does not have to be labeled by hand each time. You can reorder them, preview the matches, and apply them to a date range. |
 | 👛 | **Pockets** | The accounts the money sits in, each with its own balance and currency. |
 | 👤 | **Account** | Your username, email and profile picture, and the devices you are logged in on (log any of them out). Opened from the user menu. |
+| 🔔 | **Notifications** | In-app alerts from the user menu: an unread count on your avatar, a drawer split into *To read* and *Read*, and a toast when a new one arrives. Import reminders show up here too. |
 
 ## Tech Stack
 
