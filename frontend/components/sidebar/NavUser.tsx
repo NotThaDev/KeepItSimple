@@ -62,6 +62,7 @@ function UserMenuContent({
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
+        {/* The menus are non-modal: a modal menu leaves body pointer-events: none behind when this opens the drawer. */}
         <DropdownMenuItem onSelect={open}>
           <Bell />
           Notifications
@@ -102,7 +103,7 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
 
   if (compact) {
     return (
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
@@ -136,7 +137,7 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
