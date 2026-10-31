@@ -18,10 +18,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { CircleUserRound, EllipsisVertical, LogOut } from "lucide-react";
+import { Bell, CircleUserRound, EllipsisVertical, LogOut } from "lucide-react";
+import { UnreadBadge } from "../notifications/UnreadBadge";
 import { ThemeButton } from "../common/themeSelector/ThemeButton";
 import { profilePictureUrl } from "@/lib/models/Auth";
 import { useUserIdentityContext } from "@/stores/userIdentity";
+import { useNotificationsContext } from "@/stores/notifications";
 
 interface UserMenuContentProps {
   name: string;
@@ -35,6 +37,7 @@ function UserMenuContent({
   pictureUrl,
 }: Readonly<UserMenuContentProps>) {
   const { logout } = useUserIdentityContext();
+  const { unreadCount, open } = useNotificationsContext();
 
   return (
     <>
@@ -59,6 +62,15 @@ function UserMenuContent({
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
+        {/* The menus are non-modal: a modal menu leaves body pointer-events: none behind when this opens the drawer. */}
+        <DropdownMenuItem onSelect={open}>
+          <Bell />
+          Notifications
+          <UnreadBadge count={unreadCount} variant="menu" className="ml-auto" />
+          {unreadCount > 0 && (
+            <span className="sr-only">({unreadCount} unread)</span>
+          )}
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/account">
             <CircleUserRound />
@@ -85,23 +97,29 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
   const name = user?.userName ?? "Account";
   const email = user?.email ?? "";
   const pictureUrl = profilePictureUrl(user);
+  const { unreadCount } = useNotificationsContext();
+  const unreadLabel =
+    unreadCount > 0 ? `, ${unreadCount} unread notifications` : "";
 
   if (compact) {
     return (
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="icon-lg"
             className="rounded-lg"
-            aria-label="Open user menu"
+            aria-label={`Open user menu${unreadLabel}`}
           >
-            <Avatar className="h-8 w-8 rounded-lg">
-              <AvatarImage src={pictureUrl} alt="" />
-              <AvatarFallback className="rounded-lg">
-                {name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            <span className="relative">
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarImage src={pictureUrl} alt="" />
+                <AvatarFallback className="rounded-lg">
+                  {name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <UnreadBadge count={unreadCount} variant="avatar" />
+            </span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -119,18 +137,22 @@ export function NavUser({ compact = false }: Readonly<NavUserProps>) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              aria-label={`Open user menu${unreadLabel}`}
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={pictureUrl} alt="" />
-                <AvatarFallback className="rounded-lg">
-                  {name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
+              <span className="relative">
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarImage src={pictureUrl} alt="" />
+                  <AvatarFallback className="rounded-lg">
+                    {name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <UnreadBadge count={unreadCount} variant="avatar" />
+              </span>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{name}</span>
               </div>
