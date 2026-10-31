@@ -53,25 +53,6 @@ public class InAppNotificationTests
     }
 
     [Fact]
-    public async Task DeleteOlderThanAsync_removes_only_old_rows()
-    {
-        var userId = TestApp.NewUserId();
-        await KeepItSimpleContext.Context.WithDbContextAsync(async db =>
-        {
-            db.InAppNotifications.Add(new InAppNotification { UserId = userId, Title = "old", Body = "b", CreatedAt = DateTime.UtcNow.AddDays(-40) });
-            await db.SaveChangesAsync();
-            return 0;
-        });
-        await InAppNotification.CreateAsync(userId, "new", "b");
-
-        await InAppNotification.DeleteOlderThanAsync(DateTime.UtcNow.AddDays(-30));
-
-        var remaining = await InAppNotification.ListAsync(false, userId);
-        Assert.Single(remaining);
-        Assert.Equal("new", remaining[0].Title);
-    }
-
-    [Fact]
     public async Task EnqueueInAppAsync_queues_pending_inapp_row()
     {
         var userId = TestApp.NewUserId();

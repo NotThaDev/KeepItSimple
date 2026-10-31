@@ -79,27 +79,11 @@ public class InAppNotification
         });
     }
 
-    // Not ExecuteDeleteAsync: the in-memory test provider does not support it.
     public static Task<int> DeleteOlderThanAsync(DateTime cutoff)
     {
-        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
-        {
-            var total = 0;
-            while (true)
-            {
-                var batch = await dbContext.InAppNotifications.Where(n => n.CreatedAt < cutoff).Take(500).ToListAsync();
-                if (batch.Count == 0)
-                {
-                    break;
-                }
-
-                dbContext.InAppNotifications.RemoveRange(batch);
-                await dbContext.SaveChangesAsync();
-                total += batch.Count;
-            }
-
-            return total;
-        });
+        return KeepItSimpleContext.Context.WithDbContextAsync(dbContext => dbContext.InAppNotifications
+            .Where(n => n.CreatedAt < cutoff)
+            .ExecuteDeleteAsync());
     }
 
     private static string Truncate(string value, int maxLength) => value.Length > maxLength ? value[..maxLength] : value;
