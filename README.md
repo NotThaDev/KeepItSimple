@@ -41,6 +41,7 @@ The goal is a single app you can update in seconds and read at a glance: where s
 | 💸 | **Transactions** | Income and expenses, with categories and filters. Bank exports (Excel or CSV) can be imported instead of typed in by hand. Transfers between pockets count as movements, so they stay out of spending. |
 | 🏷️ | **Category rules** | After an import, rules set the category from the description, amount, pocket, or current category, so the same shop or transfer does not have to be labeled by hand each time. You can reorder them, preview the matches, and apply them to a date range. |
 | 👛 | **Pockets** | The accounts the money sits in, each with its own balance and currency. |
+| 👤 | **Account** | Your username, email and profile picture, and the devices you are logged in on (log any of them out). Opened from the user menu. |
 
 ## Tech Stack
 

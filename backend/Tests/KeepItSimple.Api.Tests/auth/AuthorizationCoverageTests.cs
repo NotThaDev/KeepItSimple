@@ -15,6 +15,10 @@ public class AuthorizationCoverageTests
         "AuthController.ChangePassword",
         "AuthController.Refresh",
         "AuthController.Logout",
+        "AuthController.ConfirmEmail",
+        "AuthController.ResendConfirmation",
+        "AuthController.ForgotPassword",
+        "AuthController.ResetPassword",
     ];
 
     [Fact]

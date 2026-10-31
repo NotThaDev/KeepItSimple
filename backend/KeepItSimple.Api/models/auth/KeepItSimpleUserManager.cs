@@ -1,3 +1,4 @@
+using KeepItSimple.Api.Settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
@@ -19,15 +20,21 @@ public class KeepItSimpleUserManager(
     public bool IsPasswordExpired(KeepItSimpleUser user) =>
         user.IsPasswordExpired(expirationSettings.Value.ExpirationDays, DateTime.UtcNow);
 
-    // Set before base, so the password and its date are saved in one write.
-    public override async Task<IdentityResult> ChangePasswordAsync(KeepItSimpleUser user, string currentPassword, string newPassword)
+    public override Task<IdentityResult> ChangePasswordAsync(KeepItSimpleUser user, string currentPassword, string newPassword) =>
+        RestartingExpirationClock(user, () => base.ChangePasswordAsync(user, currentPassword, newPassword));
+
+    public override Task<IdentityResult> ResetPasswordAsync(KeepItSimpleUser user, string token, string newPassword) =>
+        RestartingExpirationClock(user, () => base.ResetPasswordAsync(user, token, newPassword));
+
+    // Set before the update, so the password and its date are saved in one write.
+    private static async Task<IdentityResult> RestartingExpirationClock(KeepItSimpleUser user, Func<Task<IdentityResult>> update)
     {
         var previous = user.PasswordChangedAt;
         user.PasswordChangedAt = DateTime.UtcNow;
         var succeeded = false;
         try
         {
-            var result = await base.ChangePasswordAsync(user, currentPassword, newPassword);
+            var result = await update();
             succeeded = result.Succeeded;
             return result;
         }

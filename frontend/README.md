@@ -11,6 +11,10 @@ It is a Next.js app. It talks to the API and has these areas:
 | 💸 | Transactions | `/transactions` | Movements, categories, filters, and file import |
 | 🏷️ | Category rules | `/transactions/rules` | Rules that categorize movements imported from a bank account, with preview and apply |
 | 👛 | Pockets | `/pockets` | Accounts, balances, and currencies |
+| 👤 | Account | `/account` | Username, email, profile picture and active sessions of the signed-in user; opened from the user menu |
+| ✉️ | Confirm email | `/confirm-email` | Confirms the email address from the link sent after registration |
+| 🔑 | Forgot password | `/forgot-password` | Sends a link to reset the password; the reply is the same whether or not the email is registered |
+| 🔑 | Reset password | `/reset-password` | Sets a new password from the emailed link; the link is single-use and works for one day |
 
 Home (`/`) redirects to the dashboard.
 
@@ -22,6 +26,11 @@ This file is the overview. Notes for a complex screen live in `docs/`.
 - **Tailwind CSS** and **shadcn/ui**
 - **Recharts** for the charts
 - **TanStack Table** for the lists
+
+## Conventions
+
+- Inside a component, write handlers as arrow functions: `const onSave = async () => { ... };`, not `async function onSave() { ... }`.
+- Use `useCallback` only when something compares the function between renders: a `useEffect`/`useMemo` dependency array, a prop of a `React.memo` child, or a context value. Everywhere else it adds code and a deps array to keep right, and saves nothing: the function is still created on every render, and a plain child re-renders with its parent anyway.
 
 ## Run
 

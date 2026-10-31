@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
@@ -19,6 +20,7 @@ import {
   register,
   RegisterResponse,
 } from "@/lib/models/Auth";
+import { EmailNotConfirmedNotice } from "./EmailNotConfirmedNotice";
 import { LockoutNotice } from "./LockoutNotice";
 import { PasswordRequirements } from "./PasswordRequirements";
 import { EMAIL_PATTERN, meetsPasswordRules } from "./utils";
@@ -44,6 +46,8 @@ export function LoginPageContent() {
   // Epoch ms when the account lockout ends; null when not locked.
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const clearLockout = useCallback(() => setLockedUntil(null), []);
+  // Set when the password is right but the email is not confirmed yet.
+  const [unconfirmed, setUnconfirmed] = useState(false);
   const isInvalid = (field: FormField) => errors[field] !== undefined;
 
   const clearError = useCallback((field: FormField) => {
@@ -57,7 +61,6 @@ export function LoginPageContent() {
       if (!email.trim()) found.email = "Email is required.";
       else if (!EMAIL_PATTERN.test(email))
         found.email = "Enter a valid email address.";
-
     }
     if (isRegister || isExpired) {
       if (!meetsPasswordRules(password)) found.password = "";
@@ -101,6 +104,10 @@ export function LoginPageContent() {
 
     if (response.error) {
       setLoading(false);
+      if (response.emailNotConfirmed) {
+        setUnconfirmed(true);
+        return;
+      }
       if (response.passwordExpired) {
         setExpiredPassword(password);
         setPassword("");
@@ -126,14 +133,15 @@ export function LoginPageContent() {
       return;
     }
 
-    // Registering sets no cookies, so log in right away instead of bouncing back to /login.
+    // The account must confirm its email before it can log in.
     if (isRegister) {
-      const loginResponse = await login(username, password);
-      if (loginResponse.error) {
-        setLoading(false);
-        toast.error(`Failed to log in: ${loginResponse.error}`);
-        return;
-      }
+      setLoading(false);
+      setIsRegister(false);
+      setPassword("");
+      setErrors({});
+      setUnconfirmed(true);
+      toast.success("Account created. Check your inbox to confirm your email.");
+      return;
     }
 
     router.push("/");
@@ -177,6 +185,7 @@ export function LoginPageContent() {
                 clearError("username");
                 // The lockout belongs to the account that was typed.
                 clearLockout();
+                setUnconfirmed(false);
               }}
             />
             <FieldError id="username-error" className={FIELD_ERROR_CLASS}>
@@ -206,9 +215,11 @@ export function LoginPageContent() {
             </Field>
           )}
           <Field className="relative" data-invalid={isInvalid("password")}>
-            <FieldLabel htmlFor="password">
-              {isExpired ? "New password" : "Password"}
-            </FieldLabel>
+            <div className="flex items-center justify-between gap-2">
+              <FieldLabel htmlFor="password">
+                {isExpired ? "New password" : "Password"}
+              </FieldLabel>
+            </div>
             <div className="relative">
               <Input
                 id="password"
@@ -249,9 +260,22 @@ export function LoginPageContent() {
             <FieldError id="password-error" className={FIELD_ERROR_CLASS}>
               {errors.password}
             </FieldError>
+            {!isRegister && !isExpired && (
+              <div className="text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-indigo-600 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            )}
           </Field>
           {lockedUntil !== null && !isRegister && (
             <LockoutNotice until={lockedUntil} onExpire={clearLockout} />
+          )}
+          {unconfirmed && !isRegister && (
+            <EmailNotConfirmedNotice username={username} />
           )}
           <Button
             type="submit"
@@ -285,6 +309,7 @@ export function LoginPageContent() {
                 onClick={() => {
                   setIsRegister(!isRegister);
                   setErrors({});
+                  setUnconfirmed(false);
                 }}
               >
                 {isRegister ? "Log in" : "Register now"}

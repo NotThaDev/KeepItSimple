@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { PageWrapper } from "@/components/common/pageContainer/PageWrapper";
 import {
   getTransactions,
@@ -5,6 +6,8 @@ import {
 } from "@/lib/models/Transaction";
 import { TransactionPageContent } from "./TransactionPageContent";
 import { getPockets } from "@/lib/models/Pocket";
+
+export const metadata: Metadata = { title: "Transactions" };
 
 export default async function TransactionsPage({
   searchParams,

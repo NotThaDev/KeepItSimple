@@ -4,6 +4,14 @@ export interface User {
   id: string;
   userName?: string;
   email?: string;
+  pictureVersion?: number | null;
+}
+
+// The version in the URL changes on every upload, so the browser can cache each picture for good.
+export function profilePictureUrl(user: User | null): string | undefined {
+  return user?.pictureVersion
+    ? `/api/account/picture?v=${user.pictureVersion}`
+    : undefined;
 }
 
 export interface LoginResponse extends FetchWrapperResponse<void> {
@@ -11,6 +19,8 @@ export interface LoginResponse extends FetchWrapperResponse<void> {
   retryAfterSeconds?: number;
   // Set when the password is too old; the login form then asks for a new one.
   passwordExpired?: boolean;
+  // Set when the password is right but the email address is not confirmed yet.
+  emailNotConfirmed?: boolean;
 }
 
 // Login and refresh only set the HttpOnly auth cookies; there is no body. Logout is a Server Function (lib/actions/auth.ts).
@@ -29,8 +39,11 @@ export async function login(
       { retryAfterSeconds?: number } | undefined;
     return { ...response, retryAfterSeconds: lockout?.retryAfterSeconds ?? 0 };
   }
-  // 403 Forbidden: right password, but it has expired.
+  // 403 Forbidden: right password, but the email is not confirmed, or the password has expired.
   if (response.status === 403) {
+    if ((response.errorData as { code?: string } | undefined)?.code === "email_not_confirmed") {
+      return { ...response, emailNotConfirmed: true };
+    }
     return { ...response, passwordExpired: true };
   }
   return response;
@@ -98,4 +111,49 @@ export async function refreshToken(): Promise<FetchWrapperResponse<void>> {
 
 export async function getMe(): Promise<FetchWrapperResponse<User>> {
   return await get<User>("/api/auth/me");
+}
+
+export async function confirmEmail(
+  userId: string,
+  token: string,
+): Promise<FetchWrapperResponse<void>> {
+  return await post<void>("/api/auth/confirm-email", { userId, token }, false);
+}
+
+// Always succeeds, so it does not reveal whether the account exists.
+export async function resendConfirmation(
+  username: string,
+): Promise<FetchWrapperResponse<void>> {
+  return await post<void>("/api/auth/resend-confirmation", { username }, false);
+}
+
+// Always succeeds, so it does not reveal whether the email is registered.
+export async function forgotPassword(
+  email: string,
+): Promise<FetchWrapperResponse<void>> {
+  return await post<void>("/api/auth/forgot-password", { email }, false);
+}
+
+export interface ResetPasswordResponse extends FetchWrapperResponse<void> {
+  // 400 ValidationProblemDetails: why the new password was rejected.
+  newPasswordErrors?: string[];
+}
+
+// A bad or used link answers 400 with a plain text body, so newPasswordErrors stays undefined.
+export async function resetPassword(
+  userId: string,
+  token: string,
+  newPassword: string,
+): Promise<ResetPasswordResponse> {
+  const response = await post<void>(
+    "/api/auth/reset-password",
+    { userId, token, newPassword },
+    false,
+  );
+  if (response.status === 400) {
+    const problem = response.errorData as
+      { errors?: { newPassword?: string[] } } | undefined;
+    return { ...response, newPasswordErrors: problem?.errors?.newPassword };
+  }
+  return response;
 }

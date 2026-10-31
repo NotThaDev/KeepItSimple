@@ -7,7 +7,7 @@ ASP.NET Core Web API (`net10`) that powers KeepItSimple: pockets, transactions, 
 - **ASP.NET Core** + controllers
 - **EF Core** + **PostgreSQL** (Npgsql)
 - **Swagger** in Development
-- **Docker Compose** at repo root for Postgres
+- **Docker Compose** at repo root for Postgres and Mailpit (dev email inbox at http://localhost:8025)
 
 ## Layout
 
@@ -19,8 +19,9 @@ backend/
 │   ├── backgroundServices/   ← long-running background services (NotificationDispatcher)
 │   ├── controllers/          ← HTTP endpoints
 │   ├── dtos/                 ← import + category-rule request / response types
-│   ├── helpers/              ← TransactionImporter, CategoryRuleMatcher, DB access, currency
+│   ├── helpers/              ← TransactionImporter, CategoryRuleMatcher, EmailTemplates, DB access, currency
 │   ├── models/               ← domain entities (Active Record style)
+│   ├── settings/             ← options bound from appsettings (JWT, email, notifications, ...)
 │   ├── Migrations/
 │   └── Program.cs
 └── Tests/
@@ -35,7 +36,8 @@ backend/
 | Transactions | `/api/transactions` | CRUD, filter by pocket, and file import |
 | Category rules | `/api/category-rules` | User-defined categorization (groups = parentheses) |
 | Analytics | `/api/analytics` | Aggregations over transactions |
-| Auth | `/api/auth` | Register, login, refresh, logout ([Accounts.md](./docs/Accounts.md)) |
+| Auth | `/api/auth` | Register with email confirmation, confirm email, login, refresh, logout, sessions list, password reset by email ([Accounts.md](./docs/Accounts.md)) |
+| Account | `/api/account` | Profile picture of the signed-in user ([Accounts.md](./docs/Accounts.md#profile-picture-apiaccountpicture)) |
 | Notifications | — | Background delivery of user notifications ([Notifications.md](./docs/Notifications.md)) |
 
 Pockets and category rules belong to a user, and transactions belong to them through their pocket. Every endpoint only sees the caller's data ([Accounts.md](./docs/Accounts.md#who-owns-what)).

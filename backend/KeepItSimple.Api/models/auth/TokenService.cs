@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using KeepItSimple.Api.Settings;
 using Microsoft.IdentityModel.Tokens;
 
 namespace KeepItSimple.Api.Models.Auth;
@@ -28,7 +29,7 @@ public class TokenService(JwtSettings settings)
         MaxAge = maxAge,
     };
 
-    public (string Token, DateTime ExpiresAt) CreateToken(KeepItSimpleUser user, IEnumerable<string> roles)
+    public (string Token, DateTime ExpiresAt) CreateToken(KeepItSimpleUser user, IEnumerable<string> roles, Guid sessionId)
     {
         var expiresAt = DateTime.UtcNow.AddMinutes(_settings.ExpiryMinutes);
 
@@ -38,7 +39,8 @@ public class TokenService(JwtSettings settings)
             new(JwtRegisteredClaimNames.Sub, user.Id),
             new(JwtRegisteredClaimNames.Email, user.Email!),
             new(JwtRegisteredClaimNames.Name, user.UserName!),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtRegisteredClaimNames.Sid, sessionId.ToString())
         };
 
         // Add role claims
