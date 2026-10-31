@@ -114,3 +114,23 @@ search.
 Write reviews, review reports, PR/issue comments, PR descriptions and commit
 messages in English, even if the user writes to you in another language. Use
 another language only when the user explicitly asks for it.
+
+## 6. Verification runs in a subagent, not in the main session
+
+The main session (Opus) re-reads its whole context on every call, so each
+tool call it makes gets more expensive as the session grows. Keep test, build
+and browser work out of it:
+
+- After implementing, spawn **one** verify subagent (`model: "haiku"`;
+  `"sonnet"` if the check needs judgment, e.g. a multi-page UI flow). Give it:
+  the commands for tests and build, the pages/flows to check in the browser,
+  what "pass" looks like, and screenshots to save to the scratchpad if the PR
+  needs them.
+- It returns a short report: pass/fail per check, the first error line for
+  each failure, and screenshot paths. No logs, no page dumps.
+- The main session reads only that report. To fix a failure, send the fix to
+  an implement subagent and re-run the verify subagent.
+- The main session runs Bash or browser tools itself only for one quick check
+  (a single command or page read), never for a full test/browser pass.
+- Browser checks: `read_page`/`find`/`get_page_text` first, `browser_batch`
+  for multi-step flows, screenshots at `scale` ≤ 0.5 unless they go into a PR.
