@@ -41,7 +41,7 @@ backend/
   README.md                 # overview of the API, domains, and how to run it
   docs/                     # feature notes
   KeepItSimple.Api/
-    backgroundServices/   # every long-running BackgroundService (NotificationDispatcher)
+    backgroundServices/   # every long-running BackgroundService (NotificationDispatcher, ReminderScheduler)
     controllers/          # HTTP only
     dtos/<Domain>/        # request and response types that are not the entity
     helpers/              # pure logic, queries, importer, templates, DbContext access, service setup
