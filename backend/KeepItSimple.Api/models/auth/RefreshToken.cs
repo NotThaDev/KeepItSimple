@@ -17,6 +17,9 @@ public class RefreshToken
     public string UserId { get; set; } = string.Empty;
     // Shared by every row of one login, across rotations: logout and replay end the session by this id.
     public Guid SessionId { get; set; }
+    // Copied on rotation like SessionId, so the sessions list shows the device and login time of the whole session.
+    public string? UserAgent { get; set; }
+    public DateTime SessionCreatedAt { get; set; }
     public string TokenHash { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
@@ -34,13 +37,13 @@ public class RefreshToken
 
     public static string Hash(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 
-    public static Task<(string Token, DateTime ExpiresAt, Guid SessionId)> CreateAsync(string userId, TimeSpan lifetime)
+    public static Task<(string Token, DateTime ExpiresAt, Guid SessionId)> CreateAsync(string userId, TimeSpan lifetime, string? userAgent)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
             var now = DateTime.UtcNow;
             await DeleteExpiredAsync(dbContext, userId, now);
-            var (token, row) = NewRow(userId, Guid.NewGuid(), lifetime, now);
+            var (token, row) = NewRow(userId, Guid.NewGuid(), lifetime, now, userAgent?.Length > 512 ? userAgent[..512] : userAgent, now);
             dbContext.RefreshTokens.Add(row);
             await dbContext.SaveChangesAsync();
             return (token, row.ExpiresAt, row.SessionId);
@@ -73,7 +76,7 @@ public class RefreshToken
                 return null;
             }
 
-            var (newToken, newRow) = NewRow(row.UserId, row.SessionId, lifetime, now);
+            var (newToken, newRow) = NewRow(row.UserId, row.SessionId, lifetime, now, row.UserAgent, row.SessionCreatedAt);
             // One transaction: a parallel refresh blocks on the row lock and then sees both the revoke and the new row.
             await using var transaction = await dbContext.Database.BeginTransactionAsync();
             var claimed = await dbContext.RefreshTokens
@@ -111,7 +114,7 @@ public class RefreshToken
             return null;
         }
 
-        var (token, newRow) = NewRow(row.UserId, row.SessionId, lifetime, now);
+        var (token, newRow) = NewRow(row.UserId, row.SessionId, lifetime, now, row.UserAgent, row.SessionCreatedAt);
         dbContext.RefreshTokens.Add(newRow);
         await dbContext.SaveChangesAsync();
         return (row.UserId, token, newRow.ExpiresAt, row.SessionId);
@@ -145,6 +148,29 @@ public class RefreshToken
             .ExecuteDeleteAsync();
     }
 
+    public static Task<List<RefreshToken>> GetActiveAsync(string userId)
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(dbContext => dbContext.RefreshTokens
+            .AsNoTracking()
+            .Where(t => t.UserId == userId && t.RevokedAt == null && t.ExpiresAt > DateTime.UtcNow)
+            .ToListAsync());
+    }
+
+    // Always filtered by user, so nobody can end another user's session.
+    public static Task<int> RevokeSessionAsync(string userId, Guid sessionId)
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(dbContext => dbContext.RefreshTokens
+            .Where(t => t.UserId == userId && t.SessionId == sessionId)
+            .ExecuteDeleteAsync());
+    }
+
+    public static Task<int> RevokeOtherSessionsAsync(string userId, Guid currentSessionId)
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(dbContext => dbContext.RefreshTokens
+            .Where(t => t.UserId == userId && t.SessionId != currentSessionId)
+            .ExecuteDeleteAsync());
+    }
+
     public static Task<int> RevokeAllAsync(string userId)
     {
         return KeepItSimpleContext.Context.WithDbContextAsync(dbContext => dbContext.RefreshTokens
@@ -160,13 +186,15 @@ public class RefreshToken
             .ExecuteDeleteAsync();
     }
 
-    private static (string Token, RefreshToken Row) NewRow(string userId, Guid sessionId, TimeSpan lifetime, DateTime now)
+    private static (string Token, RefreshToken Row) NewRow(string userId, Guid sessionId, TimeSpan lifetime, DateTime now, string? userAgent, DateTime sessionCreatedAt)
     {
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         return (token, new RefreshToken
         {
             UserId = userId,
             SessionId = sessionId,
+            UserAgent = userAgent,
+            SessionCreatedAt = sessionCreatedAt,
             TokenHash = Hash(token),
             CreatedAt = now,
             ExpiresAt = now.Add(lifetime),
