@@ -11,14 +11,14 @@ public class ReminderScheduleTests
         int? dayOfMonth = null,
         TimeOnly? time = null,
         string timeZone = "Europe/Rome") => new()
-    {
-        Enabled = true,
-        Frequency = frequency,
-        DayOfWeek = dayOfWeek,
-        DayOfMonth = dayOfMonth,
-        TimeOfDay = time ?? new TimeOnly(9, 0),
-        TimeZone = timeZone,
-    };
+        {
+            Enabled = true,
+            Frequency = frequency,
+            DayOfWeek = dayOfWeek,
+            DayOfMonth = dayOfMonth,
+            TimeOfDay = time ?? new TimeOnly(9, 0),
+            TimeZone = timeZone,
+        };
 
     [Fact]
     public void NextRunUtc_daily_before_time_returns_today()
