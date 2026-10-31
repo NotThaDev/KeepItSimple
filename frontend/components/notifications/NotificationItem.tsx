@@ -18,7 +18,7 @@ export function NotificationItem({
     <li className="group relative flex gap-3 px-4 py-3 transition-colors hover:bg-muted/50">
       <span
         aria-hidden="true"
-        className={`mt-1.5 size-2 shrink-0 rounded-full ${isUnread ? "bg-destructive" : "bg-transparent"}`}
+        className={`mt-1.5 size-2 shrink-0 rounded-full ${isUnread ? "bg-primary" : "bg-transparent"}`}
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p
