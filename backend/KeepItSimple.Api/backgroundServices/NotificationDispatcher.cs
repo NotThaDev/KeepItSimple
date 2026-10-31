@@ -12,6 +12,7 @@ public class NotificationDispatcher(IEnumerable<INotificationChannel> channels, 
 {
     private readonly Dictionary<NotificationChannelType, INotificationChannel> _channels = channels.ToDictionary(c => c.Type);
     private readonly NotificationSettings _settings = options.Value;
+    private DateTime _nextCleanupAt = DateTime.MinValue;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -23,6 +24,7 @@ public class NotificationDispatcher(IEnumerable<INotificationChannel> channels, 
                 try
                 {
                     await DispatchDueAsync(stoppingToken);
+                    await CleanupAsync();
                 }
                 catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
                 {
@@ -33,6 +35,23 @@ public class NotificationDispatcher(IEnumerable<INotificationChannel> channels, 
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
+        }
+    }
+
+    // In-app notifications stay after being read; they are dropped once older than the retention, checked at most hourly.
+    private async Task CleanupAsync()
+    {
+        var now = DateTime.UtcNow;
+        if (now < _nextCleanupAt)
+        {
+            return;
+        }
+
+        _nextCleanupAt = now.AddHours(1);
+        var deleted = await InAppNotification.DeleteOlderThanAsync(now.AddDays(-_settings.InAppRetentionDays));
+        if (deleted > 0)
+        {
+            logger.LogInformation("Deleted {Count} in-app notifications older than {Days} days.", deleted, _settings.InAppRetentionDays);
         }
     }
 
