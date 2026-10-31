@@ -57,7 +57,7 @@ Rewrite the issue body in English (the user asked for this): what's already in p
 - Default: **Haiku** subagents, one per PR (or per step for big PRs). Each prompt stands alone: goal, "done when", worktree path, files to read for style, exact steps with snippets, what not to touch, no commit, output format. Use Sonnet only if Haiku fails or the step needs real reasoning.
 - Read every subagent report and the diff yourself. Fix small issues directly (stray build folders, wrong return types, missing doc rows).
 - Backend: follow `backend`. New owned entities get an ownership test. The EF in-memory test provider lacks `ExecuteDelete*` and unique-index enforcement; code must not rely on either. Background loops must not let one bad row block the rest.
-- UI: follow `frontend`. **Before writing UI**, run `design:design-system` (extend) for the new pattern: spacing scale, gaps, hierarchy (what is primary, what is quiet), states, a11y, mobile. Save the spec and hand it to the implementer. The theme is neutral grey; use the one accent (`destructive`) only as an attention signal.
+- UI: follow `frontend`. **Before writing UI**, run `design:design-system` (extend) for the new pattern: spacing scale, gaps, hierarchy (what is primary, what is quiet), states, a11y, mobile. Save the spec and hand it to the implementer. The theme is neutral grey. Signal "new" or "unread" with the neutral `primary` color, weight and position, never with `destructive` red: red reads as an error.
 
 ## 6. Verify each PR (before committing)
 
