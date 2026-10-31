@@ -35,6 +35,7 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
         {
             entity.HasIndex(token => token.TokenHash).IsUnique();
             entity.HasIndex(token => token.UserId);
+            entity.HasIndex(token => token.SessionId);
             entity.HasOne<KeepItSimpleUser>()
                 .WithMany()
                 .HasForeignKey(token => token.UserId)

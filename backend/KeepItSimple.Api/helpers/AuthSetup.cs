@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using KeepItSimple.Api.Models.Auth;
 using KeepItSimple.Api.Settings;
@@ -39,6 +40,15 @@ public static class AuthSetup
                         }
 
                         return Task.CompletedTask;
+                    },
+                    // A signed token is not enough: its session must still be active, so logout and revokes take effect on the next request.
+                    OnTokenValidated = async context =>
+                    {
+                        var sid = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sid);
+                        if (!Guid.TryParse(sid, out var sessionId) || !await RefreshToken.IsSessionActiveAsync(sessionId))
+                        {
+                            context.Fail("Session ended.");
+                        }
                     },
                 };
                 options.TokenValidationParameters = new TokenValidationParameters

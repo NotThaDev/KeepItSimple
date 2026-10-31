@@ -8,7 +8,7 @@ Login gives the browser two tokens with different jobs. Both are HttpOnly cookie
 | Cookie | `kis_access` | `kis_refresh` |
 | Lifetime | `JwtSettings:ExpiryMinutes`. The cookie's `Max-Age` is 30 s shorter, so the browser drops it before the API would reject it | `JwtSettings:RefreshExpiryDays` (14), renewed on each refresh |
 | What the server stores | Nothing: the signature proves it | SHA-256 hash in `identity.RefreshTokens` |
-| Can be revoked | No, it lives until it expires | Yes |
+| Can be revoked | Yes: its `sid` claim must name an active session on every request (see Sessions) | Yes |
 
 Both cookies have `HttpOnly`, `SameSite=Lax` and `Path=/`, and `Secure` when the request is HTTPS. They use `Max-Age` rather than `Expires`: the browser counts `Max-Age` with its own clock, so a wrong client clock doesn't matter. `TokenService.AuthCookieOptions` builds the options for both.
 
@@ -17,17 +17,16 @@ The JWT is read from the `Authorization: Bearer` header when there is one; this 
 ## Endpoints (`/api/auth`)
 
 - `POST login`:
-  - checks the password and revokes the user's other refresh rows (one session per user);
-  - creates a new row, sets both cookies, and returns 204;
-  - the other browser gets a 401 on its next refresh, but keeps its current access token until it expires;
+  - checks the password, creates a new session (new `SessionId`), sets both cookies, and returns 204;
+  - the user's other sessions stay: several browsers can be signed in at once;
   - 5 wrong passwords lock the account for 15 minutes (`IdentitySetup`). While locked, every attempt, even with the right password, gets **423 Locked** with `LockoutResponse { retryAfterSeconds }`. Seconds rather than an end timestamp, so the client's countdown doesn't depend on its clock. This tells a caller the username exists, but only after 5 failed tries on it; an unknown username stays a plain 401.
 - `POST refresh`: no body; reads `kis_refresh`.
   - **Valid**: in one transaction, the row is revoked and points at its replacement (`ReplacedByHash`), and the new row is inserted. Both cookies are set again.
-  - **Unknown, expired or revoked** (for example after logout): 401, and both cookies are cleared.
+  - **Unknown or expired** (for example after logout, which deletes the rows): 401, and both cookies are cleared.
   - **Rotated less than 10 s ago, and its successor is still active** (grace period): a new row and cookies are issued. Parallel requests that found the same expired token (prefetches, several tabs) don't log the user out.
-  - **Rotated earlier** (reuse): 401 and **every active session of that user is revoked**. Only the attacker or the real user can hold the newer token, and the server can't tell which, so both have to log in again.
-- `POST logout`: revokes the cookie's row and clears both cookies. Always 204, even without a cookie.
-- Login and a valid refresh also delete the user's expired rows. Revoked rows stay until they expire: a reused token is only caught while its row exists.
+  - **Rotated earlier** (reuse): 401 and **that session ends** (all rows of its `SessionId` are deleted). Only the attacker or the real user can hold the newer token, and the server can't tell which, so both have to log in again. The user's other sessions stay.
+- `POST logout`: deletes every row of the cookie's session and clears both cookies. Always 204, even without a cookie.
+- Login and a valid refresh also delete the user's expired rows. `RevokedAt` only marks a rotated row; rotated rows stay until they expire, because a reused token is only caught while its row exists. Ending a session (logout, replay, password change or reset) deletes its rows instead, so a token of it is simply unknown.
 - `GET me`: the signed-in user (`UserResponse`: `id`, `userName`, `email`, `pictureVersion`), read from the JWT's `sub` claim. `pictureVersion` is the ticks of the picture's last update, null without a picture. Returns 401 when that user no longer exists.
 
 ```mermaid
@@ -45,8 +44,16 @@ sequenceDiagram
   API-->>Next: 204 + new cookies (R1 replaced by R2)
   Next-->>Browser: page rendered with the new token + Set-Cookie
   Browser->>API: POST refresh with stolen R1, 10 s later
-  API-->>Browser: 401, all sessions of the user revoked
+  API-->>Browser: 401, that session ended
 ```
+
+## Sessions
+
+- Each login creates a `SessionId` (Guid). Every refresh row of that login carries it, and rotation copies it to the new row. The access token has it in the `sid` claim.
+- `JwtBearerEvents.OnTokenValidated` (`AuthSetup`) rejects a token whose `sid` is missing or has no active row (`RefreshToken.IsSessionActiveAsync`). A revoked session therefore stops on its next API request, not when the access token expires.
+- Trade-off: the JWT is no longer stateless. Every authenticated request runs one indexed query on `RefreshTokens.SessionId`.
+- Logout ends the whole session. A replayed token ends that session only. Change password and reset password end every session of the user.
+- Tokens issued before this change have no `sid`: they get one 401, and the user logs in again.
 
 ## Profile picture (`/api/account/picture`)
 
@@ -76,7 +83,7 @@ sequenceDiagram
   - 400 `ValidationProblemDetails` keyed `newPassword` when the password breaks the rules (the token is not used up).
 - On success:
   - restarts the password expiration clock (`PasswordChangedAt`);
-  - revokes every refresh token of the user, so other sessions end once their access token expires (`JwtSettings:ExpiryMinutes`);
+  - deletes every session of the user, so they stop on their next request;
   - lifts a lockout and confirms the email, since the reset proves the user owns the inbox (saved in the same write as the password);
   - rejects the current password as the new one (400 `newPassword`), checked only after the token is verified so it is no password oracle;
   - does not sign the user in: the user logs in with the new password.
@@ -114,7 +121,7 @@ The browser only talks to the Next app. `next.config.ts` rewrites `/api/*` to `A
 
 ## Known limits
 
-- The proxy trusts a present `kis_access` without checking it, and the API only checks the signature. Revoking a session takes effect when the access token expires, up to `ExpiryMinutes`. #149 tracks making it immediate.
-- Each grace-period refresh leaves one extra active refresh row for the session, until it expires or the next login. The `SessionId` in #149 fixes it.
+- The proxy trusts a present `kis_access` without checking it; the API enforces the session on the next request, so a revoked session ends with a 401 there.
+- Each grace-period refresh leaves one extra active refresh row for the session, until it expires. Extra rows share the `SessionId`, so they never count as another session.
 - Through the rewrite, the API sees HTTP, so in production behind TLS `Secure` would be off. That needs `UseForwardedHeaders` when we deploy.
 - The proxy dedupes refreshes within one server process. With several instances, only the grace period protects parallel refreshes.
