@@ -34,7 +34,7 @@ export function AccountPageContent({
   }
 
   return (
-    <div className="flex w-full max-w-2xl flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <ProfileCard user={user} />
       <SessionsCard sessions={sessionsResponse.data ?? []} />
     </div>
