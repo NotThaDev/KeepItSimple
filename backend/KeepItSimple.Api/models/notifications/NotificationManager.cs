@@ -28,6 +28,9 @@ public static class NotificationManager
         });
     }
 
+    public static Task EnqueueInAppAsync(string userId, string title, string body) =>
+        EnqueueAsync(userId, NotificationChannelType.InApp, userId, title, body);
+
     public static Task EnqueueEmailConfirmationAsync(KeepItSimpleUser user, string confirmationLink) =>
         EnqueueEmailAsync(user, EmailTemplates.EmailConfirmation, confirmationLink);
 

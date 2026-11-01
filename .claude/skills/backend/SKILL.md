@@ -48,7 +48,7 @@ backend/
     models/               # entities and their static persistence methods
       analytics/          # aggregation types and Analytics static methods
       notifications/      # Notification outbox entity, NotificationManager
-        channels/         # one INotificationChannel implementation per channel (EmailChannel)
+        channels/         # one INotificationChannel implementation per channel (EmailChannel, InAppChannel)
     settings/             # options classes bound from appsettings (JwtSettings, EmailSettings, ...)
     Migrations/           # EF Core; do not edit migrations that already shipped
     Program.cs

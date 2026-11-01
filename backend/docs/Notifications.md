@@ -43,6 +43,7 @@ Because the queue lives in Postgres, notifications survive an API restart.
 | `BatchSize` | 20 | Rows handled per poll |
 | `MaxAttempts` | 5 | Attempts before a row is `Failed` |
 | `RetryBaseSeconds` | 30 | First retry delay; doubles on each attempt |
+| `InAppRetentionDays` | 30 | In-app notifications older than this are deleted, read or not |
 
 ## Adding a channel
 
@@ -74,6 +75,16 @@ Channels are singletons. A channel that needs the database or other scoped servi
 - Templates live in `EmailTemplates` (`helpers/`). Names and links are HTML-encoded.
 - Features call `NotificationManager.EnqueueEmailConfirmationAsync` and `NotificationManager.EnqueuePasswordForgotAsync`.
 - Settings classes (`NotificationSettings`, `EmailSettings`) live in `settings/`.
+
+## In-app channel
+
+- `InAppChannel` stores each notification as a row in `InAppNotifications` (title, body, `ReadAt`). Recipient is the user id.
+- `NotificationManager.EnqueueInAppAsync(userId, title, body)` queues one; the dispatcher turns it into a row on its next poll.
+- Endpoints (authenticated, own rows only):
+  - `GET /api/notifications?read=false|true` lists the newest 50 unread or read rows.
+  - `GET /api/notifications/unread-summary` returns `{ count, latestId }`, for polling.
+  - `POST /api/notifications/{id}/read` marks one row read (404 if it is not the caller's).
+- Read rows stay. Rows older than `Notifications:InAppRetentionDays` (default 30) are deleted, checked hourly by `NotificationDispatcher`.
 
 ## Limits
 
