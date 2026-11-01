@@ -180,4 +180,15 @@ public class OwnershipTests
         Category = Transaction.TransactionCategory.Food,
         PocketId = pocketId,
     };
+
+    [Fact]
+    public async Task ImportReminderSetting_is_per_user()
+    {
+        var owner = TestApp.NewUserId();
+        var stranger = TestApp.NewUserId();
+        await ImportReminderSetting.UpsertAsync(new ImportReminderSetting { Enabled = true }, owner);
+
+        Assert.NotNull(await ImportReminderSetting.GetAsync(owner));
+        Assert.Null(await ImportReminderSetting.GetAsync(stranger));
+    }
 }

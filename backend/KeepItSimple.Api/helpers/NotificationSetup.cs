@@ -20,6 +20,7 @@ public static class NotificationSetup
         services.AddSingleton<INotificationChannel, EmailChannel>();
         services.AddSingleton<INotificationChannel, InAppChannel>();
         services.AddHostedService<NotificationDispatcher>();
+        services.AddHostedService<ReminderScheduler>();
         return services;
     }
 }
