@@ -30,6 +30,7 @@ The goal is a single app you can update in seconds and read at a glance: where s
 | 💰 | **See cash flow** | Record what came in and what went out, and check the balance right away |
 | 🔍 | **Understand spending** | Analytics for income, expenses, and savings, so patterns and frequency are easy to spot |
 | 🏷️ | **Categorize on import** | Rules match a description, amount, pocket, or category, so new movements get the right category without tagging every row |
+| 📊 | **Export a report** | An Excel report of the last month, quarter, or year, compared with the one before, with charts and every transaction |
 | 🎯 | **Know what to improve** | A quick read of the numbers, instead of rebuilding them across scattered spreadsheets |
 
 ## 🧭 In the App
