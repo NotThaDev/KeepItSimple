@@ -75,6 +75,12 @@ Docs in [`docs/`](./docs/):
 - **[CategoryRules.md](./docs/CategoryRules.md)** – UI ↔ API: create rules, import preview, apply to existing rows
 - **[CategoryRuleMatcher.md](./docs/CategoryRuleMatcher.md)** – how `CategoryRuleMatcher` evaluates the tree
 
+## Excel reports
+
+A report covers the last complete month, quarter, or year against the one before it. `ReportCalculator` computes the numbers (pure) and `ReportWorkbook` renders them with EPPlus.
+
+- **[Reports.md](./docs/Reports.md)** – periods, metric definitions, sheets, and limits
+
 ## Tests
 
 `dotnet test KeepItSimple.sln` from the repo root.

@@ -461,13 +461,13 @@ public static class Analytics
         transaction.Category is TransactionCategory.Transfer
             or TransactionCategory.Withdraw;
 
-    private static bool IsExpense(Transaction transaction) =>
+    internal static bool IsExpense(Transaction transaction) =>
         transaction.Amount < 0
         && transaction.Category is not TransactionCategory.Savings
         && transaction.Category is not TransactionCategory.Investments
         && !IsMovement(transaction);
 
-    private static bool IsIncome(Transaction transaction) =>
+    internal static bool IsIncome(Transaction transaction) =>
         transaction.Amount > 0
         && IncomeCategories.Contains(transaction.Category)
         && !IsMovement(transaction);
