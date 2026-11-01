@@ -19,6 +19,8 @@ It is a Next.js app. It talks to the API and has these areas:
 
 Home (`/`) redirects to the dashboard.
 
+In-app notifications: the **Notifications** item in the user menu opens a drawer with unread and read items, and the avatar shows an unread count. A toast appears when a new one arrives. See [notifications](docs/Notifications.md).
+
 This file is the overview. Notes for a complex screen live in `docs/`.
 
 ## Stack
