@@ -21,7 +21,9 @@ interface SelectionProps {
   placeholder?: string;
   onChange?: (value: string) => void;
   isInvalid?: boolean;
+  disabled?: boolean;
   className?: string;
+  "aria-label"?: string;
 }
 
 export function Selection({
@@ -31,17 +33,21 @@ export function Selection({
   placeholder,
   onChange,
   isInvalid,
+  disabled,
   className,
+  "aria-label": ariaLabel,
 }: Readonly<SelectionProps>) {
   return (
     <Select
       value={value}
       defaultValue={value === undefined ? defaultValue : undefined}
       onValueChange={onChange}
+      disabled={disabled}
     >
       <SelectTrigger
         className={cn("w-full", className)}
         aria-invalid={isInvalid}
+        aria-label={ariaLabel}
       >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

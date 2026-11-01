@@ -8,6 +8,7 @@ It is a Next.js app. It talks to the API and has these areas:
 | --- | --- | --- | --- |
 | 📊 | Dashboard | `/dashboard` | Balance, spending by category, and the trend over time |
 | 📈 | Analytics | `/analytics` | Income, expense, and saving views |
+| 📑 | Reports | `/reports` | Generate last month, quarter, or year as an Excel file, then download or delete it |
 | 💸 | Transactions | `/transactions` | Movements, categories, filters, and file import |
 | 🏷️ | Category rules | `/transactions/rules` | Rules that categorize movements imported from a bank account, with preview and apply |
 | 👛 | Pockets | `/pockets` | Accounts, balances, and currencies |

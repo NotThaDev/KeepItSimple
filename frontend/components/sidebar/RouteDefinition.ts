@@ -2,6 +2,7 @@ import {
   ArrowDownUp,
   ChartNoAxesCombined,
   CircleUserRound,
+  FileSpreadsheet,
   LayoutDashboard,
   List,
   ListFilter,
@@ -29,6 +30,12 @@ export const routes: RouteDefinition[] = [
     title: "Analytics",
     href: "/analytics",
     icon: ChartNoAxesCombined,
+  },
+  {
+    label: "Reports",
+    title: "Reports",
+    href: "/reports",
+    icon: FileSpreadsheet,
   },
   {
     label: "Transactions",
