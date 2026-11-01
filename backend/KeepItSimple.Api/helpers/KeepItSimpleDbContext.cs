@@ -3,6 +3,7 @@ using System.Text.Json;
 using KeepItSimple.Api.Models;
 using KeepItSimple.Api.Models.Auth;
 using KeepItSimple.Api.Models.Notifications;
+using KeepItSimple.Api.Models.Reports;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ProfilePicture> ProfilePictures => Set<ProfilePicture>();
+    public DbSet<Report> Reports => Set<Report>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,6 +68,19 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
             entity.Property(notification => notification.Recipient).IsRequired();
             entity.Property(notification => notification.Subject).IsRequired();
             entity.Property(notification => notification.Body).IsRequired();
+        });
+
+        modelBuilder.Entity<Report>(entity =>
+        {
+            entity.HasIndex(report => new { report.UserId, report.CreatedAt });
+            entity.Property(report => report.FileName).HasMaxLength(200);
+            entity.Property(report => report.Label).HasMaxLength(50);
+            entity.Property(report => report.Data).IsRequired();
+            entity.HasOne<KeepItSimpleUser>()
+                .WithMany()
+                .HasForeignKey(report => report.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Pocket>(entity =>

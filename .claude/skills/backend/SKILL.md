@@ -24,7 +24,7 @@ When you add or change a complex feature, update its feature markdown in the sam
 
 The overview README stays at the top of the app folder (`backend/README.md`, `frontend/README.md`). Feature notes go in that app's `docs/` folder.
 
-If a feature markdown already exists, update it. Backend notes today are `docs/CategoryRules.md`, `CategoryRuleMatcher.md`, `TransactionImportFlow.md`, and `TransactionImportUtil.md`. If the feature is complex and has none, add one under `backend/docs/` when the note is about the API, or `frontend/docs/` when it is about the UI. A flow doc covers the UI and API conversation. A helper doc covers pure logic that needs its own explanation. Link a new doc from that app's top-level README.
+If a feature markdown already exists, update it. Backend notes today are `docs/CategoryRules.md`, `CategoryRuleMatcher.md`, `TransactionImportFlow.md`, `TransactionImportUtil.md`, and `Reports.md`. If the feature is complex and has none, add one under `backend/docs/` when the note is about the API, or `frontend/docs/` when it is about the UI. A flow doc covers the UI and API conversation. A helper doc covers pure logic that needs its own explanation. Link a new doc from that app's top-level README.
 
 Also update the overview README whose contents the change affects:
 
@@ -47,6 +47,7 @@ backend/
     helpers/              # pure logic, queries, importer, templates, DbContext access, service setup
     models/               # entities and their static persistence methods
       analytics/          # aggregation types and Analytics static methods
+      reports/            # Report entity (stored .xlsx) and the ReportData records
       notifications/      # Notification outbox entity, NotificationManager
         channels/         # one INotificationChannel implementation per channel (EmailChannel)
     settings/             # options classes bound from appsettings (JwtSettings, EmailSettings, ...)
@@ -83,7 +84,7 @@ public async Task<ActionResult<Pocket>> GetById(int id)
 - `ArgumentException` from the model becomes `BadRequest(ex.Message)`. Missing rows become `NotFound`. Delete returns `NoContent`. Create returns `CreatedAtAction`.
 - Keep request-shape checks in the action (empty id list, same pocket on both sides of a transfer). Domain checks (`Validate`, matching, normalization) stay on the model or a helper.
 
-Existing prefixes: `/api/pocket`, `/api/transactions`, `/api/category-rules`, `/api/analytics`.
+Existing prefixes: `/api/pocket`, `/api/transactions`, `/api/category-rules`, `/api/analytics`, `/api/reports`.
 
 ## Models
 
@@ -97,6 +98,8 @@ Entities are active records in `models/`. Properties are the columns. Static met
 - Mark navigation properties with `[JsonIgnore]`.
 - Add a `DbSet` and the relationship in `KeepItSimpleDbContext.OnModelCreating`. JSON columns use `jsonb` plus a value comparer, as `CategoryRule.Groups` does.
 - Schema changes get a new EF Core migration. Do not edit a migration that is already in the tree.
+
+Reports ([docs/Reports.md](../../../backend/docs/Reports.md)): `ReportCalculator` (pure numbers) and `ReportWorkbook` (EPPlus rendering) are helpers; `Report` stores the generated file.
 
 Analytics lives in `models/analytics/`. `Analytics` is a static class: `Get*Async` loads through the entities, `Build*` is pure and takes the lists plus a `DateTime`. Tests call `Build*`.
 
