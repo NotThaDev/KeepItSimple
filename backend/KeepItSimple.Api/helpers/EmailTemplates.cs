@@ -29,6 +29,20 @@ public static class EmailTemplates
             link,
             footnote: "The link works for one day and only once. If you did not ask for this, ignore this email: your password stays the same."));
 
+    public const string ImportReminderTitle = "Time to import your transactions";
+    public const string DefaultReminderBody = "Upload your latest bank statement so your numbers stay up to date.";
+
+    // Layout does not encode the message, so the user's text is encoded here.
+    public static (string Subject, string Body) ImportReminder(string userName, string? message, string link) =>
+        (ImportReminderTitle, Layout(
+            preheader: "A quick upload keeps your numbers up to date.",
+            title: ImportReminderTitle,
+            userName,
+            message: WebUtility.HtmlEncode(message ?? DefaultReminderBody),
+            buttonText: "Import transactions",
+            link,
+            footnote: "You get this because the import reminder is on. Turn it off in Account → Notifications."));
+
     // Tables and inline styles: many email clients drop <style> blocks and modern CSS layout.
     private static string Layout(string preheader, string title, string userName, string message, string buttonText, string link, string footnote)
     {

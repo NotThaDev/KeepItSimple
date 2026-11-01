@@ -200,6 +200,95 @@ namespace KeepItSimple.Api.Migrations
                     b.ToTable("AspNetUsers", "identity");
                 });
 
+            modelBuilder.Entity("KeepItSimple.Api.Models.Notifications.ImportReminderSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("DayOfMonth")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("DayOfWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("NextRunAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("SendEmail")
+                        .HasColumnType("boolean");
+
+                    b.Property<TimeOnly>("TimeOfDay")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NextRunAt");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("ImportReminderSettings");
+                });
+
+            modelBuilder.Entity("KeepItSimple.Api.Models.Notifications.InAppNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("UserId", "ReadAt", "CreatedAt");
+
+                    b.ToTable("InAppNotifications");
+                });
+
             modelBuilder.Entity("KeepItSimple.Api.Models.Notifications.Notification", b =>
                 {
                     b.Property<int>("Id")
@@ -517,6 +606,24 @@ namespace KeepItSimple.Api.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("KeepItSimple.Api.Models.Notifications.ImportReminderSetting", b =>
+                {
+                    b.HasOne("KeepItSimple.Api.Models.KeepItSimpleUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("KeepItSimple.Api.Models.Notifications.InAppNotification", b =>
+                {
+                    b.HasOne("KeepItSimple.Api.Models.KeepItSimpleUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

@@ -4,4 +4,5 @@ namespace KeepItSimple.Api.Models.Notifications;
 public enum NotificationChannelType
 {
     Email = 1,
+    InApp = 2,
 }
