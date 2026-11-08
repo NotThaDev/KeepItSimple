@@ -18,8 +18,10 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
     public DbSet<CategoryRule> CategoryRules => Set<CategoryRule>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<InAppNotification> InAppNotifications => Set<InAppNotification>();
     public DbSet<ProfilePicture> ProfilePictures => Set<ProfilePicture>();
     public DbSet<Report> Reports => Set<Report>();
+    public DbSet<ImportReminderSetting> ImportReminderSettings => Set<ImportReminderSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -68,6 +70,32 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
             entity.Property(notification => notification.Recipient).IsRequired();
             entity.Property(notification => notification.Subject).IsRequired();
             entity.Property(notification => notification.Body).IsRequired();
+        });
+
+        modelBuilder.Entity<InAppNotification>(entity =>
+        {
+            entity.Property(n => n.Title).HasMaxLength(InAppNotification.TitleMaxLength);
+            entity.Property(n => n.Body).HasMaxLength(InAppNotification.BodyMaxLength);
+            entity.HasIndex(n => new { n.UserId, n.ReadAt, n.CreatedAt });
+            entity.HasIndex(n => n.CreatedAt);
+            entity.HasOne<KeepItSimpleUser>()
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ImportReminderSetting>(entity =>
+        {
+            entity.HasIndex(s => s.UserId).IsUnique();
+            entity.HasIndex(s => s.NextRunAt);
+            entity.Property(s => s.Message).HasMaxLength(ImportReminderSetting.MessageMaxLength);
+            entity.Property(s => s.TimeZone).HasMaxLength(100);
+            entity.HasOne<KeepItSimpleUser>()
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Report>(entity =>
