@@ -136,7 +136,7 @@ public class TransactionController : ControllerBase
 
     [HttpPost("import/analyze")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public ActionResult<AnalyzeResponse> AnalyzeImport(IFormFile file)
+    public async Task<ActionResult<AnalyzeResponse>> AnalyzeImport(IFormFile file)
     {
         if (file is null || file.Length == 0)
         {
@@ -149,16 +149,20 @@ public class TransactionController : ControllerBase
             return BadRequest("Only .xls, .xlsx and .csv files are supported.");
         }
 
+        AnalyzeResponse result;
         try
         {
             using var stream = file.OpenReadStream();
-            var result = TransactionImporter.Analyze(stream, User.GetUserId());
-            return Ok(result);
+            result = TransactionImporter.Analyze(stream, User.GetUserId());
         }
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
         }
+
+        var mappings = await ImportMapping.GetAllAsync(User.GetUserId());
+        result.SuggestedMappingId = ImportMapping.FindBestMatch(mappings, result.Columns.Select(c => c.Name).ToList())?.Id;
+        return Ok(result);
     }
 
     [HttpPost("import/preview")]
