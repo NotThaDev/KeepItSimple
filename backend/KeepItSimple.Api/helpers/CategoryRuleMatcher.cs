@@ -13,7 +13,7 @@ public static class CategoryRuleMatcher
     public static CategoryRule? FindMatch(
         string? description,
         decimal amount,
-        Transaction.TransactionCategory category,
+        int category,
         IReadOnlyList<CategoryRule> rules,
         int pocketId = 0)
     {
@@ -49,7 +49,7 @@ public static class CategoryRuleMatcher
     private static bool MatchesRule(
         string? description,
         decimal amount,
-        Transaction.TransactionCategory category,
+        int category,
         int pocketId,
         CategoryRule rule)
     {
@@ -66,7 +66,7 @@ public static class CategoryRuleMatcher
     private static bool MatchesGroup(
         string? description,
         decimal amount,
-        Transaction.TransactionCategory category,
+        int category,
         int pocketId,
         CategoryRuleGroup group)
     {
@@ -90,7 +90,7 @@ public static class CategoryRuleMatcher
     private static bool MatchesCondition(
         string? description,
         decimal amount,
-        Transaction.TransactionCategory category,
+        int category,
         int pocketId,
         CategoryRuleCondition condition)
     {
@@ -161,10 +161,10 @@ public static class CategoryRuleMatcher
     }
 
     private static bool MatchesCategory(
-        Transaction.TransactionCategory category,
+        int category,
         CategoryRuleCondition condition)
     {
-        if (!Enum.TryParse<Transaction.TransactionCategory>(condition.Value, ignoreCase: true, out var expected))
+        if (Category.ParseConditionId(condition.Value) is not { } expected)
         {
             return false;
         }

@@ -187,6 +187,12 @@ public class TransactionController : ControllerBase
                 return NotFound($"Pocket {request.PocketId} not found.");
             }
 
+            if (request.DefaultCategoryId is { } defaultCategoryId
+                && !await Category.IsVisibleAsync(defaultCategoryId, userId))
+            {
+                return BadRequest("Unknown default category.");
+            }
+
             var rules = await CategoryRule.GetEnabledOrderedAsync(userId);
             var result = TransactionImporter.Preview(request, userId, rules);
             return Ok(result);

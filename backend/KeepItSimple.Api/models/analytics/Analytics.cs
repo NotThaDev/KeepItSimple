@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using static KeepItSimple.Api.Models.Pocket;
 using static KeepItSimple.Api.Models.Transaction;
 
@@ -8,18 +7,23 @@ public static class Analytics
 {
     public static async Task<OverviewAnalytics> GetOverviewAsync(string userId)
     {
-        var transactionsTask = Transaction.GetAllAsync(userId);
-        var pocketsTask = Pocket.GetAllAsync(userId);
-        await Task.WhenAll(transactionsTask, pocketsTask);
+        var transactions = await Transaction.GetAllAsync(userId);
+        var pockets = await Pocket.GetAllAsync(userId);
+        var categories = await LoadCategoriesAsync(userId);
 
-        return BuildOverview(transactionsTask.Result, pocketsTask.Result, DateTime.UtcNow);
+        return BuildOverview(transactions, pockets, DateTime.UtcNow, categories);
     }
 
     public static OverviewAnalytics BuildOverview(
         IReadOnlyCollection<Transaction> transactions,
         IReadOnlyCollection<Pocket> pockets,
-        DateTime now)
+        DateTime now,
+        IReadOnlyDictionary<int, Category>? categories = null)
     {
+        var kinds = categories ?? NoCategories;
+        bool IsExpense(Transaction t) => IsExpenseFor(t);
+        bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
+
         var previousMonth = now.AddMonths(-1);
         var currentMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -75,15 +79,15 @@ public static class Analytics
             .ToList();
 
         var monthlyExpensesByCategory = monthlyExpenses
-            .GroupBy(t => t.Category)
+            .GroupBy(t => t.CategoryId)
             .Select(g => new TransactionByCategory
             {
-                Category = g.Key,
+                CategoryId = g.Key,
                 Total = g.Sum(t => t.Amount)
             })
             .ToList();
 
-        var topExpenseCategory = monthlyExpensesByCategory.OrderByDescending(e => e.Total).FirstOrDefault()?.Category;
+        var topExpenseCategory = monthlyExpensesByCategory.OrderByDescending(e => e.Total).FirstOrDefault()?.CategoryId;
 
         var expensesPerPocketTotals = monthlyExpenses
             .GroupBy(t => t.PocketId)
@@ -102,7 +106,7 @@ public static class Analytics
             CurrentMonthTotalBalance = currentMonthBalance,
             MonthlyExpensesDailyComparison = monthlyExpensesDailyComparison,
             MonthlyExpensesByCategory = monthlyExpensesByCategory,
-            TopExpenseCategory = topExpenseCategory,
+            TopExpenseCategoryId = topExpenseCategory,
             ExpensesPerPocket = expensesPerPocket,
             PreviousMonthTotalBalance = previousMonthBalance
         };
@@ -113,7 +117,7 @@ public static class Analytics
         var pockets = await Pocket.GetAllAsync(userId);
         var transactions = pocketId is null ? await Transaction.GetAllAsync(userId) : await Transaction.GetByPocketIdAsync(pocketId.Value, userId);
         var calendarNow = DateTime.UtcNow;
-        return BuildExpenseAnalytics(transactions, pockets, ResolveAnalyticsNow(month, calendarNow), calendarNow);
+        return BuildExpenseAnalytics(transactions, pockets, ResolveAnalyticsNow(month, calendarNow), calendarNow, await LoadCategoriesAsync(userId));
     }
 
     public static ExpenseAnalytics BuildExpenseAnalytics(
@@ -121,8 +125,13 @@ public static class Analytics
         IReadOnlyCollection<Pocket> pockets,
         DateTime now,
         // Tests only: freezes today apart from the selected month. Production always passes DateTime.UtcNow.
-        DateTime? calendarNow = null)
+        DateTime? calendarNow = null,
+        IReadOnlyDictionary<int, Category>? categories = null)
     {
+        var kinds = categories ?? NoCategories;
+        bool IsExpense(Transaction t) => IsExpenseFor(t);
+        bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
+
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
         var monthlyExpenses = monthlyTransactions.Where(IsExpense).ToList();
         var monthlyTotalExpenses = Math.Abs(monthlyExpenses.Sum(t => t.Amount));
@@ -179,13 +188,13 @@ public static class Analytics
             .ToList();
 
 
-        var expensesByCategory = monthlyExpenses.GroupBy(t => t.Category).Select(g => new TransactionByCategory
+        var expensesByCategory = monthlyExpenses.GroupBy(t => t.CategoryId).Select(g => new TransactionByCategory
         {
-            Category = g.Key,
+            CategoryId = g.Key,
             Total = g.Sum(t => t.Amount)
         }).ToList().OrderByDescending(t => t.Total).ToList();
 
-        var fixedExpenses = expensesByCategory.Where(t => FixedExpenseCategories.Contains(t.Category)).Sum(t => t.Total);
+        var fixedExpenses = expensesByCategory.Where(t => FixedExpenseCategories.Contains((TransactionCategory)t.CategoryId)).Sum(t => t.Total);
 
         var calendar = calendarNow ?? now;
         var currentYear = calendar.Year;
@@ -242,7 +251,7 @@ public static class Analytics
         var pockets = await Pocket.GetAllAsync(userId);
         var transactions = pocketId is null ? await Transaction.GetAllAsync(userId) : await Transaction.GetByPocketIdAsync(pocketId.Value, userId);
         var calendarNow = DateTime.UtcNow;
-        return BuildIncomeAnalytics(transactions, pockets, ResolveAnalyticsNow(month, calendarNow), calendarNow);
+        return BuildIncomeAnalytics(transactions, pockets, ResolveAnalyticsNow(month, calendarNow), calendarNow, await LoadCategoriesAsync(userId));
     }
 
     public static IncomeAnalytics BuildIncomeAnalytics(
@@ -250,8 +259,13 @@ public static class Analytics
         IReadOnlyCollection<Pocket> pockets,
         DateTime now,
         // Tests only: freezes today apart from the selected month. Production always passes DateTime.UtcNow.
-        DateTime? calendarNow = null)
+        DateTime? calendarNow = null,
+        IReadOnlyDictionary<int, Category>? categories = null)
     {
+        var kinds = categories ?? NoCategories;
+        bool IsExpense(Transaction t) => IsExpenseFor(t);
+        bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
+
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
         var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
 
@@ -280,26 +294,36 @@ public static class Analytics
             .Where(t => ActiveIncomeCategories.Contains(t.Category))
             .Sum(t => t.Amount);
 
-        var incomeByCategory = monthlyIncomeTransactions.GroupBy(t => t.Category).Select(g => new TransactionByCategory
+        var incomeByCategory = monthlyIncomeTransactions.GroupBy(t => t.CategoryId).Select(g => new TransactionByCategory
         {
-            Category = g.Key,
+            CategoryId = g.Key,
             Total = g.Sum(t => t.Amount)
         }).ToList().OrderByDescending(t => t.Total).ToList();
 
         var currentYear = (calendarNow ?? now).Year;
         var yearIncomeTotalsByMonthAndCategory = transactions
             .Where(t => t.Date.Year == currentYear && IsIncome(t))
-            .GroupBy(t => (t.Date.Month, t.Category))
+            .GroupBy(t => (t.Date.Month, t.CategoryId))
             .ToDictionary(group => group.Key, group => group.Sum(t => t.Amount));
 
+        var incomeCategoryIds = IncomeCategories.Select(c => (int)c)
+            .Concat(kinds.Values.Where(c => !c.IsSystem && c.Kind == CategoryKind.Income).Select(c => c.Id))
+            .ToList();
         var yearIncomeByMonth = Enumerable.Range(1, 12)
-            .Select(month => new MonthlyTransactionByCategory
+            .Select(month =>
             {
-                Month = month,
-                Categories = IncomeCategories.ToDictionary(
-                    category => category,
-                    category => yearIncomeTotalsByMonthAndCategory.GetValueOrDefault((month, category), 0)
-                )
+                var byId = incomeCategoryIds.ToDictionary(
+                    id => id,
+                    id => yearIncomeTotalsByMonthAndCategory.GetValueOrDefault((month, id), 0));
+                // Legacy map: system keys, with custom categories merged into "Other".
+                var legacy = new Dictionary<string, decimal>();
+                foreach (var (id, total) in byId)
+                {
+                    var key = Category.LegacyKey(id);
+                    legacy[key] = legacy.GetValueOrDefault(key) + total;
+                }
+
+                return new MonthlyTransactionByCategory { Month = month, Categories = legacy, CategoryIds = byId };
             })
             .ToList();
 
@@ -336,7 +360,7 @@ public static class Analytics
         var pockets = await Pocket.GetAllAsync(userId);
         var currency = pockets.FirstOrDefault()?.Currency;
         var calendarNow = DateTime.UtcNow;
-        return BuildSavingAnalytics(transactions, ResolveAnalyticsNow(month, calendarNow), currency ?? "EUR", calendarNow);
+        return BuildSavingAnalytics(transactions, ResolveAnalyticsNow(month, calendarNow), currency ?? "EUR", calendarNow, await LoadCategoriesAsync(userId));
     }
 
     public static SavingAnalytics BuildSavingAnalytics(
@@ -344,8 +368,13 @@ public static class Analytics
         DateTime now,
         string currency = "EUR",
         // Tests only: freezes today apart from the selected month. Production always passes DateTime.UtcNow.
-        DateTime? calendarNow = null)
+        DateTime? calendarNow = null,
+        IReadOnlyDictionary<int, Category>? categories = null)
     {
+        var kinds = categories ?? NoCategories;
+        bool IsExpense(Transaction t) => IsExpenseFor(t);
+        bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
+
         var monthlyTransactions = transactions
             .Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month)
             .ToList();
@@ -398,10 +427,10 @@ public static class Analytics
             .ToList();
 
         var savingsByCategory = monthlySavingsTransactions
-            .GroupBy(t => t.Category)
+            .GroupBy(t => t.CategoryId)
             .Select(group => new TransactionByCategory
             {
-                Category = group.Key,
+                CategoryId = group.Key,
                 Total = Math.Abs(group.Sum(t => t.Amount)),
             })
             .OrderByDescending(entry => entry.Total)
@@ -461,16 +490,28 @@ public static class Analytics
         transaction.Category is TransactionCategory.Transfer
             or TransactionCategory.Withdraw;
 
-    private static bool IsExpense(Transaction transaction) =>
+    // System ids keep the enum logic; a custom category's Kind decides income vs expense.
+    // Custom categories are in none of the fixed/passive/active splits.
+    private static bool IsExpenseFor(Transaction transaction) =>
         transaction.Amount < 0
         && transaction.Category is not TransactionCategory.Savings
         && transaction.Category is not TransactionCategory.Investments
         && !IsMovement(transaction);
 
-    private static bool IsIncome(Transaction transaction) =>
+    private static bool IsIncomeFor(Transaction transaction, IReadOnlyDictionary<int, Category> categories) =>
         transaction.Amount > 0
-        && IncomeCategories.Contains(transaction.Category)
+        && (IncomeCategories.Contains(transaction.Category) || IsCustomIncome(transaction, categories))
         && !IsMovement(transaction);
+
+    private static bool IsCustomIncome(Transaction transaction, IReadOnlyDictionary<int, Category> categories) =>
+        categories.TryGetValue(transaction.CategoryId, out var category)
+        && !category.IsSystem
+        && category.Kind == CategoryKind.Income;
+
+    private static readonly IReadOnlyDictionary<int, Category> NoCategories = new Dictionary<int, Category>();
+
+    private static async Task<IReadOnlyDictionary<int, Category>> LoadCategoriesAsync(string userId) =>
+        (await Category.GetVisibleAsync(userId)).ToDictionary(c => c.Id);
 
     private static bool IsSavings(Transaction transaction) =>
         transaction.Category is TransactionCategory.Savings || transaction.Category is TransactionCategory.Investments;
@@ -478,15 +519,20 @@ public static class Analytics
 
     public class TransactionByCategory
     {
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public TransactionCategory Category { get; set; }
+        public int CategoryId { get; set; }
+
+        // Legacy field: the system key, "Other" for custom categories.
+        public string Category => Models.Category.LegacyKey(CategoryId);
         public decimal Total { get; set; }
     }
 
     public class MonthlyTransactionByCategory
     {
         public int Month { get; set; }
-        public Dictionary<TransactionCategory, decimal> Categories { get; set; } = [];
+
+        // Legacy map keyed by system key; custom categories are merged into "Other".
+        public Dictionary<string, decimal> Categories { get; set; } = [];
+        public Dictionary<int, decimal> CategoryIds { get; set; } = [];
     }
 
     public class TransactionPerPocket
