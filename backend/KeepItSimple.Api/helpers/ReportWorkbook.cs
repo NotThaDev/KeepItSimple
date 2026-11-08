@@ -147,7 +147,8 @@ public static class ReportWorkbook
             return;
         }
 
-        var chartRow = kpiHeader - 1;
+        // Zero-based: one empty row below the frozen KPI header, so charts never sit under it.
+        var chartRow = kpiHeader + 1;
         if (scope.Trend.Any(b => b.Income != 0 || b.Expenses != 0))
         {
             var chart = ws.Drawings.AddChart("incomeVsExpenses", eChartType.ColumnClustered);
@@ -231,7 +232,7 @@ public static class ReportWorkbook
         chart.Series.Add(ws.Cells[2, 4, last, 4], ws.Cells[2, 1, last, 1]).Header = "Expenses";
         var line = chart.PlotArea.ChartTypes.Add(eChartType.Line);
         line.Series.Add(ws.Cells[2, 6, last, 6], ws.Cells[2, 1, last, 1]).Header = "Cumulative net";
-        Place(chart, 0, 8);
+        Place(chart, 2, 8);
     }
 
     private static void WriteCategories(ExcelWorksheet ws, ReportData data, List<ReportCategoryRow> rows, bool income)
@@ -272,7 +273,7 @@ public static class ReportWorkbook
             var pie = ws.Drawings.AddChart("incomePie", eChartType.Pie);
             pie.Title.Text = "Income by category";
             pie.Series.Add(ws.Cells[2, 2, last, 2], ws.Cells[2, 1, last, 1]);
-            Place(pie, 0, 8);
+            Place(pie, 2, 8);
         }
         else
         {
@@ -280,7 +281,7 @@ public static class ReportWorkbook
             bar.Title.Text = "Expenses: this period vs previous";
             bar.Series.Add(ws.Cells[2, 2, last, 2], ws.Cells[2, 1, last, 1]).Header = data.Range.Label;
             bar.Series.Add(ws.Cells[2, 6, last, 6], ws.Cells[2, 1, last, 1]).Header = data.Range.PreviousLabel;
-            Place(bar, 0, 8);
+            Place(bar, 2, 8);
         }
     }
 
