@@ -100,7 +100,6 @@ public static class ReportWorkbook
         Kpi(ws, ++row, "Largest expense", -(c.LargestExpense?.Amount ?? 0), -(p.LargestExpense?.Amount ?? 0), money, null);
         Kpi(ws, ++row, "Opening balance", c.OpeningBalance, p.OpeningBalance, money, null);
         Kpi(ws, ++row, "Closing balance", c.ClosingBalance, p.ClosingBalance, money, false);
-        ws.View.FreezePanes(kpiHeader + 1, 1);
 
         row += 2;
         var trendHeader = row;
@@ -147,7 +146,7 @@ public static class ReportWorkbook
             return;
         }
 
-        // Zero-based: one empty row below the frozen KPI header, so charts never sit under it.
+        // Zero-based: one empty row below the KPI header.
         var chartRow = kpiHeader + 1;
         if (scope.Trend.Any(b => b.Income != 0 || b.Expenses != 0))
         {
@@ -327,7 +326,6 @@ public static class ReportWorkbook
         {
             ws.Cells[1, 7].Value = NoData;
         }
-        ws.View.FreezePanes(3, 1);
         ws.Cells.AutoFitColumns();
     }
 
