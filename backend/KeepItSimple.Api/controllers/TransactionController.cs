@@ -38,14 +38,21 @@ public class TransactionController : ControllerBase
             return BadRequest("New transaction should not have an ID.");
         }
 
-        var createdTransaction = await Transaction.Update(transaction, User.GetUserId());
-        // The pocket doesn't exist or isn't the caller's.
-        if (createdTransaction == null)
+        try
         {
-            return NotFound($"Pocket {transaction.PocketId} not found.");
-        }
+            var createdTransaction = await Transaction.Update(transaction, User.GetUserId());
+            // The pocket doesn't exist or isn't the caller's.
+            if (createdTransaction == null)
+            {
+                return NotFound($"Pocket {transaction.PocketId} not found.");
+            }
 
-        return CreatedAtAction(nameof(GetById), new { id = createdTransaction.Id }, createdTransaction);
+            return CreatedAtAction(nameof(GetById), new { id = createdTransaction.Id }, createdTransaction);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPost("transfer")]
@@ -85,13 +92,20 @@ public class TransactionController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] Transaction transaction)
     {
         transaction.Id = id; // Ensure the ID is set to the URL parameter
-        var updatedTransaction = await Transaction.Update(transaction, User.GetUserId());
-        if (updatedTransaction == null)
+        try
         {
-            return NotFound();
-        }
+            var updatedTransaction = await Transaction.Update(transaction, User.GetUserId());
+            if (updatedTransaction == null)
+            {
+                return NotFound();
+            }
 
-        return Ok(updatedTransaction);
+            return Ok(updatedTransaction);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpDelete("{id}")]
@@ -204,6 +218,10 @@ public class TransactionController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
         }
     }
 }

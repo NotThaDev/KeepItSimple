@@ -83,7 +83,7 @@ public async Task<ActionResult<Pocket>> GetById(int id)
 - `ArgumentException` from the model becomes `BadRequest(ex.Message)`. Missing rows become `NotFound`. Delete returns `NoContent`. Create returns `CreatedAtAction`.
 - Keep request-shape checks in the action (empty id list, same pocket on both sides of a transfer). Domain checks (`Validate`, matching, normalization) stay on the model or a helper.
 
-Existing prefixes: `/api/pocket`, `/api/transactions`, `/api/category-rules`, `/api/analytics`.
+Existing prefixes: `/api/pocket`, `/api/transactions`, `/api/categories`, `/api/category-rules`, `/api/analytics`.
 
 ## Models
 
@@ -93,6 +93,7 @@ Entities are active records in `models/`. Properties are the columns. Static met
 - `Id == 0` (or null on `Transaction`) means create. Copy incoming fields onto the tracked row on update.
 - Call `Normalize` and `Validate` on the entity before `SaveChangesAsync` when the domain has those methods.
 - Put the enum on the entity file when only that entity uses it (`TransactionCategory` on `Transaction`, `RuleLogic` / `RuleField` / `RuleOperator` beside `CategoryRule`).
+- Categories are rows (`Category`, system rows seeded by `helpers/SystemCategories`, `Id == (int)Transaction.TransactionCategory`). Transactions and rules store `CategoryId` / `TargetCategoryId`; the `Category` / `TargetCategory` enum properties are `[NotMapped]` views of them, and `LegacyCategory` keeps the old JSON string until the cleanup PR. Check ids with `Category.IsVisibleAsync`.
 - Mark enum properties that go over the wire with `[JsonConverter(typeof(JsonStringEnumConverter))]`. The database still stores them as integers.
 - Mark navigation properties with `[JsonIgnore]`.
 - Add a `DbSet` and the relationship in `KeepItSimpleDbContext.OnModelCreating`. JSON columns use `jsonb` plus a value comparer, as `CategoryRule.Groups` does.
