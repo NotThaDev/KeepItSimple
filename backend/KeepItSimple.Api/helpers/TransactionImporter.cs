@@ -364,7 +364,7 @@ public static class TransactionImporter
                     row,
                     request.Mapping,
                     request.PocketId,
-                    request.DefaultCategory,
+                    request.DefaultCategoryId ?? (int)request.DefaultCategory,
                     appliedRules));
             }
             catch (Exception ex)
@@ -466,13 +466,13 @@ public static class TransactionImporter
         Dictionary<int, string> row,
         List<ColumnMapping> mapping,
         int pocketId,
-        Transaction.TransactionCategory defaultCategory,
+        int defaultCategoryId,
         IReadOnlyList<CategoryRule> rules)
     {
         string? description = null;
         decimal? amount = null;
         DateTime? date = null;
-        var category = defaultCategory;
+        var categoryId = defaultCategoryId;
 
         foreach (var map in mapping)
         {
@@ -503,7 +503,7 @@ public static class TransactionImporter
                 case MappableField.Category:
                     if (TryParseCategory(raw, out var parsed))
                     {
-                        category = parsed;
+                        categoryId = (int)parsed;
                     }
                     break;
             }
@@ -519,10 +519,10 @@ public static class TransactionImporter
             throw new InvalidOperationException("Missing or invalid Date.");
         }
 
-        var matchedRule = CategoryRuleMatcher.FindMatch(description, amount.Value, category, rules, pocketId);
+        var matchedRule = CategoryRuleMatcher.FindMatch(description, amount.Value, categoryId, rules, pocketId);
         if (matchedRule is not null)
         {
-            category = matchedRule.TargetCategory;
+            categoryId = matchedRule.TargetCategoryId;
         }
 
         return new Transaction
@@ -530,7 +530,7 @@ public static class TransactionImporter
             Description = description,
             Amount = amount.Value,
             Date = DateTime.SpecifyKind(date.Value, DateTimeKind.Utc),
-            Category = category,
+            CategoryId = categoryId,
             PocketId = pocketId,
         };
     }
@@ -543,7 +543,8 @@ public static class TransactionImporter
     private static bool TryParseCategory(string raw, out Transaction.TransactionCategory category)
     {
         var key = NormalizeCategoryLabel(raw);
-        if (Enum.TryParse(key, ignoreCase: true, out category))
+        // IsDefined rejects numeric labels, which would otherwise become arbitrary ids.
+        if (Enum.TryParse(key, ignoreCase: true, out category) && Enum.IsDefined(category))
         {
             return true;
         }

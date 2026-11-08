@@ -103,6 +103,8 @@ Example: `Amount > 0 AND (description equals "stipendio" OR description contains
 }
 ```
 
+A `Category` condition `value` is a category id (system or the user's own custom category), for example `"7"`. A legacy enum name such as `"Food"` is still accepted and mapped to its system id, until the one-time backfill (`POST /api/maintenance/backfill-rule-categories`, see the backend README) has converted stored rules and the legacy names are removed. `targetCategoryId` wins over the legacy `targetCategory` name; both are returned. Apply and preview-apply compare ids, so a custom target category applies; the preview items carry `oldCategoryId`/`newCategoryId` next to the legacy `oldCategory`/`newCategory` names ("Other" for custom ids).
+
 A group has no `logic` of its own. The first condition has none either. Each later condition carries the operator that joins it to the result so far. `groupLogic` only combines groups.
 
 ### 2. Import preview

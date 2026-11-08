@@ -76,6 +76,12 @@ Docs in [`docs/`](./docs/):
 - **[CategoryRules.md](./docs/CategoryRules.md)** – UI ↔ API: create rules, import preview, apply to existing rows
 - **[CategoryRuleMatcher.md](./docs/CategoryRuleMatcher.md)** – how `CategoryRuleMatcher` evaluates the tree
 
+### Backfill: rule condition categories
+
+`POST /api/maintenance/backfill-rule-categories` converts the legacy enum-name values of Category conditions in every rule to category ids. It is idempotent and returns `{ scanned, updated }`. It is not user-authenticated: send the header `X-Backfill-Key` matching the configuration `Backfill:Key` (env var `Backfill__Key`). Without a configured key the endpoint returns 404; a missing or wrong key returns 401. Do not commit a key value. Unset it after the backfill ran.
+
+Run it only after the frontend that reads category ids (#91 part 3) is deployed: the older rules page shows a converted condition as a raw id (`category = 2`).
+
 ## Tests
 
 `dotnet test KeepItSimple.sln` from the repo root.

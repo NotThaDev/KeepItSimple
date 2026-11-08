@@ -1,6 +1,4 @@
-using System.Text.Json.Serialization;
 using static KeepItSimple.Api.Models.Analytics.Analytics;
-using static KeepItSimple.Api.Models.Transaction;
 
 namespace KeepItSimple.Api.Models.Analytics;
 
@@ -15,8 +13,10 @@ public class OverviewAnalytics
     public decimal PreviousMonthTotalIncome { get; set; }
     public decimal PreviousMonthTotalBalance { get; set; }
     public List<DailyExpenseComparison> MonthlyExpensesDailyComparison { get; set; } = [];
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public TransactionCategory? TopExpenseCategory { get; set; }
+    public int? TopExpenseCategoryId { get; set; }
+
+    // Legacy field: the system key, "Other" for custom categories.
+    public string? TopExpenseCategory => TopExpenseCategoryId is { } id ? Category.LegacyKey(id) : null;
     public List<TransactionByCategory> MonthlyExpensesByCategory { get; set; } = [];
     public List<TransactionPerPocket> ExpensesPerPocket { get; set; } = [];
 
