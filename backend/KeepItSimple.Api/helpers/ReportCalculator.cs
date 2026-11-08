@@ -10,6 +10,8 @@ namespace KeepItSimple.Api.Helpers;
 public static class ReportCalculator
 {
     private const string NoDescription = "(no description)";
+    private const int MaxTransferNotes = 15;
+    private const int TransferMatchDays = 3;
 
     public static ReportData Calculate(
         IReadOnlyCollection<Transaction> transactions,
@@ -19,11 +21,12 @@ public static class ReportCalculator
     {
         var names = pockets.ToDictionary(p => p.Id, p => p.Name);
         var currency = pockets.FirstOrDefault()?.Currency ?? "EUR";
+        var counterparts = MatchTransfers(transactions);
 
-        var total = BuildScope("Total", currency, transactions, pockets.Sum(p => p.Balance), range, names);
+        var total = BuildScope("Total", currency, transactions, pockets.Sum(p => p.Balance), range, names, counterparts);
         var perPocket = pockets
             .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
-            .Select(p => BuildScope(p.Name, p.Currency, transactions.Where(t => t.PocketId == p.Id).ToList(), p.Balance, range, names))
+            .Select(p => BuildScope(p.Name, p.Currency, transactions.Where(t => t.PocketId == p.Id).ToList(), p.Balance, range, names, counterparts))
             .ToList();
 
         var rows = transactions
@@ -41,7 +44,8 @@ public static class ReportCalculator
         IReadOnlyCollection<Transaction> all,
         decimal balance,
         ReportPeriodRange range,
-        Dictionary<int, string> names)
+        Dictionary<int, string> names,
+        Dictionary<Transaction, Transaction> counterparts)
     {
         var current = InRange(all, range.Start, range.End);
         var previous = InRange(all, range.PreviousStart, range.PreviousEnd);
@@ -68,7 +72,7 @@ public static class ReportCalculator
             currency,
             currentKpis,
             previousKpis,
-            BuildTrend(current, range, currentKpis.OpeningBalance),
+            BuildTrend(current, range, currentKpis.OpeningBalance, currency, names, counterparts, [.. all.Select(t => t.PocketId)]),
             BuildCategories(current.Where(Analytics.IsExpense), previous.Where(Analytics.IsExpense), -1),
             BuildCategories(current.Where(Analytics.IsIncome), previous.Where(Analytics.IsIncome), 1),
             topExpenses,
@@ -110,7 +114,14 @@ public static class ReportCalculator
             closing);
     }
 
-    private static List<ReportTrendBucket> BuildTrend(List<Transaction> current, ReportPeriodRange range, decimal opening)
+    private static List<ReportTrendBucket> BuildTrend(
+        List<Transaction> current,
+        ReportPeriodRange range,
+        decimal opening,
+        string currency,
+        Dictionary<int, string> names,
+        Dictionary<Transaction, Transaction> counterparts,
+        HashSet<int> scopePockets)
     {
         var daily = range.Period == ReportPeriod.LastMonth;
         var buckets = new List<ReportTrendBucket>();
@@ -123,14 +134,75 @@ public static class ReportCalculator
             var items = current.Where(t => t.Date >= start && t.Date < next).ToList();
             var income = items.Where(Analytics.IsIncome).Sum(t => t.Amount);
             var expenses = -items.Where(Analytics.IsExpense).Sum(t => t.Amount);
+            var moves = items.Where(IsMove).ToList();
+            var notes = TransferNotes(moves, currency, names, counterparts, scopePockets);
             cumulativeNet += income - expenses;
             running += items.Sum(t => t.Amount);
             var label = start.ToString(daily ? "dd MMM" : "MMM yyyy", CultureInfo.InvariantCulture);
-            buckets.Add(new ReportTrendBucket(label, start, income, expenses, income - expenses, cumulativeNet, running));
+            buckets.Add(new ReportTrendBucket(label, start, income, expenses, moves.Sum(t => t.Amount), notes, income - expenses, cumulativeNet, running));
             start = next;
         }
 
         return buckets;
+    }
+
+    private static bool IsMove(Transaction t) => !Analytics.IsIncome(t) && !Analytics.IsExpense(t);
+
+    // Transactions carry no link to the other side of a transfer, so pair each move with the closest move
+    // of the opposite amount in another pocket within a few days.
+    // shortcut: amount + date matching can pair the wrong transactions when equal amounts move the same week; store a transfer id if that matters.
+    private static Dictionary<Transaction, Transaction> MatchTransfers(IReadOnlyCollection<Transaction> transactions)
+    {
+        var pairs = new Dictionary<Transaction, Transaction>(ReferenceEqualityComparer.Instance);
+        var moves = transactions.Where(IsMove).OrderBy(t => t.Date).ToList();
+        foreach (var t in moves.Where(t => t.Amount < 0))
+        {
+            var match = moves
+                .Where(u => u.Amount == -t.Amount && u.PocketId != t.PocketId && !pairs.ContainsKey(u)
+                    && Math.Abs((u.Date - t.Date).TotalDays) <= TransferMatchDays)
+                .OrderBy(u => Math.Abs((u.Date - t.Date).TotalDays))
+                .FirstOrDefault();
+            if (match is not null)
+            {
+                pairs[t] = match;
+                pairs[match] = t;
+            }
+        }
+        return pairs;
+    }
+
+    private static List<string> TransferNotes(
+        List<Transaction> moves,
+        string currency,
+        Dictionary<int, string> names,
+        Dictionary<Transaction, Transaction> counterparts,
+        HashSet<int> scopePockets)
+    {
+        var multiPocket = scopePockets.Count > 1;
+        var lines = new List<string>();
+        foreach (var t in moves.OrderBy(t => t.Date))
+        {
+            var amount = t.Amount.ToString("+#,##0.00;-#,##0.00", CultureInfo.InvariantCulture) + " " + currency;
+            var prefix = multiPocket ? names.GetValueOrDefault(t.PocketId, string.Empty) + ": " : string.Empty;
+            if (counterparts.TryGetValue(t, out var other))
+            {
+                // Inside one scope a matched pair is a single move: show it once, from the sending side.
+                if (t.Amount > 0 && scopePockets.Contains(other.PocketId))
+                {
+                    continue;
+                }
+                var direction = t.Amount < 0 ? "to" : "from";
+                lines.Add($"{prefix}{amount} {direction} {names.GetValueOrDefault(other.PocketId, "another pocket")}");
+            }
+            else
+            {
+                var description = Describe(t);
+                lines.Add($"{prefix}{amount} {t.Category}: {(description.Length > 40 ? description[..40] + "…" : description)}");
+            }
+        }
+        return lines.Count <= MaxTransferNotes
+            ? lines
+            : [.. lines.Take(MaxTransferNotes), $"… and {lines.Count - MaxTransferNotes} more"];
     }
 
     // sign flips expenses (negative amounts) to positive.
