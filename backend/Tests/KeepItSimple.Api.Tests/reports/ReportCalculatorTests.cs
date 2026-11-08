@@ -22,6 +22,26 @@ public class ReportCalculatorTests
         ReportCalculator.Calculate(txs, pockets, Month, Now);
 
     [Fact]
+    public void Calculate_counts_savings_tagged_on_either_or_both_sides_once()
+    {
+        var receivingOnly = Run(
+        [
+            Tx(1, TransactionCategory.Transfer, -400, D(8, 30)),
+            Tx(2, TransactionCategory.Savings, 400, D(8, 31)),
+            Tx(2, TransactionCategory.Investments, -150, D(8, 17)),
+        ], P(1, "Main", 1000), P(2, "Savings", 1000));
+        var bothSides = Run(
+        [
+            Tx(1, TransactionCategory.Savings, -400, D(8, 30)),
+            Tx(2, TransactionCategory.Savings, 400, D(8, 31)),
+        ], P(1, "Main", 1000), P(2, "Savings", 1000));
+
+        Assert.Equal(400m, receivingOnly.Total.Current.Saved);
+        Assert.Equal(150m, receivingOnly.Total.Current.Invested);
+        Assert.Equal(400m, bothSides.Total.Current.Saved);
+    }
+
+    [Fact]
     public void Calculate_moves_and_savings_are_not_income_or_expenses()
     {
         var data = Run(
@@ -36,7 +56,8 @@ public class ReportCalculatorTests
 
         Assert.Equal(2000m, data.Total.Current.Income);
         Assert.Equal(100m, data.Total.Current.Expenses);
-        Assert.Equal(350m, data.Total.Current.SavedInvested);
+        Assert.Equal(200m, data.Total.Current.Saved);
+        Assert.Equal(150m, data.Total.Current.Invested);
         Assert.Equal(6, data.Total.Current.TransactionCount);
         Assert.Contains(data.Transactions, t => t.Type == "Transfer");
         Assert.Contains(data.Transactions, t => t.Type == "Savings");
