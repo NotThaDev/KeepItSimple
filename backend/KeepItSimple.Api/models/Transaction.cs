@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using KeepItSimple.Api.dtos.Transaction;
 using KeepItSimple.Api.Helpers;
@@ -11,8 +12,24 @@ public class Transaction
     public string? Description { get; set; }
     public decimal Amount { get; set; }
     public DateTime Date { get; set; }
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public TransactionCategory Category { get; set; }
+    public int CategoryId { get; set; }
+
+    // Code-side view of CategoryId for system categories (custom ids cast to a value outside the enum).
+    [NotMapped, JsonIgnore]
+    public TransactionCategory Category
+    {
+        get => (TransactionCategory)CategoryId;
+        set => CategoryId = (int)value;
+    }
+
+    // Legacy JSON field "category" (enum name). On write, CategoryId wins when both are sent.
+    [NotMapped, JsonPropertyName("category")]
+    public string? LegacyCategory
+    {
+        get => Models.Category.LegacyKey(CategoryId);
+        set => CategoryId = Models.Category.LegacyId(value, CategoryId);
+    }
+
     public int PocketId { get; set; }
     [JsonIgnore]
     public Pocket? Pocket { get; set; }
@@ -59,6 +76,7 @@ public class Transaction
                     return null;
                 }
 
+                await EnsureCategoryAsync(dbContext, expense, userId);
                 pocket.Balance += expense.Amount;
 
                 expense.PocketId = pocket.Id;
@@ -79,6 +97,7 @@ public class Transaction
                 return null;
             }
 
+            await EnsureCategoryAsync(dbContext, expense, userId);
             var currentPocketId = existingExpense.PocketId;
             var targetPocketId = expense.PocketId > 0 ? expense.PocketId : currentPocketId;
             var previousAmount = existingExpense.Amount;
@@ -114,12 +133,26 @@ public class Transaction
             existingExpense.Description = expense.Description;
             existingExpense.Amount = expense.Amount;
             existingExpense.Date = expense.Date;
-            existingExpense.Category = expense.Category;
+            existingExpense.CategoryId = expense.CategoryId;
 
             await dbContext.SaveChangesAsync();
             return existingExpense;
         });
 
+    }
+
+    // A missing category defaults to Other; one the user cannot see is rejected.
+    private static async Task EnsureCategoryAsync(KeepItSimpleDbContext dbContext, Transaction transaction, string userId)
+    {
+        if (transaction.CategoryId == 0)
+        {
+            transaction.CategoryId = (int)TransactionCategory.Other;
+        }
+
+        if (!await Models.Category.IsVisibleAsync(dbContext, transaction.CategoryId, userId))
+        {
+            throw new ArgumentException("Unknown category.");
+        }
     }
 
     public static Task<bool> Delete(List<int> ids, string userId)
@@ -177,7 +210,7 @@ public class Transaction
             var outgoing = new Transaction
             {
                 Amount = -transferAmount,
-                Category = TransactionCategory.Transfer,
+                CategoryId = (int)TransactionCategory.Transfer,
                 Date = date,
                 Description = description,
                 PocketId = fromPocket.Id,
@@ -186,7 +219,7 @@ public class Transaction
             var incoming = new Transaction
             {
                 Amount = transferAmount,
-                Category = TransactionCategory.Transfer,
+                CategoryId = (int)TransactionCategory.Transfer,
                 Date = date,
                 Description = description,
                 PocketId = toPocket.Id,
@@ -207,7 +240,7 @@ public class Transaction
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum TransactionCategory
     {
-        Coffe,
+        Coffe = 1,
         Food,
         Transport,
         Entertainment,

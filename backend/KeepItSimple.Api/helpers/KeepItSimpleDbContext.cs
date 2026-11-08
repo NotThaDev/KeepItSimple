@@ -14,6 +14,7 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
 {
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Pocket> Pockets => Set<Pocket>();
+    public DbSet<Category> Categories => Set<Category>();
     public DbSet<CategoryRule> CategoryRules => Set<CategoryRule>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Notification> Notifications => Set<Notification>();
@@ -30,6 +31,29 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
             .HasOne(transaction => transaction.Pocket)
             .WithMany(pocket => pocket.Transactions)
             .HasForeignKey(transaction => transaction.PocketId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Category>(entity =>
+        {
+            entity.HasIndex(category => category.UserId);
+            entity.Property(category => category.Key).HasMaxLength(40);
+            entity.Property(category => category.Name).HasMaxLength(40).IsRequired();
+            entity.Property(category => category.Group).HasMaxLength(40).IsRequired();
+            entity.Property(category => category.Icon).HasMaxLength(40).IsRequired();
+            entity.Property(category => category.Color).HasMaxLength(7).IsRequired();
+            entity.HasOne<KeepItSimpleUser>()
+                .WithMany()
+                .HasForeignKey(category => category.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasData(SystemCategories.All);
+        });
+
+        modelBuilder.Entity<Transaction>()
+            .HasOne<Category>()
+            .WithMany()
+            .HasForeignKey(transaction => transaction.CategoryId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -109,6 +133,11 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
         modelBuilder.Entity<CategoryRule>(entity =>
         {
             entity.HasIndex(rule => rule.UserId);
+            entity.HasOne<Category>()
+                .WithMany()
+                .HasForeignKey(rule => rule.TargetCategoryId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<KeepItSimpleUser>()
                 .WithMany()
                 .HasForeignKey(rule => rule.UserId)

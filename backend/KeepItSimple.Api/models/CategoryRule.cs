@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -20,8 +21,23 @@ public class CategoryRule
     [JsonIgnore]
     public string UserId { get; set; } = string.Empty;
 
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public Transaction.TransactionCategory TargetCategory { get; set; }
+    public int TargetCategoryId { get; set; }
+
+    // Code-side view of TargetCategoryId for system categories.
+    [NotMapped, JsonIgnore]
+    public Transaction.TransactionCategory TargetCategory
+    {
+        get => (Transaction.TransactionCategory)TargetCategoryId;
+        set => TargetCategoryId = (int)value;
+    }
+
+    // Legacy JSON field "targetCategory" (enum name). On write, TargetCategoryId wins when both are sent.
+    [NotMapped, JsonPropertyName("targetCategory")]
+    public string? LegacyTargetCategory
+    {
+        get => Category.LegacyKey(TargetCategoryId);
+        set => TargetCategoryId = Category.LegacyId(value, TargetCategoryId);
+    }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public RuleLogic GroupLogic { get; set; } = RuleLogic.Or;
@@ -61,6 +77,7 @@ public class CategoryRule
 
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
+            await EnsureCategoryAsync(dbContext, rule.TargetCategoryId, userId);
             var maxOrder = await dbContext.CategoryRules
                 .Where(r => r.UserId == userId)
                 .Select(existing => (int?)existing.SortOrder)
@@ -88,14 +105,23 @@ public class CategoryRule
                 return null;
             }
 
+            await EnsureCategoryAsync(dbContext, rule.TargetCategoryId, userId);
             existing.Name = rule.Name;
             existing.Enabled = rule.Enabled;
-            existing.TargetCategory = rule.TargetCategory;
+            existing.TargetCategoryId = rule.TargetCategoryId;
             existing.GroupLogic = rule.GroupLogic;
             existing.Groups = rule.Groups;
             await dbContext.SaveChangesAsync();
             return existing;
         });
+    }
+
+    private static async Task EnsureCategoryAsync(KeepItSimpleDbContext dbContext, int categoryId, string userId)
+    {
+        if (!await Category.IsVisibleAsync(dbContext, categoryId, userId))
+        {
+            throw new ArgumentException("Unknown target category.");
+        }
     }
 
     public static Task<bool> DeleteAsync(int id, string userId)

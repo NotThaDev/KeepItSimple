@@ -17,7 +17,7 @@ namespace KeepItSimple.Api.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -94,6 +94,633 @@ namespace KeepItSimple.Api.Migrations
                     b.ToTable("RefreshTokens", "identity");
                 });
 
+            modelBuilder.Entity("KeepItSimple.Api.Models.Category", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<string>("Group")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Icon")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Key")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Categories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Color = "#8B5E3C",
+                            Group = "Food & Drink",
+                            Icon = "Utensils",
+                            Key = "Coffe",
+                            Kind = 0,
+                            Name = "Coffe"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Color = "#4CAF50",
+                            Group = "Food & Drink",
+                            Icon = "Utensils",
+                            Key = "Food",
+                            Kind = 0,
+                            Name = "Food"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Color = "#2196F3",
+                            Group = "Transport",
+                            Icon = "Car",
+                            Key = "Transport",
+                            Kind = 0,
+                            Name = "Transport"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Color = "#0D9488",
+                            Group = "Leisure",
+                            Icon = "Ticket",
+                            Key = "Entertainment",
+                            Kind = 0,
+                            Name = "Entertainment"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Color = "#FF9800",
+                            Group = "Home",
+                            Icon = "Home",
+                            Key = "Utilities",
+                            Kind = 0,
+                            Name = "Utilities"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Color = "#BE185D",
+                            Group = "Shopping",
+                            Icon = "ShoppingBag",
+                            Key = "Shopping",
+                            Kind = 0,
+                            Name = "Shopping"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Color = "#EF4444",
+                            Group = "Health",
+                            Icon = "HeartPulse",
+                            Key = "Health",
+                            Kind = 0,
+                            Name = "Health"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Color = "#1E3A8A",
+                            Group = "Education",
+                            Icon = "GraduationCap",
+                            Key = "Education",
+                            Kind = 0,
+                            Name = "Education"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Color = "#0EA5E9",
+                            Group = "Leisure",
+                            Icon = "Ticket",
+                            Key = "Travel",
+                            Kind = 0,
+                            Name = "Travel"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Color = "#06B6D4",
+                            Group = "Health",
+                            Icon = "HeartPulse",
+                            Key = "Sports",
+                            Kind = 0,
+                            Name = "Sports"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Color = "#A16207",
+                            Group = "Bills",
+                            Icon = "Receipt",
+                            Key = "Subscriptions",
+                            Kind = 0,
+                            Name = "Subscriptions"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Color = "#14B8A6",
+                            Group = "Money",
+                            Icon = "Wallet",
+                            Key = "Savings",
+                            Kind = 2,
+                            Name = "Savings"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Color = "#10B981",
+                            Group = "Money",
+                            Icon = "Wallet",
+                            Key = "Investments",
+                            Kind = 2,
+                            Name = "Investments"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Color = "#EC4899",
+                            Group = "Giving",
+                            Icon = "Gift",
+                            Key = "Gifts",
+                            Kind = 0,
+                            Name = "Gifts"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            Color = "#F43F5E",
+                            Group = "Giving",
+                            Icon = "Gift",
+                            Key = "Love",
+                            Kind = 0,
+                            Name = "Love"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            Color = "#22C55E",
+                            Group = "Giving",
+                            Icon = "Gift",
+                            Key = "Charity",
+                            Kind = 0,
+                            Name = "Charity"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            Color = "#15803D",
+                            Group = "Work",
+                            Icon = "Briefcase",
+                            Key = "Salary",
+                            Kind = 1,
+                            Name = "Salary"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            Color = "#65A30D",
+                            Group = "Work",
+                            Icon = "Briefcase",
+                            Key = "Bonus",
+                            Kind = 1,
+                            Name = "Bonus"
+                        },
+                        new
+                        {
+                            Id = 19,
+                            Color = "#0F766E",
+                            Group = "Work",
+                            Icon = "Briefcase",
+                            Key = "Freelance",
+                            Kind = 1,
+                            Name = "Freelance"
+                        },
+                        new
+                        {
+                            Id = 20,
+                            Color = "#1D4ED8",
+                            Group = "Work",
+                            Icon = "Briefcase",
+                            Key = "Business",
+                            Kind = 1,
+                            Name = "Business"
+                        },
+                        new
+                        {
+                            Id = 21,
+                            Color = "#3F6212",
+                            Group = "Investments",
+                            Icon = "TrendingUp",
+                            Key = "Interest",
+                            Kind = 1,
+                            Name = "Interest"
+                        },
+                        new
+                        {
+                            Id = 22,
+                            Color = "#0891B2",
+                            Group = "Investments",
+                            Icon = "TrendingUp",
+                            Key = "Dividends",
+                            Kind = 1,
+                            Name = "Dividends"
+                        },
+                        new
+                        {
+                            Id = 23,
+                            Color = "#475569",
+                            Group = "Property",
+                            Icon = "Building2",
+                            Key = "RentalIncome",
+                            Kind = 1,
+                            Name = "Rental Income"
+                        },
+                        new
+                        {
+                            Id = 24,
+                            Color = "#38BDF8",
+                            Group = "Other",
+                            Icon = "MoreHorizontal",
+                            Key = "Refund",
+                            Kind = 1,
+                            Name = "Refund"
+                        },
+                        new
+                        {
+                            Id = 25,
+                            Color = "#9E9E9E",
+                            Group = "Other",
+                            Icon = "MoreHorizontal",
+                            Key = "Other",
+                            Kind = 0,
+                            Name = "Other"
+                        },
+                        new
+                        {
+                            Id = 26,
+                            Color = "#F59E0B",
+                            Group = "Transport",
+                            Icon = "Car",
+                            Key = "Car",
+                            Kind = 0,
+                            Name = "Car"
+                        },
+                        new
+                        {
+                            Id = 27,
+                            Color = "#7C3AED",
+                            Group = "Shopping",
+                            Icon = "ShoppingBag",
+                            Key = "Clothing",
+                            Kind = 0,
+                            Name = "Clothing"
+                        },
+                        new
+                        {
+                            Id = 28,
+                            Color = "#C026D3",
+                            Group = "Shopping",
+                            Icon = "ShoppingBag",
+                            Key = "Accessories",
+                            Kind = 0,
+                            Name = "Accessories"
+                        },
+                        new
+                        {
+                            Id = 29,
+                            Color = "#B45309",
+                            Group = "Home",
+                            Icon = "Home",
+                            Key = "Furniture",
+                            Kind = 0,
+                            Name = "Furniture"
+                        },
+                        new
+                        {
+                            Id = 30,
+                            Color = "#92400E",
+                            Group = "Home",
+                            Icon = "Home",
+                            Key = "Home",
+                            Kind = 0,
+                            Name = "Home"
+                        },
+                        new
+                        {
+                            Id = 31,
+                            Color = "#64748B",
+                            Group = "Leisure",
+                            Icon = "Ticket",
+                            Key = "Newsstand",
+                            Kind = 0,
+                            Name = "Newsstand"
+                        },
+                        new
+                        {
+                            Id = 32,
+                            Color = "#DB2777",
+                            Group = "Leisure",
+                            Icon = "Ticket",
+                            Key = "Events",
+                            Kind = 0,
+                            Name = "Events"
+                        },
+                        new
+                        {
+                            Id = 33,
+                            Color = "#4338CA",
+                            Group = "Shopping",
+                            Icon = "ShoppingBag",
+                            Key = "Computers",
+                            Kind = 0,
+                            Name = "Computers"
+                        },
+                        new
+                        {
+                            Id = 34,
+                            Color = "#0E7490",
+                            Group = "Leisure",
+                            Icon = "Ticket",
+                            Key = "Hotel",
+                            Kind = 0,
+                            Name = "Hotel"
+                        },
+                        new
+                        {
+                            Id = 35,
+                            Color = "#1D4ED8",
+                            Group = "Education",
+                            Icon = "GraduationCap",
+                            Key = "School",
+                            Kind = 0,
+                            Name = "School"
+                        },
+                        new
+                        {
+                            Id = 36,
+                            Color = "#9A3412",
+                            Group = "Education",
+                            Icon = "GraduationCap",
+                            Key = "Books",
+                            Kind = 0,
+                            Name = "Books"
+                        },
+                        new
+                        {
+                            Id = 37,
+                            Color = "#1F2937",
+                            Group = "Transport",
+                            Icon = "Car",
+                            Key = "Motorcycle",
+                            Kind = 0,
+                            Name = "Motorcycle"
+                        },
+                        new
+                        {
+                            Id = 38,
+                            Color = "#7E22CE",
+                            Group = "Leisure",
+                            Icon = "Ticket",
+                            Key = "Music",
+                            Kind = 0,
+                            Name = "Music"
+                        },
+                        new
+                        {
+                            Id = 39,
+                            Color = "#047857",
+                            Group = "Health",
+                            Icon = "HeartPulse",
+                            Key = "Gym",
+                            Kind = 0,
+                            Name = "Gym"
+                        },
+                        new
+                        {
+                            Id = 40,
+                            Color = "#E11D48",
+                            Group = "Health",
+                            Icon = "HeartPulse",
+                            Key = "Hairdresser",
+                            Kind = 0,
+                            Name = "Hairdresser"
+                        },
+                        new
+                        {
+                            Id = 41,
+                            Color = "#A21CAF",
+                            Group = "Health",
+                            Icon = "HeartPulse",
+                            Key = "Personal",
+                            Kind = 0,
+                            Name = "Personal"
+                        },
+                        new
+                        {
+                            Id = 42,
+                            Color = "#EA580C",
+                            Group = "Home",
+                            Icon = "Home",
+                            Key = "Repairs",
+                            Kind = 0,
+                            Name = "Repairs"
+                        },
+                        new
+                        {
+                            Id = 43,
+                            Color = "#BE185D",
+                            Group = "Giving",
+                            Icon = "Gift",
+                            Key = "Relationships",
+                            Kind = 0,
+                            Name = "Relationships"
+                        },
+                        new
+                        {
+                            Id = 44,
+                            Color = "#0369A1",
+                            Group = "Bills",
+                            Icon = "Receipt",
+                            Key = "Services",
+                            Kind = 0,
+                            Name = "Services"
+                        },
+                        new
+                        {
+                            Id = 45,
+                            Color = "#CA8A04",
+                            Group = "Other",
+                            Icon = "MoreHorizontal",
+                            Key = "Special",
+                            Kind = 0,
+                            Name = "Special"
+                        },
+                        new
+                        {
+                            Id = 46,
+                            Color = "#16A34A",
+                            Group = "Food & Drink",
+                            Icon = "Utensils",
+                            Key = "Groceries",
+                            Kind = 0,
+                            Name = "Groceries"
+                        },
+                        new
+                        {
+                            Id = 47,
+                            Color = "#0D9488",
+                            Group = "Health",
+                            Icon = "HeartPulse",
+                            Key = "Sport",
+                            Kind = 0,
+                            Name = "Sport"
+                        },
+                        new
+                        {
+                            Id = 48,
+                            Color = "#2563EB",
+                            Group = "Leisure",
+                            Icon = "Ticket",
+                            Key = "Leisure",
+                            Kind = 0,
+                            Name = "Leisure"
+                        },
+                        new
+                        {
+                            Id = 49,
+                            Color = "#991B1B",
+                            Group = "Bills",
+                            Icon = "Receipt",
+                            Key = "Taxes",
+                            Kind = 0,
+                            Name = "Taxes"
+                        },
+                        new
+                        {
+                            Id = 50,
+                            Color = "#4F46E5",
+                            Group = "Bills",
+                            Icon = "Receipt",
+                            Key = "Phone",
+                            Kind = 0,
+                            Name = "Phone"
+                        },
+                        new
+                        {
+                            Id = 51,
+                            Color = "#C02688",
+                            Group = "Leisure",
+                            Icon = "Ticket",
+                            Key = "Film",
+                            Kind = 0,
+                            Name = "Film"
+                        },
+                        new
+                        {
+                            Id = 52,
+                            Color = "#334155",
+                            Group = "Bills",
+                            Icon = "Receipt",
+                            Key = "Insurance",
+                            Kind = 0,
+                            Name = "Insurance"
+                        },
+                        new
+                        {
+                            Id = 53,
+                            Color = "#7C2D12",
+                            Group = "Home",
+                            Icon = "Home",
+                            Key = "Lease",
+                            Kind = 0,
+                            Name = "Lease"
+                        },
+                        new
+                        {
+                            Id = 54,
+                            Color = "#9A3412",
+                            Group = "Home",
+                            Icon = "Home",
+                            Key = "Rent",
+                            Kind = 0,
+                            Name = "Rent"
+                        },
+                        new
+                        {
+                            Id = 55,
+                            Color = "#44403C",
+                            Group = "Home",
+                            Icon = "Home",
+                            Key = "Mortgage",
+                            Kind = 0,
+                            Name = "Mortgage"
+                        },
+                        new
+                        {
+                            Id = 56,
+                            Color = "#8B5CF6",
+                            Group = "Money",
+                            Icon = "Wallet",
+                            Key = "Loan",
+                            Kind = 0,
+                            Name = "Loan"
+                        },
+                        new
+                        {
+                            Id = 57,
+                            Color = "#6366F1",
+                            Group = "Money",
+                            Icon = "Wallet",
+                            Key = "Transfer",
+                            Kind = 3,
+                            Name = "Transfer"
+                        },
+                        new
+                        {
+                            Id = 58,
+                            Color = "#0F766E",
+                            Group = "Money",
+                            Icon = "Wallet",
+                            Key = "Withdraw",
+                            Kind = 0,
+                            Name = "Withdraw"
+                        });
+                });
+
             modelBuilder.Entity("KeepItSimple.Api.Models.CategoryRule", b =>
                 {
                     b.Property<int>("Id")
@@ -119,7 +746,7 @@ namespace KeepItSimple.Api.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
 
-                    b.Property<int>("TargetCategory")
+                    b.Property<int>("TargetCategoryId")
                         .HasColumnType("integer");
 
                     b.Property<string>("UserId")
@@ -127,6 +754,8 @@ namespace KeepItSimple.Api.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TargetCategoryId");
 
                     b.HasIndex("UserId");
 
@@ -383,7 +1012,7 @@ namespace KeepItSimple.Api.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
 
-                    b.Property<int>("Category")
+                    b.Property<int>("CategoryId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("Date")
@@ -396,6 +1025,8 @@ namespace KeepItSimple.Api.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
 
                     b.HasIndex("PocketId");
 
@@ -552,8 +1183,22 @@ namespace KeepItSimple.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("KeepItSimple.Api.Models.Category", b =>
+                {
+                    b.HasOne("KeepItSimple.Api.Models.KeepItSimpleUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("KeepItSimple.Api.Models.CategoryRule", b =>
                 {
+                    b.HasOne("KeepItSimple.Api.Models.Category", null)
+                        .WithMany()
+                        .HasForeignKey("TargetCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("KeepItSimple.Api.Models.KeepItSimpleUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -598,6 +1243,12 @@ namespace KeepItSimple.Api.Migrations
 
             modelBuilder.Entity("KeepItSimple.Api.Models.Transaction", b =>
                 {
+                    b.HasOne("KeepItSimple.Api.Models.Category", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("KeepItSimple.Api.Models.Pocket", "Pocket")
                         .WithMany("Transactions")
                         .HasForeignKey("PocketId")
