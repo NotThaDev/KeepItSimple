@@ -89,7 +89,8 @@ public static class ReportCalculator
         var income = inRange.Where(Analytics.IsIncome).Sum(t => t.Amount);
         var expenses = -inRange.Where(Analytics.IsExpense).Sum(t => t.Amount);
         var net = income - expenses;
-        var saved = -inRange.Where(t => IsSavings(t) && t.Amount < 0).Sum(t => t.Amount);
+        var saved = Moved(inRange, TransactionCategory.Savings);
+        var invested = Moved(inRange, TransactionCategory.Investments);
         var days = Math.Max(1, (end - start).Days);
         var largest = inRange.Where(Analytics.IsExpense).OrderBy(t => t.Amount).FirstOrDefault();
         var closing = balance - all.Where(t => t.Date >= end).Sum(t => t.Amount);
@@ -101,6 +102,7 @@ public static class ReportCalculator
             net,
             income == 0 ? 0 : net / income,
             saved,
+            invested,
             expenses / days,
             inRange.Count,
             largest is null ? null : ToRow(largest, names),
@@ -154,6 +156,14 @@ public static class ReportCalculator
             })
             .OrderByDescending(r => r.Amount)
             .ThenBy(r => r.Category, StringComparer.Ordinal)];
+    }
+
+    // A move can be tagged on the sending side (negative), the receiving side (positive) or both;
+    // the larger side is the amount moved, without double counting when both sides are tagged.
+    private static decimal Moved(List<Transaction> inRange, TransactionCategory category)
+    {
+        var tagged = inRange.Where(t => t.Category == category).ToList();
+        return Math.Max(tagged.Where(t => t.Amount > 0).Sum(t => t.Amount), -tagged.Where(t => t.Amount < 0).Sum(t => t.Amount));
     }
 
     private static bool IsSavings(Transaction t) =>
