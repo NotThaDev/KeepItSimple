@@ -170,7 +170,7 @@ A user can save a column mapping (`Columns`: header → `MappableField`) and reu
 |--------|------|-------|
 | `GET` | `/api/import-mappings` | All of the caller's mappings, ordered by name |
 | `GET` | `/api/import-mappings/{id}` | `404` when missing or owned by someone else |
-| `POST` | `/api/import-mappings` | Body without `id`. `400` on validation, `409` on name clash or the limit |
+| `POST` | `/api/import-mappings` | Body without `id`. `400` on validation, `409` on name clash or the limit; errors are `{ "message": "..." }` |
 | `PUT` | `/api/import-mappings/{id}` | Same errors as `POST`. `404` when missing |
 | `DELETE` | `/api/import-mappings/{id}` | `204` or `404` |
 

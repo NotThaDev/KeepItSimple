@@ -41,11 +41,11 @@ public class ImportMappingController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(ex.Message);
+            return Conflict(new { message = ex.Message });
         }
     }
 
@@ -65,11 +65,11 @@ public class ImportMappingController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(ex.Message);
+            return Conflict(new { message = ex.Message });
         }
     }
 
