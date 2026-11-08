@@ -65,10 +65,10 @@ export function ReportsPageContent({
   };
 
   const toolbar = (
-    <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto">
+    <div className="flex w-full items-center justify-center gap-2 sm:w-auto">
       <Selection
         aria-label="Report period"
-        className="w-full sm:w-44"
+        className="min-w-0 flex-1 data-[size=default]:h-9 sm:w-40 sm:flex-none"
         items={PERIOD_ITEMS}
         value={period}
         onChange={(value) => setPeriod(value as ReportPeriod)}
@@ -76,7 +76,7 @@ export function ReportsPageContent({
       />
       <Button
         size="lg"
-        className="w-full sm:w-auto"
+        className="shrink-0"
         onClick={generate}
         disabled={generating}
         aria-busy={generating}
