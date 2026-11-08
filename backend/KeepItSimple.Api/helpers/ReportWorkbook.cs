@@ -14,6 +14,8 @@ public static class ReportWorkbook
     private const string PercentFormat = "0.0%";
     private const string NoData = "No transactions in this period.";
     private const int MaxSheetName = 31;
+    // Long bank descriptions would otherwise widen a column until the rest of the sheet is off-screen.
+    private const double MaxColumnWidth = 60;
     private static readonly Color Good = Color.FromArgb(0x1B, 0x7F, 0x3B);
     private static readonly Color Bad = Color.FromArgb(0xC0, 0x39, 0x2B);
     private static readonly Color HeaderFill = Color.FromArgb(0xE5, 0xE7, 0xEB);
@@ -138,7 +140,7 @@ public static class ReportWorkbook
             ws.Cells[catHeader + 1, 2, catLast, 2].Style.Numberformat.Format = money;
         }
 
-        ws.Cells.AutoFitColumns();
+        ws.Cells.AutoFitColumns(ws.DefaultColWidth, MaxColumnWidth);
 
         if (c.TransactionCount == 0)
         {
@@ -217,7 +219,7 @@ public static class ReportWorkbook
         ws.Cells[2, 2, last, 2].Style.Numberformat.Format = DateFormat;
         ws.Cells[2, 3, last, 7].Style.Numberformat.Format = money;
         ws.View.FreezePanes(2, 1);
-        ws.Cells.AutoFitColumns();
+        ws.Cells.AutoFitColumns(ws.DefaultColWidth, MaxColumnWidth);
 
         if (data.Total.Current.TransactionCount == 0)
         {
@@ -259,7 +261,7 @@ public static class ReportWorkbook
             ws.ConditionalFormatting.AddDatabar(ws.Cells[2, 3, last, 3], Color.SteelBlue);
         }
         ws.View.FreezePanes(2, 1);
-        ws.Cells.AutoFitColumns();
+        ws.Cells.AutoFitColumns(ws.DefaultColWidth, MaxColumnWidth);
 
         if (!rows.Any(r => r.Amount > 0 || r.PreviousAmount > 0))
         {
@@ -326,7 +328,7 @@ public static class ReportWorkbook
         {
             ws.Cells[1, 7].Value = NoData;
         }
-        ws.Cells.AutoFitColumns();
+        ws.Cells.AutoFitColumns(ws.DefaultColWidth, MaxColumnWidth);
     }
 
     private static void WriteTransactions(ExcelWorksheet ws, ReportData data)
@@ -338,7 +340,7 @@ public static class ReportWorkbook
         {
             ws.Cells[2, 1].Value = NoData;
             ws.View.FreezePanes(2, 1);
-            ws.Cells.AutoFitColumns();
+            ws.Cells.AutoFitColumns(ws.DefaultColWidth, MaxColumnWidth);
             return;
         }
 
@@ -361,7 +363,7 @@ public static class ReportWorkbook
         table.ShowTotal = true;
         table.Columns[5].TotalsRowFunction = RowFunctions.Sum;
         ws.View.FreezePanes(2, 1);
-        ws.Cells.AutoFitColumns();
+        ws.Cells.AutoFitColumns(ws.DefaultColWidth, MaxColumnWidth);
     }
 
     private static void Header(ExcelWorksheet ws, int row, params string[] titles)
