@@ -92,6 +92,22 @@ public class ReportWorkbookTests
     }
 
     [Fact]
+    public void Render_comments_transfer_cells_with_the_moves()
+    {
+        var data = Build(
+        [
+            Tx(1, TransactionCategory.Transfer, -250, 8),
+            Tx(2, TransactionCategory.Transfer, 250, 8),
+        ], new Pocket { Id = 1, Name = "Main", Balance = 1000, Currency = "EUR" }, new Pocket { Id = 2, Name = "Revolut", Balance = 500, Currency = "EUR" });
+
+        using var package = Load(ReportWorkbook.Render(data));
+
+        var comment = Assert.Single(package.Workbook.Worksheets["Pocket - Main"].Comments.Cast<OfficeOpenXml.ExcelComment>());
+        Assert.Equal("-250.00 EUR to Revolut", comment.Text);
+        Assert.Equal(-250d, Convert.ToDouble(package.Workbook.Worksheets["Pocket - Main"].Cells[comment.Address].Value));
+    }
+
+    [Fact]
     public void Render_sanitizes_and_deduplicates_pocket_sheet_names()
     {
         var longName = new string('a', 40);

@@ -106,17 +106,22 @@ public static class ReportWorkbook
 
         row += 2;
         var trendHeader = row;
-        Header(ws, row, "Period", "Income", "Expenses", "Closing balance");
+        Header(ws, row, "Period", "Income", "Expenses", "Transfers", "Closing balance");
         foreach (var b in scope.Trend)
         {
             row++;
             ws.Cells[row, 1].Value = b.Label;
             ws.Cells[row, 2].Value = b.Income;
             ws.Cells[row, 3].Value = b.Expenses;
-            ws.Cells[row, 4].Value = b.ClosingBalance;
+            ws.Cells[row, 4].Value = b.Transfers;
+            ws.Cells[row, 5].Value = b.ClosingBalance;
+            if (b.TransferNotes.Count > 0)
+            {
+                ws.Cells[row, 4].AddComment(string.Join("\n", b.TransferNotes), "KeepItSimple").AutoFit = true;
+            }
         }
         var trendLast = row;
-        ws.Cells[trendHeader + 1, 2, trendLast, 4].Style.Numberformat.Format = money;
+        ws.Cells[trendHeader + 1, 2, trendLast, 5].Style.Numberformat.Format = money;
 
         row += 2;
         var catHeader = row;
@@ -165,7 +170,7 @@ public static class ReportWorkbook
         {
             var chart = ws.Drawings.AddChart("closingBalance", eChartType.Line);
             chart.Title.Text = "Closing balance";
-            chart.Series.Add(ws.Cells[trendHeader + 1, 4, trendLast, 4], ws.Cells[trendHeader + 1, 1, trendLast, 1]).Header = "Closing balance";
+            chart.Series.Add(ws.Cells[trendHeader + 1, 5, trendLast, 5], ws.Cells[trendHeader + 1, 1, trendLast, 1]).Header = "Closing balance";
             Place(chart, chartRow, 6);
             chartRow += 17;
         }
