@@ -54,7 +54,10 @@ export function LeftoverBreakDown() {
   const leftoverPercentage = toPercentage(analytics.leftOver);
   const savingsPercentage = toPercentage(analytics.totalMonthlySavings);
 
-  const moneyLeft = analytics.leftOver - analytics.totalMonthlySavings;
+  const moneyLeft = Math.max(
+    0,
+    analytics.leftOver - analytics.totalMonthlySavings,
+  );
   const moneyLeftPercentage = toPercentage(moneyLeft);
 
   return (
