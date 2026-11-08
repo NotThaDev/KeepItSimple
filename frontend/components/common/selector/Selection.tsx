@@ -22,6 +22,7 @@ interface SelectionProps {
   onChange?: (value: string) => void;
   isInvalid?: boolean;
   className?: string;
+  id?: string;
 }
 
 export function Selection({
@@ -32,6 +33,7 @@ export function Selection({
   onChange,
   isInvalid,
   className,
+  id,
 }: Readonly<SelectionProps>) {
   return (
     <Select
@@ -40,6 +42,7 @@ export function Selection({
       onValueChange={onChange}
     >
       <SelectTrigger
+        id={id}
         className={cn("w-full", className)}
         aria-invalid={isInvalid}
       >

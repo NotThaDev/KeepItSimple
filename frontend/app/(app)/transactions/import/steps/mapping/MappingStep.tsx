@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { isMappableField, MappableField } from "@/lib/models/Transaction";
 import { useTransactionImportContext } from "@/stores/transactionImport";
 import { SampleRowsAccordion } from "./SampleRowsAccordion";
+import { SavedMappingBar } from "./SavedMappingBar";
 
 const MAPPING_ITEMS = Object.values(MappableField).map((field) => ({
   value: field,
@@ -21,6 +22,8 @@ export function MappingStep() {
 
   return (
     <div className="flex flex-col gap-6">
+      <SavedMappingBar />
+
       <div className="flex flex-col gap-3">
         <Label>Column mapping</Label>
         <p className="text-xs text-muted-foreground">

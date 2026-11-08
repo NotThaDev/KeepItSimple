@@ -432,6 +432,7 @@ export interface TransactionImportAnalyzeResponse {
   sessionId: string;
   columns: TransactionImportColumn[];
   sampleRows: Record<string, string>[];
+  suggestedMappingId?: number | null;
 }
 
 export interface TransactionImportColumnMapping {
