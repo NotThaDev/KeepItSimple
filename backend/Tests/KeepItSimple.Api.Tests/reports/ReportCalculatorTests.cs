@@ -42,6 +42,40 @@ public class ReportCalculatorTests
     }
 
     [Fact]
+    public void Calculate_trend_transfers_reconcile_balance_and_name_the_other_pocket()
+    {
+        var data = Run(
+        [
+            Tx(1, TransactionCategory.Salary, 1000, D(8, 1)),
+            Tx(1, TransactionCategory.Transfer, -250, D(8, 8), "money to revolut"),
+            Tx(2, TransactionCategory.Transfer, 250, D(8, 9)),
+            Tx(3, TransactionCategory.Investments, -150, D(8, 17), "SOTTOSCRIZ. RATA PIANO FONDI"),
+        ], P(1, "Main", 2000), P(2, "Revolut", 500), P(3, "Savings", 1000));
+
+        foreach (var scope in data.Pockets.Append(data.Total))
+        {
+            var balance = scope.Current.OpeningBalance;
+            foreach (var b in scope.Trend)
+            {
+                balance += b.Income - b.Expenses + b.Transfers;
+                Assert.Equal(b.ClosingBalance, balance);
+            }
+        }
+
+        var main = data.Pockets.Single(s => s.Name == "Main").Trend.Single(b => b.Label == "08 Aug");
+        Assert.Equal(-250m, main.Transfers);
+        Assert.Equal(["-250.00 EUR to Revolut"], main.TransferNotes);
+        var revolut = data.Pockets.Single(s => s.Name == "Revolut").Trend.Single(b => b.Label == "09 Aug");
+        Assert.Equal(["+250.00 EUR from Main"], revolut.TransferNotes);
+        var savings = data.Pockets.Single(s => s.Name == "Savings").Trend.Single(b => b.Label == "17 Aug");
+        Assert.Equal(["-150.00 EUR Investments: SOTTOSCRIZ. RATA PIANO FONDI"], savings.TransferNotes);
+
+        // In the total a transfer between own pockets is shown once, from the sending side.
+        Assert.Equal(["Main: -250.00 EUR to Revolut"], data.Total.Trend.Single(b => b.Label == "08 Aug").TransferNotes);
+        Assert.Empty(data.Total.Trend.Single(b => b.Label == "09 Aug").TransferNotes);
+    }
+
+    [Fact]
     public void Calculate_moves_and_savings_are_not_income_or_expenses()
     {
         var data = Run(
