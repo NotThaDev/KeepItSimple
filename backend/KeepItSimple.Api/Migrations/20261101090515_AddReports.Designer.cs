@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KeepItSimple.Api.Migrations
 {
     [DbContext(typeof(KeepItSimpleDbContext))]
-    [Migration("20261101163727_AddReports")]
+    [Migration("20261101090515_AddReports")]
     partial class AddReports
     {
         /// <inheritdoc />
