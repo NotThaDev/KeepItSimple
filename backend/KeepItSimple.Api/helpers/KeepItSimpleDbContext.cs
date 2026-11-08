@@ -15,6 +15,7 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Pocket> Pockets => Set<Pocket>();
     public DbSet<CategoryRule> CategoryRules => Set<CategoryRule>();
+    public DbSet<ImportMapping> ImportMappings => Set<ImportMapping>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<InAppNotification> InAppNotifications => Set<InAppNotification>();
@@ -128,6 +129,31 @@ public class KeepItSimpleDbContext(DbContextOptions<KeepItSimpleDbContext> optio
                     groups => JsonSerializer.Deserialize<List<CategoryRuleGroup>>(
                         JsonSerializer.Serialize(groups, CategoryRuleJson.Options),
                         CategoryRuleJson.Options) ?? new List<CategoryRuleGroup>()));
+        });
+
+        modelBuilder.Entity<ImportMapping>(entity =>
+        {
+            entity.HasIndex(mapping => mapping.UserId);
+            entity.HasIndex(mapping => new { mapping.UserId, mapping.Name }).IsUnique();
+            entity.HasOne<KeepItSimpleUser>()
+                .WithMany()
+                .HasForeignKey(mapping => mapping.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(mapping => mapping.Name).IsRequired().HasMaxLength(ImportMapping.MaxNameLength);
+            entity.Property(mapping => mapping.Columns)
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    columns => JsonSerializer.Serialize(columns, ImportMappingJson.Options),
+                    json => JsonSerializer.Deserialize<List<ImportMappingColumn>>(json, ImportMappingJson.Options)
+                        ?? new List<ImportMappingColumn>())
+                .Metadata.SetValueComparer(new ValueComparer<List<ImportMappingColumn>>(
+                    (left, right) => JsonSerializer.Serialize(left, ImportMappingJson.Options)
+                        == JsonSerializer.Serialize(right, ImportMappingJson.Options),
+                    columns => JsonSerializer.Serialize(columns, ImportMappingJson.Options).GetHashCode(),
+                    columns => JsonSerializer.Deserialize<List<ImportMappingColumn>>(
+                        JsonSerializer.Serialize(columns, ImportMappingJson.Options),
+                        ImportMappingJson.Options) ?? new List<ImportMappingColumn>()));
         });
     }
 
