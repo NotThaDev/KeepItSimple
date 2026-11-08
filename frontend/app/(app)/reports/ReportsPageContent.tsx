@@ -65,7 +65,7 @@ export function ReportsPageContent({
   };
 
   const toolbar = (
-    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+    <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto">
       <Selection
         aria-label="Report period"
         className="w-full sm:w-44"
@@ -89,17 +89,14 @@ export function ReportsPageContent({
 
   if (reports.length === 0) {
     return (
-      <div className="flex w-full min-w-0 flex-1 flex-col gap-4">
-        {toolbar}
-        <div className="flex flex-1 items-center justify-center">
-          <EmptyStateCard
-            title="No reports yet"
-            description={EMPTY_DESCRIPTION}
-            actionText="Generate report"
-            onAction={generate}
-            icon={FileSpreadsheet}
-          />
-        </div>
+      <div className="flex w-full min-w-0 flex-1 items-center justify-center">
+        <EmptyStateCard
+          title="No reports yet"
+          description={EMPTY_DESCRIPTION}
+          icon={FileSpreadsheet}
+        >
+          {toolbar}
+        </EmptyStateCard>
       </div>
     );
   }

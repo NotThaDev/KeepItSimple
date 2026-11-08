@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import Link from "next/link";
 import { Inbox } from "lucide-react";
 
@@ -22,6 +22,8 @@ interface EmptyStateCardProps {
   actionHref?: string;
   icon?: ComponentType<{ className?: string }>;
   className?: string;
+  /** Replaces the default action button in the footer. */
+  children?: ReactNode;
 }
 
 export function EmptyStateCard({
@@ -32,6 +34,7 @@ export function EmptyStateCard({
   actionHref,
   icon: Icon = Inbox,
   className,
+  children,
 }: EmptyStateCardProps) {
   const isActionDisabled = !actionHref && !onAction;
 
@@ -75,15 +78,15 @@ export function EmptyStateCard({
         </div>
       </CardContent>
 
-      {actionText ? (
+      {children || actionText ? (
         <CardFooter className="justify-center border-t px-6 mt-3 pt-0 sm:px-8 bg-transparent border-t-0">
-          {actionHref ? (
+          {children ?? (actionHref ? (
             <Button asChild size="lg" className="w-full sm:w-auto sm:min-w-44">
               <Link href={actionHref}>{actionText}</Link>
             </Button>
           ) : (
             actionButton
-          )}
+          ))}
         </CardFooter>
       ) : null}
     </Card>
