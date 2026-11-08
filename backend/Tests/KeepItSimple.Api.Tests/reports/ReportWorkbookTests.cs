@@ -44,6 +44,25 @@ public class ReportWorkbookTests
     }
 
     [Fact]
+    public void Render_places_charts_below_frozen_header_rows()
+    {
+        var data = Build(
+        [
+            Tx(1, TransactionCategory.Salary, 1500, 3),
+            Tx(1, TransactionCategory.Food, -200, 4),
+        ], new Pocket { Id = 1, Name = "Main", Balance = 1300, Currency = "EUR" });
+
+        using var package = Load(ReportWorkbook.Render(data));
+
+        foreach (var ws in package.Workbook.Worksheets.Where(w => w.Drawings.Count > 0))
+        {
+            var frozenRows = new ExcelAddress(ws.View.PaneSettings.TopLeftCell).Start.Row - 1;
+            // Drawing rows are zero-based; keep one empty row between the frozen header and the chart.
+            Assert.All(ws.Drawings, d => Assert.True(d.From.Row > frozenRows, $"{ws.Name}/{d.Name} starts at row {d.From.Row}"));
+        }
+    }
+
+    [Fact]
     public void Render_sanitizes_and_deduplicates_pocket_sheet_names()
     {
         var longName = new string('a', 40);
