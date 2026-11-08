@@ -54,12 +54,28 @@ public class ReportWorkbookTests
 
         using var package = Load(ReportWorkbook.Render(data));
 
-        foreach (var ws in package.Workbook.Worksheets.Where(w => w.Drawings.Count > 0))
+        foreach (var ws in package.Workbook.Worksheets.Where(w => w.Drawings.Count > 0 && w.View.PaneSettings?.TopLeftCell is not null))
         {
             var frozenRows = new ExcelAddress(ws.View.PaneSettings.TopLeftCell).Start.Row - 1;
             // Drawing rows are zero-based; keep one empty row between the frozen header and the chart.
             Assert.All(ws.Drawings, d => Assert.True(d.From.Row > frozenRows, $"{ws.Name}/{d.Name} starts at row {d.From.Row}"));
         }
+    }
+
+    [Fact]
+    public void Render_freezes_headers_only_on_single_table_sheets()
+    {
+        var data = Build(
+        [
+            Tx(1, TransactionCategory.Salary, 1500, 3),
+            Tx(1, TransactionCategory.Food, -200, 4),
+        ], new Pocket { Id = 1, Name = "Main", Balance = 1300, Currency = "EUR" });
+
+        using var package = Load(ReportWorkbook.Render(data));
+
+        string[] multiTable = ["Summary", "Top spending", "Pocket - Main"];
+        Assert.All(multiTable, name => Assert.False(package.Workbook.Worksheets[name].View.PaneSettings?.State == ePaneState.Frozen, name));
+        Assert.Equal(ePaneState.Frozen, package.Workbook.Worksheets["Transactions"].View.PaneSettings.State);
     }
 
     [Fact]
