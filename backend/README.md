@@ -36,6 +36,7 @@ backend/
 | Transactions | `/api/transactions` | CRUD, filter by pocket, and file import |
 | Category rules | `/api/category-rules` | User-defined categorization (groups = parentheses) |
 | Analytics | `/api/analytics` | Aggregations over transactions |
+| Import mappings | `/api/import-mappings` | Saved column mappings for file import; analyze suggests one ([TransactionImportFlow.md](./docs/TransactionImportFlow.md#saved-column-mappings)) |
 | Auth | `/api/auth` | Register with email confirmation, confirm email, login, refresh, logout, sessions list, password reset by email ([Accounts.md](./docs/Accounts.md)) |
 | Account | `/api/account` | Profile picture of the signed-in user ([Accounts.md](./docs/Accounts.md#profile-picture-apiaccountpicture)) |
 | Notifications | — | Background delivery of user notifications ([Notifications.md](./docs/Notifications.md)) |

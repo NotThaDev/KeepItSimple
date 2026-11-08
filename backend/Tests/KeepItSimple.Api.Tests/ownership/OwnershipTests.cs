@@ -154,6 +154,34 @@ public class OwnershipTests
         Assert.Single(await InAppNotification.ListAsync(false, owner));
     }
 
+    [Fact]
+    public async Task Import_mapping_of_another_user_is_not_found()
+    {
+        var owner = TestApp.NewUserId();
+        var stranger = TestApp.NewUserId();
+        var created = await ImportMapping.CreateAsync(NewImportMapping("owner mapping"), owner);
+        var id = created.Id;
+
+        Assert.Null(await ImportMapping.GetByIdAsync(id, stranger));
+        var hijack = NewImportMapping("hacked");
+        hijack.Id = id;
+        Assert.Null(await ImportMapping.UpdateAsync(hijack, stranger));
+        Assert.False(await ImportMapping.DeleteAsync(id, stranger));
+        Assert.Empty(await ImportMapping.GetAllAsync(stranger));
+        Assert.Single(await ImportMapping.GetAllAsync(owner));
+        Assert.NotNull(await ImportMapping.GetByIdAsync(id, owner));
+    }
+
+    private static ImportMapping NewImportMapping(string name) => new()
+    {
+        Name = name,
+        Columns =
+        [
+            new ImportMappingColumn { Header = "Date", TargetField = TransactionImporter.MappableField.Date },
+            new ImportMappingColumn { Header = "Amount", TargetField = TransactionImporter.MappableField.Amount },
+        ],
+    };
+
     private static CategoryRule NewRule(string name) => new()
     {
         Name = name,
