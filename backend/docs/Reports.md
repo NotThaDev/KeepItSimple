@@ -20,7 +20,7 @@ Rules are the same as Analytics (`Analytics.IsIncome` / `IsExpense`):
 - **Income**: amount above 0, an income category, not Transfer or Withdraw.
 - **Net**: income minus expenses.
 - **Savings rate**: net / income, 0 when there is no income.
-- **Saved / invested**: absolute value of outflows in Savings and Investments.
+- **Saved** and **Invested**: money moved in the Savings and Investments categories. A move can be tagged on the sending side (negative), the receiving side (positive) or both, so each figure is the larger of the inflows and the outflows in that category; a move tagged on both sides counts once.
 - **Average daily expense**: expenses / days in the period.
 - **Balances**: closing = sum of current pocket balances minus every transaction dated on or after the period end; opening = closing minus every transaction in the period (all categories, transfers included). Because the starting point is the stored pocket balance, manual balance adjustments are part of the figures.
 - **Categories**: share of total, count, average, previous-period amount, and delta. A category present only in the previous period shows with amount 0.

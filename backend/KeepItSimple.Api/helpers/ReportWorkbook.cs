@@ -96,7 +96,8 @@ public static class ReportWorkbook
         Kpi(ws, ++row, "Expenses", c.Expenses, p.Expenses, money, true);
         Kpi(ws, ++row, "Net", c.Net, p.Net, money, false);
         Kpi(ws, ++row, "Savings rate", c.SavingsRate, p.SavingsRate, PercentFormat, false, percentDelta: false);
-        Kpi(ws, ++row, "Saved / invested", c.SavedInvested, p.SavedInvested, money, false);
+        Kpi(ws, ++row, "Saved", c.Saved, p.Saved, money, false);
+        Kpi(ws, ++row, "Invested", c.Invested, p.Invested, money, false);
         Kpi(ws, ++row, "Average daily expense", c.AverageDailyExpense, p.AverageDailyExpense, money, true);
         Kpi(ws, ++row, "Transactions", c.TransactionCount, p.TransactionCount, "0", null);
         Kpi(ws, ++row, "Largest expense", -(c.LargestExpense?.Amount ?? 0), -(p.LargestExpense?.Amount ?? 0), money, null);
