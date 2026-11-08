@@ -79,6 +79,19 @@ public class ReportWorkbookTests
     }
 
     [Fact]
+    public void Render_caps_column_width_for_long_descriptions()
+    {
+        var expense = Tx(1, TransactionCategory.Food, -200, 4);
+        expense.Description = new string('x', 300);
+        var data = Build([expense], new Pocket { Id = 1, Name = "Main", Balance = 1300, Currency = "EUR" });
+
+        using var package = Load(ReportWorkbook.Render(data));
+
+        Assert.All(package.Workbook.Worksheets, ws =>
+            Assert.All(Enumerable.Range(1, 8), c => Assert.True(ws.Column(c).Width <= 60, $"{ws.Name} column {c}: {ws.Column(c).Width}")));
+    }
+
+    [Fact]
     public void Render_sanitizes_and_deduplicates_pocket_sheet_names()
     {
         var longName = new string('a', 40);
