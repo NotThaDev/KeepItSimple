@@ -13,7 +13,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace KeepItSimple.Api.Tests.Categories;
 
-// Rules, import, analytics and the backfill with custom categories (#91).
+// Rules, import, analytics and with custom categories (#91).
 public class CustomCategoryBehaviorTests
 {
     private static readonly DateTime Now = new(2026, 9, 20, 12, 0, 0, DateTimeKind.Utc);
@@ -37,24 +37,24 @@ public class CustomCategoryBehaviorTests
     };
 
     [Fact]
-    public void Matcher_accepts_an_id_a_legacy_name_and_a_custom_id()
+    public void Matcher_accepts_an_id_and_a_custom_id_and_rejects_names()
     {
         Assert.NotNull(CategoryRuleMatcher.FindMatch("x", -1m, Food, [Rule(Food.ToString(), Other)]));
-        Assert.NotNull(CategoryRuleMatcher.FindMatch("x", -1m, Food, [Rule("Food", Other)]));
+        Assert.Null(CategoryRuleMatcher.FindMatch("x", -1m, Food, [Rule("Food", Other)]));
         Assert.NotNull(CategoryRuleMatcher.FindMatch("x", -1m, 1005, [Rule("1005", Other)]));
         Assert.Null(CategoryRuleMatcher.FindMatch("x", -1m, Other, [Rule("1005", Other)]));
         Assert.Null(CategoryRuleMatcher.FindMatch("x", -1m, Food, [Rule("Nope", Other)]));
     }
 
     [Fact]
-    public async Task Rule_validation_rejects_another_users_custom_id_and_accepts_own_and_legacy()
+    public async Task Rule_validation_rejects_another_users_custom_id_and_accepts_own_and_rejects_names()
     {
         var owner = TestApp.NewUserId();
         var stranger = TestApp.NewUserId();
         var mine = await Category.CreateAsync(NewCategory(CategoryKind.Expense), owner);
 
         await CategoryRule.CreateAsync(Rule(mine.Id.ToString(), Other), owner);
-        await CategoryRule.CreateAsync(Rule("Food", Other), owner);
+        await Assert.ThrowsAsync<ArgumentException>(() => CategoryRule.CreateAsync(Rule("Food", Other), owner));
         await Assert.ThrowsAsync<ArgumentException>(() => CategoryRule.CreateAsync(Rule(mine.Id.ToString(), Other), stranger));
         await Assert.ThrowsAsync<ArgumentException>(() => CategoryRule.CreateAsync(Rule("Nope", Other), owner));
     }
@@ -76,8 +76,6 @@ public class CustomCategoryBehaviorTests
         var item = Assert.Single(preview);
         Assert.Equal(Other, item.OldCategoryId);
         Assert.Equal(custom.Id, item.NewCategoryId);
-        Assert.Equal("Other", item.OldCategory);
-        Assert.Equal("Other", item.NewCategory);
         Assert.Equal(1, await CategoryRule.ApplyAsync([saved!.Id!.Value], user));
         Assert.Empty(await CategoryRule.PreviewAsync(null, user));
     }
@@ -111,12 +109,11 @@ public class CustomCategoryBehaviorTests
         var ok = Assert.IsType<OkObjectResult>(Run(custom.Id).Result);
         var drafts = Assert.IsType<PreviewResponse>(ok.Value).Transactions;
         Assert.All(drafts, draft => Assert.Equal(custom.Id, draft.CategoryId));
-        Assert.All(drafts, draft => Assert.Equal("Other", draft.LegacyCategory));
         Assert.IsType<BadRequestObjectResult>(Run(foreign.Id).Result);
     }
 
     [Fact]
-    public void Analytics_counts_custom_income_and_expense_by_kind_and_keeps_the_legacy_key()
+    public void Analytics_counts_custom_income_and_expense_by_kind()
     {
         var income = new Category { Id = 1001, UserId = "u", Kind = CategoryKind.Income, Name = "Side gig" };
         var expense = new Category { Id = 1002, UserId = "u", Kind = CategoryKind.Expense, Name = "Pets" };
@@ -134,55 +131,12 @@ public class CustomCategoryBehaviorTests
         Assert.Equal(300m, incomeAnalytics.TotalMonthlyIncome);
         Assert.Equal(40m, incomeAnalytics.MonthlyExpenses);
         Assert.Equal(300m, incomeAnalytics.TwelveMonthIncomeTrend.Single(m => m.Month == 9).CategoryIds[income.Id]);
-        Assert.Equal(300m, incomeAnalytics.TwelveMonthIncomeTrend.Single(m => m.Month == 9).Categories["Other"]);
         Assert.Equal(-40m, overview.MonthlyTotalExpenses);
         Assert.Equal(300m, overview.MonthlyTotalIncome);
         Assert.Equal(expense.Id, overview.TopExpenseCategoryId);
 
         using var json = JsonDocument.Parse(JsonSerializer.Serialize(overview, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
         var top = json.RootElement.GetProperty("monthlyExpensesByCategory")[0];
-        Assert.Equal("Other", top.GetProperty("category").GetString());
         Assert.Equal(expense.Id, top.GetProperty("categoryId").GetInt32());
-        Assert.Equal("Other", json.RootElement.GetProperty("topExpenseCategory").GetString());
     }
-
-    private static MaintenanceController Backfill(string? configured, string? header)
-    {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(configured is null ? [] : new Dictionary<string, string?> { ["Backfill:Key"] = configured })
-            .Build();
-        var http = new DefaultHttpContext();
-        if (header is not null)
-        {
-            http.Request.Headers["X-Backfill-Key"] = header;
-        }
-
-        return new MaintenanceController(config) { ControllerContext = new ControllerContext { HttpContext = http } };
-    }
-
-    [Fact]
-    public async Task Backfill_needs_a_configured_key_and_a_matching_header()
-    {
-        Assert.IsType<NotFoundResult>(await Backfill(null, "k").BackfillRuleCategories());
-        Assert.IsType<UnauthorizedResult>(await Backfill("secret", "wrong").BackfillRuleCategories());
-        Assert.IsType<UnauthorizedResult>(await Backfill("secret", null).BackfillRuleCategories());
-    }
-
-    [Fact]
-    public async Task Backfill_converts_legacy_names_to_ids_and_is_idempotent()
-    {
-        var user = TestApp.NewUserId();
-        var rule = await CategoryRule.CreateAsync(Rule("Food", Other), user);
-
-        var first = Assert.IsType<OkObjectResult>(await Backfill("secret", "secret").BackfillRuleCategories());
-        Assert.True(Updated(first) >= 1);
-        var stored = await CategoryRule.GetByIdAsync(rule.Id, user);
-        Assert.Equal(Food.ToString(), stored!.Groups[0].Conditions[0].Value);
-
-        var second = Assert.IsType<OkObjectResult>(await Backfill("secret", "secret").BackfillRuleCategories());
-        Assert.Equal(0, Updated(second));
-    }
-
-    private static int Updated(OkObjectResult result) =>
-        (int)result.Value!.GetType().GetProperty("updated")!.GetValue(result.Value)!;
 }

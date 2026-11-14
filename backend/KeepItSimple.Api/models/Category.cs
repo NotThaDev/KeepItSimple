@@ -38,34 +38,10 @@ public partial class Category
     [NotMapped]
     public bool IsSystem => UserId is null;
 
-    // Legacy JSON: the enum name of a system id, "Other" for custom ids. Removed with the legacy fields.
-    public static string LegacyKey(int categoryId)
-    {
-        return Enum.IsDefined(typeof(Transaction.TransactionCategory), categoryId)
-            ? ((Transaction.TransactionCategory)categoryId).ToString()
-            : nameof(Transaction.TransactionCategory.Other);
-    }
-
-    public static int LegacyId(string? key, int currentId)
-    {
-        if (currentId != 0 || string.IsNullOrWhiteSpace(key))
-        {
-            return currentId;
-        }
-
-        // An unknown name maps to -1 so the visibility check rejects it with 400.
-        return Enum.TryParse<Transaction.TransactionCategory>(key, ignoreCase: true, out var parsed) ? (int)parsed : -1;
-    }
-
-    // A rule condition value is a category id, or a legacy enum name until the backfill ran.
+    // A rule condition value is a category id string.
     public static int? ParseConditionId(string? value)
     {
-        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id))
-        {
-            return id;
-        }
-
-        return Enum.TryParse<Transaction.TransactionCategory>(value, ignoreCase: true, out var parsed) ? (int)parsed : null;
+        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) ? id : null;
     }
 
     public static Task<List<Category>> GetVisibleAsync(string userId)
