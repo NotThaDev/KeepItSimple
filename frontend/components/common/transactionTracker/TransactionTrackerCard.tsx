@@ -1,13 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  CategoryColorMap,
-  DEFAULT_CATEGORY_COLORS,
-} from "@/lib/helpers/colors";
 import { formatAmount } from "@/lib/helpers/currencyHelper";
 import { ExpenseByCategory } from "@/lib/models/Analytics";
-import { formatCategoryLabel } from "@/lib/models/Transaction";
+import { useCategories } from "@/stores/categories";
 import { cn } from "@/lib/utils";
 import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import {
@@ -46,6 +42,7 @@ export function TransactionTrackerCard({
   icon: Icon = ReceiptText,
   className,
 }: Readonly<TransactionTrackerCardProps>) {
+  const { byId } = useCategories();
   const sortedCategories = [...categories].sort(
     (left, right) => Math.abs(right.total) - Math.abs(left.total),
   );
@@ -94,20 +91,17 @@ export function TransactionTrackerCard({
               <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
                 {pagedCategories.map((entry) => (
                   <div
-                    key={entry.category}
+                    key={entry.categoryId}
                     className="flex items-center justify-between"
                   >
                     <div className="flex items-center">
                       <SquircleDashed
                         className="mr-2"
                         size={18}
-                        color={
-                          CategoryColorMap[entry.category]?.background ??
-                          DEFAULT_CATEGORY_COLORS.background
-                        }
+                        color={byId(entry.categoryId).color}
                       />
                       <p className="font-semibold">
-                        {formatCategoryLabel(entry.category)}
+                        {byId(entry.categoryId).name}
                       </p>
                     </div>
                     <p className="rounded-md bg-secondary px-2 py-0.5 text-secondary-foreground">

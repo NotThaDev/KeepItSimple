@@ -103,7 +103,7 @@ Add `"use client"` only on files that use state, events, or browser APIs.
 
 One file per domain in `frontend/lib/models/` (`Transaction.ts`, `Pocket.ts`, `CategoryRule.ts`, `Analytics.ts`):
 
-- Interfaces and string enums matching the API (`TransactionCategory.Food = "Food"`).
+- Interfaces and string enums matching the API (`MappableField.Amount = "Amount"`).
 - Constants and pure helpers that define the domain (`OPERATORS_BY_FIELD`, `normalizeRuleGroups`).
 - Async functions that call `get`, `post`, `put`, or `del` from `@/lib/fetchWrapper` and return `Promise<FetchWrapperResponse<T>>`.
 
@@ -146,7 +146,8 @@ Use these before adding a new primitive:
 - `EmptyStateCard` — no data, with `actionHref` or `onAction`
 - `ConfirmationDialogContent` — destructive confirm inside `Dialog`
 - `DatePicker`, `DateRangePicker`, `ENGLISH_DATE_FORMATTER` from `components/common/DateUtils`
-- `CategoryBadge` — transaction category
+- `CategoryBadge` — pass `categoryId`
+- Categories: all data (name, group, kind, icon, color) comes from `GET /api/categories`, loaded once in the `(app)` layout. Read it with `useCategories()` from `@/stores/categories` (`byId`, `byKey`, `other`, `expenseCategories`, `incomeCategories`, `groups(tab)`); never hardcode a category list. Models send ids (`categoryId`, `targetCategoryId`, `defaultCategoryId`). Icons are looked up by name in `components/common/category/iconRegistry.ts` (`getCategoryIcon`); colors via `createCategoryColors(category.color)`.
 - `formatAmount` from `lib/helpers/currencyHelper`
 - `toast` from `sonner`
 - Icons from `lucide-react`

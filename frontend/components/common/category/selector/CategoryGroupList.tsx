@@ -4,7 +4,8 @@ import {
   SelectSeparator,
 } from "@/components/ui/select";
 import { Fragment } from "react";
-import { selectItemValue, type CategoryGroup } from "./utils";
+import type { CategoryGroup } from "@/stores/categories";
+import { selectItemValue } from "./utils";
 import { CategorySelectItem } from "./CategorySelectItem";
 
 export function CategoryGroupList({ groups }: { groups: CategoryGroup[] }) {
@@ -15,9 +16,9 @@ export function CategoryGroupList({ groups }: { groups: CategoryGroup[] }) {
         <SelectLabel>{group.label}</SelectLabel>
         {group.categories.map((category) => (
           <CategorySelectItem
-            key={`${group.id}-${category}`}
+            key={`${group.id}-${category.id}`}
             category={category}
-            itemValue={selectItemValue(group.id, category)}
+            itemValue={selectItemValue(group.id, category.id)}
           />
         ))}
       </SelectGroup>

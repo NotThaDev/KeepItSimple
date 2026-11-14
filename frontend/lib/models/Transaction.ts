@@ -6,171 +6,16 @@ export interface Transaction {
   description?: string;
   amount: number;
   date: Date;
-  category: TransactionCategory;
+  categoryId: number;
   pocketId: number;
 }
 
-export enum TransactionCategory {
-  Coffe = "Coffe",
-  Food = "Food",
-  Transport = "Transport",
-  Entertainment = "Entertainment",
-  Utilities = "Utilities",
-  Shopping = "Shopping",
-  Health = "Health",
-  Education = "Education",
-  Travel = "Travel",
-  Sports = "Sports",
-  Subscriptions = "Subscriptions",
-  Savings = "Savings",
-  Investments = "Investments",
-  Gifts = "Gifts",
-  Love = "Love",
-  Charity = "Charity",
-  Other = "Other",
-  Salary = "Salary",
-  Bonus = "Bonus",
-  Freelance = "Freelance",
-  Business = "Business",
-  Interest = "Interest",
-  Dividends = "Dividends",
-  RentalIncome = "RentalIncome",
-  Refund = "Refund",
-  Car = "Car",
-  Clothing = "Clothing",
-  Accessories = "Accessories",
-  Furniture = "Furniture",
-  Home = "Home",
-  Newsstand = "Newsstand",
-  Events = "Events",
-  Computers = "Computers",
-  Hotel = "Hotel",
-  School = "School",
-  Books = "Books",
-  Motorcycle = "Motorcycle",
-  Music = "Music",
-  Gym = "Gym",
-  Hairdresser = "Hairdresser",
-  Personal = "Personal",
-  Repairs = "Repairs",
-  Relationships = "Relationships",
-  Services = "Services",
-  Special = "Special",
-  Groceries = "Groceries",
-  Sport = "Sport",
-  Leisure = "Leisure",
-  Taxes = "Taxes",
-  Phone = "Phone",
-  Film = "Film",
-  Insurance = "Insurance",
-  Lease = "Lease",
-  Rent = "Rent",
-  Mortgage = "Mortgage",
-  Loan = "Loan",
-  Transfer = "Transfer",
-  Withdraw = "Withdraw",
-}
-
-export const EXPENSE_TRANSACTION_CATEGORIES: TransactionCategory[] = [
-  TransactionCategory.Coffe,
-  TransactionCategory.Food,
-  TransactionCategory.Transport,
-  TransactionCategory.Entertainment,
-  TransactionCategory.Utilities,
-  TransactionCategory.Shopping,
-  TransactionCategory.Health,
-  TransactionCategory.Education,
-  TransactionCategory.Travel,
-  TransactionCategory.Sports,
-  TransactionCategory.Subscriptions,
-  TransactionCategory.Savings,
-  TransactionCategory.Investments,
-  TransactionCategory.Gifts,
-  TransactionCategory.Love,
-  TransactionCategory.Charity,
-  TransactionCategory.Other,
-  TransactionCategory.Car,
-  TransactionCategory.Clothing,
-  TransactionCategory.Accessories,
-  TransactionCategory.Furniture,
-  TransactionCategory.Home,
-  TransactionCategory.Newsstand,
-  TransactionCategory.Events,
-  TransactionCategory.Computers,
-  TransactionCategory.Hotel,
-  TransactionCategory.School,
-  TransactionCategory.Books,
-  TransactionCategory.Motorcycle,
-  TransactionCategory.Music,
-  TransactionCategory.Gym,
-  TransactionCategory.Hairdresser,
-  TransactionCategory.Personal,
-  TransactionCategory.Repairs,
-  TransactionCategory.Relationships,
-  TransactionCategory.Services,
-  TransactionCategory.Special,
-  TransactionCategory.Groceries,
-  TransactionCategory.Sport,
-  TransactionCategory.Leisure,
-  TransactionCategory.Taxes,
-  TransactionCategory.Phone,
-  TransactionCategory.Film,
-  TransactionCategory.Insurance,
-  TransactionCategory.Lease,
-  TransactionCategory.Rent,
-  TransactionCategory.Mortgage,
-  TransactionCategory.Loan,
-  TransactionCategory.Transfer,
-  TransactionCategory.Withdraw,
-];
-
-export const INCOME_TRANSACTION_CATEGORIES: TransactionCategory[] = [
-  TransactionCategory.Salary,
-  TransactionCategory.Bonus,
-  TransactionCategory.Freelance,
-  TransactionCategory.Business,
-  TransactionCategory.Interest,
-  TransactionCategory.Dividends,
-  TransactionCategory.RentalIncome,
-  TransactionCategory.Refund,
-  TransactionCategory.Savings,
-  TransactionCategory.Investments,
-  TransactionCategory.Transfer,
-];
-
-export const MOVEMENT_TRANSACTION_CATEGORIES: TransactionCategory[] = [
-  TransactionCategory.Transfer,
-  TransactionCategory.Withdraw,
-];
-
-export const INCOME_ANALYTICS_CATEGORIES: TransactionCategory[] =
-  INCOME_TRANSACTION_CATEGORIES.filter(
-    (category) =>
-      category !== TransactionCategory.Savings &&
-      !MOVEMENT_TRANSACTION_CATEGORIES.includes(category),
-  );
-
 export const DEFAULT_TRANSACTION_PAGE_SIZE = 10;
-export const ALL_TRANSACTION_CATEGORIES = Object.values(TransactionCategory);
-
-export function formatCategoryLabel(category: TransactionCategory): string {
-  return category.replace(/([A-Z])/g, " $1").trim();
-}
-
-export function isTransactionCategory(
-  value: string | undefined,
-): value is TransactionCategory {
-  return (
-    value !== undefined &&
-    ALL_TRANSACTION_CATEGORIES.includes(value as TransactionCategory)
-  );
-}
-
 export interface TransactionListQuery {
   page: number;
   pageSize: number;
   pocketId?: number;
-  category?: TransactionCategory;
+  categoryId?: number;
   from?: string;
   to?: string;
   search?: string;
@@ -200,7 +45,7 @@ export function parseTransactionSearchParams(
   const pageValue = Number(firstSearchParam(searchParams.page));
   const pageSizeValue = Number(firstSearchParam(searchParams.pageSize));
   const pocketIdValue = Number(firstSearchParam(searchParams.pocketId));
-  const categoryValue = firstSearchParam(searchParams.category);
+  const categoryIdValue = Number(firstSearchParam(searchParams.categoryId));
   const fromParam = firstSearchParam(searchParams.from);
   const toParam = firstSearchParam(searchParams.to);
   const hasDateParams = fromParam !== undefined || toParam !== undefined;
@@ -215,7 +60,10 @@ export function parseTransactionSearchParams(
       Number.isInteger(pocketIdValue) && pocketIdValue > 0
         ? pocketIdValue
         : undefined,
-    category: isTransactionCategory(categoryValue) ? categoryValue : undefined,
+    categoryId:
+      Number.isInteger(categoryIdValue) && categoryIdValue > 0
+        ? categoryIdValue
+        : undefined,
     from: hasDateParams
       ? isDateOnly(fromParam)
         ? fromParam
@@ -242,8 +90,8 @@ export function toTransactionSearchParams(query: TransactionListQuery): string {
   if (query.pocketId != null) {
     params.set("pocketId", String(query.pocketId));
   }
-  if (query.category) {
-    params.set("category", query.category);
+  if (query.categoryId != null) {
+    params.set("categoryId", String(query.categoryId));
   }
   if (query.from) {
     params.set("from", query.from);
@@ -280,8 +128,8 @@ export async function getTransactions(
   if (query.pocketId != null) {
     params.set("pocketId", String(query.pocketId));
   }
-  if (query.category) {
-    params.set("category", query.category);
+  if (query.categoryId != null) {
+    params.set("categoryId", String(query.categoryId));
   }
   if (query.from) {
     params.set("from", query.from);
@@ -443,7 +291,7 @@ export interface TransactionImportDraft {
   description?: string;
   amount: number;
   date: string;
-  category: TransactionCategory;
+  categoryId: number;
   pocketId: number;
 }
 
@@ -473,7 +321,7 @@ export async function previewTransactionImport(request: {
   sessionId: string;
   pocketId: number;
   mapping: TransactionImportColumnMapping[];
-  defaultCategory?: TransactionCategory;
+  defaultCategoryId?: number;
 }): Promise<FetchWrapperResponse<TransactionImportPreviewResponse>> {
   return post<TransactionImportPreviewResponse>(
     "/api/transactions/import/preview",

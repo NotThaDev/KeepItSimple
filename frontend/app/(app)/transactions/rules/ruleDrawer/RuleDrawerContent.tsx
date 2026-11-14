@@ -25,6 +25,7 @@ import {
   updateCategoryRule,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
+import { useCategories } from "@/stores/categories";
 import { Info } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -47,8 +48,9 @@ export function RuleDrawerContent({
   pockets,
   onSave,
 }: Readonly<RuleDrawerContentProps>) {
+  const { categories, other } = useCategories();
   const [ruleData, setRuleData] = useState<CategoryRule>(() =>
-    draftFrom(rule, copyFrom),
+    draftFrom(categories, other.id, rule, copyFrom),
   );
   const [validation, setValidation] = useState<RuleValidation | null>(null);
   const [saving, setSaving] = useState(false);
@@ -133,9 +135,9 @@ export function RuleDrawerContent({
               <CategorySelector
                 showAll
                 className="min-w-[342px]"
-                category={ruleData.targetCategory}
-                onChange={(targetCategory) =>
-                  updateRule({ ...ruleData, targetCategory })
+                categoryId={ruleData.targetCategoryId}
+                onChange={(targetCategoryId) =>
+                  updateRule({ ...ruleData, targetCategoryId })
                 }
               />
             </Field>

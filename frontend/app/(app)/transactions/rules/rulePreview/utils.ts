@@ -1,16 +1,14 @@
 import {
   CategoryRuleCondition,
   CategoryRuleGroup,
+  resolveConditionCategory,
   RuleField,
   RuleLogic,
   RuleOperator,
 } from "@/lib/models/CategoryRule";
 import { FIELD_LABELS } from "../ruleLabels";
 import { Pocket } from "@/lib/models/Pocket";
-import {
-  isTransactionCategory,
-  formatCategoryLabel,
-} from "@/lib/models/Transaction";
+import type { Category } from "@/lib/models/Category";
 
 export enum BadgeKind {
   Token = "token",
@@ -49,12 +47,13 @@ export function conditionLead(condition: CategoryRuleCondition) {
 export function conditionValue(
   condition: CategoryRuleCondition,
   pockets: Pocket[],
+  categories: Category[],
 ) {
-  if (
-    condition.field === RuleField.Category &&
-    isTransactionCategory(condition.value)
-  ) {
-    return formatCategoryLabel(condition.value);
+  if (condition.field === RuleField.Category) {
+    return (
+      resolveConditionCategory(condition.value, categories)?.name ??
+      condition.value
+    );
   }
 
   if (condition.field === RuleField.Pocket) {
@@ -70,8 +69,9 @@ export function conditionValue(
 export function formatDisplayValue(
   condition: CategoryRuleCondition,
   pockets: Pocket[],
+  categories: Category[],
 ) {
-  const value = conditionValue(condition, pockets);
+  const value = conditionValue(condition, pockets, categories);
   if (condition.field === RuleField.Description) {
     return `"${value}"`;
   }

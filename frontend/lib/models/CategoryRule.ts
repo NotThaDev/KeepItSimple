@@ -1,5 +1,5 @@
 import { del, FetchWrapperResponse, get, post, put } from "../fetchWrapper";
-import { ALL_TRANSACTION_CATEGORIES, TransactionCategory } from "./Transaction";
+import type { Category } from "./Category";
 
 export enum RuleLogic {
   And = "And",
@@ -40,7 +40,7 @@ export interface CategoryRule {
   name: string;
   enabled: boolean;
   sortOrder?: number;
-  targetCategory: TransactionCategory;
+  targetCategoryId: number;
   groupLogic: RuleLogic;
   groups: CategoryRuleGroup[];
 }
@@ -50,13 +50,11 @@ export interface CategoryRulePreviewItem {
   description?: string;
   amount: number;
   date: string;
-  oldCategory: TransactionCategory;
-  newCategory: TransactionCategory;
+  oldCategoryId: number;
+  newCategoryId: number;
   matchedRuleId: number;
   matchedRuleName: string;
 }
-
-export const RULE_CATEGORIES = ALL_TRANSACTION_CATEGORIES;
 
 export const OPERATORS_BY_FIELD: Record<RuleField, RuleOperator[]> = {
   [RuleField.Description]: [RuleOperator.Contains, RuleOperator.Equals],
@@ -70,6 +68,20 @@ export const OPERATORS_BY_FIELD: Record<RuleField, RuleOperator[]> = {
   [RuleField.Category]: [RuleOperator.Equals, RuleOperator.NotEquals],
   [RuleField.Pocket]: [RuleOperator.Equals, RuleOperator.NotEquals],
 };
+
+// A Category condition value is a category id, or a legacy enum name saved before the id migration.
+export function resolveConditionCategory(
+  value: string,
+  categories: Category[],
+): Category | undefined {
+  const id = Number(value);
+  if (value.trim() !== "" && Number.isInteger(id)) {
+    return categories.find((category) => category.id === id);
+  }
+  return categories.find(
+    (category) => category.key?.toLowerCase() === value.toLowerCase(),
+  );
+}
 
 export function normalizeRuleGroups(
   groups: CategoryRuleGroup[],
@@ -99,7 +111,7 @@ function ruleRequestBody(rule: CategoryRule) {
   return {
     name: rule.name,
     enabled: rule.enabled,
-    targetCategory: rule.targetCategory,
+    targetCategoryId: rule.targetCategoryId,
     groupLogic: rule.groupLogic,
     groups: normalizeRuleGroups(rule.groups),
     ...(rule.id != null ? { id: rule.id } : {}),
