@@ -96,10 +96,22 @@ async function fetch<T>(
   }
 
   if (!response.ok) {
-    console.error(`Request to ${fullUrl} failed with status ${response.status}`);
+    console.error(
+      `Request to ${fullUrl} failed with status ${response.status}`,
+    );
     return {
       error: `Request failed with status ${response.status}`,
-      errorData: await response.json().catch(() => undefined),
+      // Plain-text bodies (BadRequest("message")) are not JSON; keep the text instead.
+      errorData: await response
+        .text()
+        .then((text) => {
+          try {
+            return JSON.parse(text);
+          } catch {
+            return text || undefined;
+          }
+        })
+        .catch(() => undefined),
       status: response.status,
     };
   }
