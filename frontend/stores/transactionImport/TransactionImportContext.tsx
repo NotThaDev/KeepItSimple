@@ -6,7 +6,6 @@ import {
   confirmTransactionImport,
   MappableField,
   previewTransactionImport,
-  TransactionCategory,
   TransactionImportPreviewResponse,
 } from "@/lib/models/Transaction";
 import {
@@ -18,6 +17,7 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
+import { useCategories } from "@/stores/categories";
 import { importErrorMessage } from "./utils";
 import { ImportStep } from "./types";
 import type { TransactionImportContext as TransactionImportContextValue } from "./types";
@@ -48,6 +48,7 @@ export function TransactionImportProvider({
   onImported,
   children,
 }: Readonly<TransactionImportProviderProps>) {
+  const { other } = useCategories();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<ImportStep>(ImportStep.Analyze);
   const [file, setFile] = useState<File | null>(null);
@@ -167,7 +168,7 @@ export function TransactionImportProvider({
     const result = await previewTransactionImport({
       sessionId: analyze.sessionId,
       pocketId: Number(pocketId),
-      defaultCategory: TransactionCategory.Other,
+      defaultCategoryId: other.id,
       mapping: analyze.columns.map((column) => ({
         columnIndex: column.index,
         targetField: mapping[column.index] ?? MappableField.Ignore,
@@ -184,7 +185,7 @@ export function TransactionImportProvider({
 
     setPreview(result.data);
     setStep(ImportStep.Preview);
-  }, [analyze, mapping, pocketId]);
+  }, [analyze, mapping, pocketId, other.id]);
 
   const confirmTransactions = useCallback(async () => {
     if (!preview || preview.transactions.length === 0) {
@@ -213,7 +214,7 @@ export function TransactionImportProvider({
   }, [openDialog, onImported, pocketId, preview]);
 
   const updateDraftCategory = useCallback(
-    (index: number, category: TransactionCategory) => {
+    (index: number, categoryId: number) => {
       setPreview((current) => {
         if (!current) {
           return current;
@@ -222,7 +223,7 @@ export function TransactionImportProvider({
         return {
           ...current,
           transactions: current.transactions.map((item, itemIndex) =>
-            itemIndex === index ? { ...item, category } : item,
+            itemIndex === index ? { ...item, categoryId } : item,
           ),
         };
       });

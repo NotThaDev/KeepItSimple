@@ -8,6 +8,7 @@ import {
   CategoryRuleGroup,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
+import { useCategories } from "@/stores/categories";
 import { cn } from "cn";
 import { FIELD_SHORT_LABELS, OPERATOR_SHORT_LABELS } from "../ruleLabels";
 import { LogicBadge, TokenBadge } from "./LogicBadge";
@@ -62,8 +63,9 @@ function ValueBadge({
   pockets: Pocket[];
   compact?: boolean;
 }>) {
-  const value = conditionValue(condition, pockets);
-  const display = formatDisplayValue(condition, pockets);
+  const { categories } = useCategories();
+  const value = conditionValue(condition, pockets, categories);
+  const display = formatDisplayValue(condition, pockets, categories);
 
   if (!compact) {
     return (

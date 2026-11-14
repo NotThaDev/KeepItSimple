@@ -6,16 +6,9 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import {
-  CategoryColorMap,
-  DEFAULT_CATEGORY_COLORS,
-} from "@/lib/helpers/colors";
 import { formatAmount } from "@/lib/helpers/currencyHelper";
 import { ExpenseByCategory } from "@/lib/models/Analytics";
-import {
-  formatCategoryLabel,
-  TransactionCategory,
-} from "@/lib/models/Transaction";
+import { useCategories } from "@/stores/categories";
 import { SquircleDashed } from "lucide-react";
 import { useMemo } from "react";
 import { Label, Pie, PieChart } from "recharts";
@@ -33,17 +26,16 @@ export function TransactionPieChart({
   currency,
   label = "Expenses",
 }: Readonly<TransactionPieChartProps>) {
+  const { byId } = useCategories();
   const chartData = useMemo(() => {
     return categories
       .map((entry) => ({
-        category: entry.category,
+        categoryId: String(entry.categoryId),
         total: Math.abs(entry.total),
-        fill:
-          CategoryColorMap[entry.category]?.background ??
-          DEFAULT_CATEGORY_COLORS.background,
+        fill: byId(entry.categoryId).color,
       }))
       .filter((entry) => entry.total > 0);
-  }, [categories]);
+  }, [categories, byId]);
 
   const chartConfig = useMemo(() => {
     const config: ChartConfig = {
@@ -53,14 +45,14 @@ export function TransactionPieChart({
     };
 
     chartData.forEach((entry) => {
-      config[entry.category] = {
-        label: formatCategoryLabel(entry.category),
+      config[entry.categoryId] = {
+        label: byId(Number(entry.categoryId)).name,
         color: entry.fill,
       };
     });
 
     return config;
-  }, [chartData, label]);
+  }, [chartData, label, byId]);
 
   const total = useMemo(() => {
     return chartData.reduce((acc, curr) => acc + curr.total, 0);
@@ -82,13 +74,10 @@ export function TransactionPieChart({
                 <div className="flex items-center gap-1">
                   <SquircleDashed
                     size={14}
-                    color={
-                      CategoryColorMap[name as TransactionCategory]
-                        ?.background ?? DEFAULT_CATEGORY_COLORS.background
-                    }
+                    color={byId(Number(name)).color}
                   />
                   <span className="text-muted-foreground mr-1">
-                    {formatCategoryLabel(name as TransactionCategory)}
+                    {byId(Number(name)).name}
                   </span>
                   <span className="font-mono font-medium text-foreground tabular-nums">
                     {formatAmount(Number(value), currency)}
@@ -101,7 +90,7 @@ export function TransactionPieChart({
         <Pie
           data={chartData}
           dataKey="total"
-          nameKey="category"
+          nameKey="categoryId"
           innerRadius={80}
           outerRadius={100}
           paddingAngle={4}

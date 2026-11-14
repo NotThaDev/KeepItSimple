@@ -43,7 +43,7 @@ export function DraftSummaryTable({
           id: "category",
           header: "Category",
           headerClassName: "w-44",
-          cell: ({ item }) => <CategoryBadge category={item.category} />,
+          cell: ({ item }) => <CategoryBadge categoryId={item.categoryId} />,
         },
         {
           id: "actions",

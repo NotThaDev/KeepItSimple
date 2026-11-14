@@ -1,7 +1,6 @@
 import type { Pocket } from "@/lib/models/Pocket";
 import type {
   MappableField,
-  TransactionCategory,
   TransactionImportAnalyzeResponse,
   TransactionImportPreviewResponse,
 } from "@/lib/models/Transaction";
@@ -36,7 +35,7 @@ export interface TransactionImportContextAction {
   analyzeFile: () => Promise<void>;
   previewTransactions: () => Promise<void>;
   confirmTransactions: () => Promise<void>;
-  updateDraftCategory: (index: number, category: TransactionCategory) => void;
+  updateDraftCategory: (index: number, categoryId: number) => void;
   removeDraft: (index: number) => void;
 }
 
