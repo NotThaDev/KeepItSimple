@@ -27,7 +27,7 @@ public class AnalyticsTests
         Assert.Equal(2000m, overview.MonthlyTotalIncome);
         Assert.Equal(-80m, overview.TotalExpenses);
         Assert.Equal(2000m, overview.TotalIncome);
-        Assert.Equal("Food", overview.TopExpenseCategory);
+        Assert.Equal((int)TransactionCategory.Food, overview.TopExpenseCategoryId);
         Assert.DoesNotContain(
             overview.MonthlyExpensesByCategory,
             entry => (TransactionCategory)entry.CategoryId is TransactionCategory.Transfer);
@@ -126,7 +126,7 @@ public class AnalyticsTests
             entry => (TransactionCategory)entry.CategoryId is TransactionCategory.Transfer);
         Assert.Equal(1800m, analytics.MonthlyIncomePerPocket.Single(entry => entry.Pocket.Id == 1).Total);
         Assert.Equal(0m, analytics.MonthlyIncomePerPocket.Single(entry => entry.Pocket.Id == 2).Total);
-        Assert.Equal(1800m, analytics.TwelveMonthIncomeTrend.Single(entry => entry.Month == 9).Categories["Salary"]);
+        Assert.Equal(1800m, analytics.TwelveMonthIncomeTrend.Single(entry => entry.Month == 9).CategoryIds[(int)TransactionCategory.Salary]);
         Assert.DoesNotContain(
             analytics.TopMonthlyIncome,
             transaction => transaction.Category is TransactionCategory.Transfer);
@@ -255,8 +255,8 @@ public class AnalyticsTests
         Assert.Equal(1800m, income.TotalMonthlyIncome);
         Assert.Equal(1700m, income.PreviousMonthIncome);
         Assert.Equal(400m, income.MonthlyExpenses);
-        Assert.Equal(1800m, income.TwelveMonthIncomeTrend.Single(entry => entry.Month == 8).Categories["Salary"]);
-        Assert.Equal(2000m, income.TwelveMonthIncomeTrend.Single(entry => entry.Month == 9).Categories["Salary"]);
+        Assert.Equal(1800m, income.TwelveMonthIncomeTrend.Single(entry => entry.Month == 8).CategoryIds[(int)TransactionCategory.Salary]);
+        Assert.Equal(2000m, income.TwelveMonthIncomeTrend.Single(entry => entry.Month == 9).CategoryIds[(int)TransactionCategory.Salary]);
         Assert.Equal(12, income.TwelveMonthIncomeTrend.Count);
 
         Assert.Equal(200m, saving.TotalMonthlySavings);

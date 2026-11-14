@@ -171,49 +171,7 @@ public class CategoryTests
     }
 
     [Fact]
-    public async Task Legacy_category_string_works_on_write_and_both_fields_are_returned()
-    {
-        var owner = TestApp.NewUserId();
-        var pocketId = await NewPocketAsync(owner);
-        var body = JsonSerializer.Deserialize<Transaction>(
-            $$"""{"amount":-3,"date":"2026-01-01T00:00:00Z","category":"Food","pocketId":{{pocketId}}}""", Web)!;
-
-        var saved = await Transaction.Update(body, owner);
-        var json = JsonSerializer.Serialize(saved, Web);
-
-        Assert.Equal((int)Transaction.TransactionCategory.Food, saved!.CategoryId);
-        using var document = JsonDocument.Parse(json);
-        Assert.Equal("Food", document.RootElement.GetProperty("category").GetString());
-        Assert.Equal(saved.CategoryId, document.RootElement.GetProperty("categoryId").GetInt32());
-    }
-
-    [Fact]
-    public async Task Unknown_legacy_category_name_is_rejected()
-    {
-        var owner = TestApp.NewUserId();
-        var pocketId = await NewPocketAsync(owner);
-        var body = JsonSerializer.Deserialize<Transaction>(
-            $$"""{"amount":-3,"date":"2026-01-01T00:00:00Z","category":"Fod","pocketId":{{pocketId}}}""", Web)!;
-
-        await Assert.ThrowsAsync<ArgumentException>(() => Transaction.Update(body, owner));
-    }
-
-    [Fact]
-    public void CategoryId_wins_over_legacy_category_and_custom_ids_read_as_Other()
-    {
-        var both = JsonSerializer.Deserialize<Transaction>("""{"category":"Food","categoryId":2}""", Web)!;
-        var bothReversed = JsonSerializer.Deserialize<Transaction>("""{"categoryId":2,"category":"Salary"}""", Web)!;
-        var custom = new Transaction { CategoryId = 1000 };
-        var rule = JsonSerializer.Deserialize<CategoryRule>("""{"targetCategory":"Salary"}""", Web)!;
-
-        Assert.Equal(2, both.CategoryId);
-        Assert.Equal(2, bothReversed.CategoryId);
-        Assert.Equal("Other", custom.LegacyCategory);
-        Assert.Equal((int)Transaction.TransactionCategory.Salary, rule.TargetCategoryId);
-    }
-
-    [Fact]
-    public async Task Filter_by_categoryId_and_legacy_category_and_foreign_id_returns_empty()
+    public async Task Filter_by_categoryId_and_foreign_id_returns_empty()
     {
         var owner = TestApp.NewUserId();
         var stranger = TestApp.NewUserId();
@@ -223,11 +181,9 @@ public class CategoryTests
         await Transaction.Update(NewTransaction(pocketId, (int)Transaction.TransactionCategory.Food), owner);
 
         var byId = await Transaction.GetPagedAsync(new TransactionListQuery { CategoryId = custom.Id }, owner);
-        var legacy = await Transaction.GetPagedAsync(new TransactionListQuery { Category = Transaction.TransactionCategory.Food }, owner);
         var foreign = await Transaction.GetPagedAsync(new TransactionListQuery { CategoryId = custom.Id }, stranger);
 
         Assert.Single(byId.Items);
-        Assert.Single(legacy.Items);
         Assert.Empty(foreign.Items);
     }
 }

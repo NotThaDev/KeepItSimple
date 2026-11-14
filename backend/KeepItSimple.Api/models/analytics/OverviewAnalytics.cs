@@ -15,8 +15,6 @@ public class OverviewAnalytics
     public List<DailyExpenseComparison> MonthlyExpensesDailyComparison { get; set; } = [];
     public int? TopExpenseCategoryId { get; set; }
 
-    // Legacy field: the system key, "Other" for custom categories.
-    public string? TopExpenseCategory => TopExpenseCategoryId is { } id ? Category.LegacyKey(id) : null;
     public List<TransactionByCategory> MonthlyExpensesByCategory { get; set; } = [];
     public List<TransactionPerPocket> ExpensesPerPocket { get; set; } = [];
 

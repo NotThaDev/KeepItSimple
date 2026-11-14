@@ -325,7 +325,7 @@ public class PreviewTests
             SessionId = analyzed.SessionId,
             PocketId = PocketId,
             Mapping = mapping,
-            DefaultCategory = defaultCategory,
+            DefaultCategoryId = (int)defaultCategory,
         }, ImportFixtures.UserId, rules);
     }
 }

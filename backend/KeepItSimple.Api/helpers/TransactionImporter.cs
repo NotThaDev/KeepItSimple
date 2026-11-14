@@ -364,7 +364,7 @@ public static class TransactionImporter
                     row,
                     request.Mapping,
                     request.PocketId,
-                    request.DefaultCategoryId ?? (int)request.DefaultCategory,
+                    request.DefaultCategoryId ?? (int)Models.Transaction.TransactionCategory.Other,
                     appliedRules));
             }
             catch (Exception ex)
