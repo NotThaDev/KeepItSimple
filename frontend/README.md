@@ -9,6 +9,7 @@ It is a Next.js app. It talks to the API and has these areas:
 | 📊 | Dashboard | `/dashboard` | Balance, spending by category, and the trend over time |
 | 📈 | Analytics | `/analytics` | Income, expense, and saving views |
 | 💸 | Transactions | `/transactions` | Movements, categories, filters, and file import |
+| 🗂️ | Categories | `/transactions/categories` | Browse system categories and create, edit or delete your own (name, kind, icon, color) |
 | 🏷️ | Category rules | `/transactions/rules` | Rules that categorize movements imported from a bank account, with preview and apply |
 | 👛 | Pockets | `/pockets` | Accounts, balances, and currencies |
 | 👤 | Account | `/account` | Username, email, profile picture and active sessions of the signed-in user; opened from the user menu |
