@@ -44,7 +44,6 @@ public class EmailChannel(IOptions<EmailSettings> options) : INotificationChanne
             await client.AuthenticateAsync(settings.Username, settings.Password, cancellationToken);
         }
 
-        // MailKit 5 removed the MimeMessage overload from SmtpClient; the extension method still takes it.
         await IMailTransportExtensions.SendAsync(client, message, cancellationToken);
         await client.DisconnectAsync(true, cancellationToken);
     }
