@@ -141,33 +141,20 @@ public class ImportMapping
     /// Picks the saved mapping that fits a file's header row, or null when none fits.
     /// A mapping is a candidate when every mapped (non-Ignore) header occurs exactly once in the file,
     /// compared case- and whitespace-insensitively. A renamed or missing mapped header means no match.
-    /// Among candidates: an exact header set match wins, then more mapped columns, then the most recently updated.
+    /// Among candidates: more mapped columns wins, then the most recently updated.
     /// </summary>
     public static ImportMapping? FindBestMatch(IEnumerable<ImportMapping> mappings, IReadOnlyCollection<string> fileHeaders)
     {
         var fileCounts = fileHeaders
             .GroupBy(Normalize)
             .ToDictionary(group => group.Key, group => group.Count());
-        var fileSet = fileCounts.Keys.ToHashSet();
 
-        var candidates = new List<(ImportMapping Mapping, bool Exact, int MappedCount)>();
-        foreach (var mapping in mappings)
-        {
-            var mapped = mapping.Columns
+        return mappings
+            .Select(mapping => (Mapping: mapping, Mapped: mapping.Columns
                 .Where(column => column.TargetField != TransactionImporter.MappableField.Ignore)
-                .ToList();
-            if (!mapped.All(column => fileCounts.GetValueOrDefault(Normalize(column.Header)) == 1))
-            {
-                continue;
-            }
-
-            var savedSet = mapping.Columns.Select(column => Normalize(column.Header)).ToHashSet();
-            candidates.Add((mapping, savedSet.SetEquals(fileSet), mapped.Count));
-        }
-
-        return candidates
-            .OrderByDescending(candidate => candidate.Exact)
-            .ThenByDescending(candidate => candidate.MappedCount)
+                .ToList()))
+            .Where(candidate => candidate.Mapped.All(column => fileCounts.GetValueOrDefault(Normalize(column.Header)) == 1))
+            .OrderByDescending(candidate => candidate.Mapped.Count)
             .ThenByDescending(candidate => candidate.Mapping.UpdatedAt)
             .Select(candidate => candidate.Mapping)
             .FirstOrDefault();

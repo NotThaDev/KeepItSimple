@@ -7,14 +7,14 @@ namespace KeepItSimple.Api.Tests.ImportMappings;
 public class FindBestMatchTests
 {
     [Fact]
-    public void FindBestMatch_exact_set_wins_over_newer_subset_match()
+    public void FindBestMatch_more_mapped_columns_wins_over_newer_mapping()
     {
-        var exact = Build("exact", new DateTime(2025, 1, 1), ("Date", Field.Date), ("Amount", Field.Amount), ("Note", Field.Ignore));
-        var subset = Build("subset", new DateTime(2026, 1, 1), ("Date", Field.Date), ("Amount", Field.Amount));
+        var wider = Build("wider", new DateTime(2025, 1, 1), ("Date", Field.Date), ("Amount", Field.Amount), ("Note", Field.Description));
+        var narrower = Build("narrower", new DateTime(2026, 1, 1), ("Date", Field.Date), ("Amount", Field.Amount));
 
-        var result = ImportMapping.FindBestMatch([subset, exact], new[] { "Date", "Amount", "Note" });
+        var result = ImportMapping.FindBestMatch([narrower, wider], new[] { "Date", "Amount", "Note" });
 
-        Assert.Equal("exact", result!.Name);
+        Assert.Equal("wider", result!.Name);
     }
 
     [Fact]

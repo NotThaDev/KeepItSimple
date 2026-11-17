@@ -184,14 +184,13 @@ A saved mapping is a candidate when every non-`Ignore` column header occurs exac
 
 Among candidates, the first rule that separates them wins:
 
-1. Exact header set: the saved headers (all columns, `Ignore` included) equal the file headers.
-2. More non-`Ignore` columns.
-3. Later `UpdatedAt`.
+1. More non-`Ignore` columns.
+2. Later `UpdatedAt`.
 
 Consequences:
 
 - A mapped header that was renamed or removed in the file means no match.
-- An `Ignore` column that is missing from the file does not block a match. It only lowers the exact-set rank.
+- `Ignore` columns play no part in matching. The UI saves only mapped columns.
 - A mapped header that appears twice in the file means no match.
 
 ### Validation and limits
