@@ -7,6 +7,8 @@ namespace KeepItSimple.Api.Tests.Reports;
 
 public class ReportCalculatorTests
 {
+    private static readonly IReadOnlyDictionary<int, Category> SystemCats = SystemCategories.All.ToDictionary(c => c.Id);
+
     private static readonly DateTime Now = new(2026, 9, 20, 12, 0, 0, DateTimeKind.Utc);
     private static readonly ReportPeriodRange Month = ReportPeriodRange.Resolve(ReportPeriod.LastMonth, Now); // Aug 2026, prev Jul 2026
 
@@ -19,7 +21,7 @@ public class ReportCalculatorTests
         new() { Id = id, Name = name, Balance = balance, Currency = currency };
 
     private static ReportData Run(List<Transaction> txs, params Pocket[] pockets) =>
-        ReportCalculator.Calculate(txs, pockets, Month, Now);
+        ReportCalculator.Calculate(txs, pockets, SystemCats, Month, Now);
 
     [Fact]
     public void Calculate_counts_savings_tagged_on_either_or_both_sides_once()
@@ -205,7 +207,7 @@ public class ReportCalculatorTests
         Assert.Equal(31, month.Total.Trend.Count);
         Assert.Equal("01 Aug", month.Total.Trend[0].Label);
 
-        var year = ReportCalculator.Calculate([], [P(1, "Main", 0)], ReportPeriodRange.Resolve(ReportPeriod.LastYear, Now), Now);
+        var year = ReportCalculator.Calculate([], [P(1, "Main", 0)], SystemCats, ReportPeriodRange.Resolve(ReportPeriod.LastYear, Now), Now);
         Assert.Equal(12, year.Total.Trend.Count);
         Assert.Equal("Jan 2025", year.Total.Trend[0].Label);
     }
@@ -224,5 +226,28 @@ public class ReportCalculatorTests
         Assert.Equal(540m, trend[0].ClosingBalance);
         Assert.Equal(500m, trend[^1].ClosingBalance);
         Assert.Equal(60m, trend[^1].CumulativeNet);
+    }
+
+    [Fact]
+    public void Calculate_uses_custom_category_names_and_counts_custom_income()
+    {
+        var categories = new Dictionary<int, Category>(SystemCats)
+        {
+            [1000] = new() { Id = 1000, UserId = "u", Name = "Side gig", Kind = CategoryKind.Income },
+            [1001] = new() { Id = 1001, UserId = "u", Name = "Pets", Kind = CategoryKind.Expense },
+        };
+        var txs = new List<Transaction>
+        {
+            new() { PocketId = 1, CategoryId = 1000, Amount = 300, Date = D(8, 10) },
+            new() { PocketId = 1, CategoryId = 1001, Amount = -40, Date = D(8, 11) },
+        };
+
+        var data = ReportCalculator.Calculate(txs, [P(1, "Main", 1000)], categories, Month, Now);
+
+        Assert.Equal(300m, data.Total.Current.Income);
+        Assert.Equal(300m, Assert.Single(data.Total.IncomeByCategory, r => r.Category == "Side gig").Amount);
+        Assert.Equal(40m, Assert.Single(data.Total.ExpensesByCategory, r => r.Category == "Pets").Amount);
+        Assert.Contains(data.Transactions, r => r.Category == "Side gig" && r.Type == "Income");
+        Assert.Contains(data.Transactions, r => r.Category == "Pets" && r.Type == "Expense");
     }
 }
