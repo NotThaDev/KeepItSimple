@@ -2,11 +2,10 @@
 
 import {
   createImportMapping,
-  deleteImportMapping,
   getImportMappings,
   ImportMapping,
   ImportMappingInput,
-  updateImportMapping,
+  mappingErrorMessage,
 } from "@/lib/models/ImportMapping";
 import { Pocket } from "@/lib/models/Pocket";
 import {
@@ -85,12 +84,6 @@ function mappingFromSaved(
   return { mapping, missingHeaders };
 }
 
-// The import-mappings API explains 400/409 as { message }.
-function mappingErrorMessage(errorData: unknown, fallback: string) {
-  const message = (errorData as { message?: unknown } | undefined)?.message;
-  return typeof message === "string" ? message : fallback;
-}
-
 function toMappingInput(
   name: string,
   columns: TransactionImportColumn[],
@@ -162,20 +155,6 @@ export function TransactionImportProvider({
   const canContinueToPreview =
     Boolean(analyze) && Boolean(pocketId) && isMappingReady(mapping);
   const canSaveMapping = isMappingReady(mapping);
-
-  const selectedMappingChanged = useMemo(() => {
-    const saved = savedMappings.find((item) => item.id === selectedMappingId);
-    if (!analyze || !saved) {
-      return false;
-    }
-
-    const expected = mappingFromSaved(analyze.columns, saved).mapping;
-    return analyze.columns.some(
-      (column) =>
-        (mapping[column.index] ?? MappableField.Ignore) !==
-        (expected[column.index] ?? MappableField.Ignore),
-    );
-  }, [analyze, mapping, savedMappings, selectedMappingId]);
 
   const reset = useCallback(() => {
     setStep(ImportStep.Analyze);
@@ -281,49 +260,6 @@ export function TransactionImportProvider({
     },
     [analyze, loadSavedMappings, mapping],
   );
-
-  const updateSelectedMapping = useCallback(async () => {
-    const selected = savedMappings.find((item) => item.id === selectedMappingId);
-    if (!analyze || !selected || !isMappingReady(mapping)) {
-      return;
-    }
-
-    setIsSavingMapping(true);
-    const result = await updateImportMapping(
-      selected.id,
-      toMappingInput(selected.name, analyze.columns, mapping),
-    );
-    setIsSavingMapping(false);
-
-    if (result.status !== 200 || !result.data) {
-      toast.error(mappingErrorMessage(result.errorData, "Could not save the mapping."));
-      return;
-    }
-
-    toast.success("Mapping updated");
-    await loadSavedMappings();
-  }, [analyze, loadSavedMappings, mapping, savedMappings, selectedMappingId]);
-
-  const deleteSelectedMapping = useCallback(async () => {
-    if (selectedMappingId === null) {
-      return false;
-    }
-
-    setIsSavingMapping(true);
-    const result = await deleteImportMapping(selectedMappingId);
-    setIsSavingMapping(false);
-
-    if (result.status !== 204) {
-      toast.error(mappingErrorMessage(result.errorData, "Could not delete the mapping."));
-      return false;
-    }
-
-    toast.success("Mapping deleted");
-    setSelectedMappingId(null);
-    setMappingNote(null);
-    await loadSavedMappings();
-    return true;
-  }, [loadSavedMappings, selectedMappingId]);
 
   const analyzeFile = useCallback(async () => {
     if (!file) {
@@ -508,12 +444,9 @@ export function TransactionImportProvider({
       selectedMappingId,
       mappingNote,
       canSaveMapping,
-      selectedMappingChanged,
       isSavingMapping,
       applySavedMapping,
       saveMappingAs,
-      updateSelectedMapping,
-      deleteSelectedMapping,
     }),
     [
       analyze,
@@ -522,7 +455,6 @@ export function TransactionImportProvider({
       canContinueToPreview,
       canSaveMapping,
       confirmTransactions,
-      deleteSelectedMapping,
       file,
       handleFileChange,
       isLoading,
@@ -538,13 +470,11 @@ export function TransactionImportProvider({
       removeDraft,
       saveMappingAs,
       savedMappings,
-      selectedMappingChanged,
       selectedMappingId,
       selectedPocket,
       setMappingField,
       step,
       updateDraftCategory,
-      updateSelectedMapping,
     ],
   );
 

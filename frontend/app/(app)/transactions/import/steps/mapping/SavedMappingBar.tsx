@@ -1,9 +1,7 @@
 "use client";
 
-import { ConfirmationDialogContent } from "@/components/common/ConfirmationDialogContent";
 import { Selection } from "@/components/common/selector/Selection";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,7 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useTransactionImportContext } from "@/stores/transactionImport";
-import { Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 const NONE_VALUE = "none";
@@ -23,22 +21,15 @@ export function SavedMappingBar() {
     selectedMappingId,
     mappingNote,
     canSaveMapping,
-    selectedMappingChanged,
     isLoading,
     isSavingMapping,
     applySavedMapping,
     saveMappingAs,
-    updateSelectedMapping,
-    deleteSelectedMapping,
   } = useTransactionImportContext();
   const [saveOpen, setSaveOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [name, setName] = useState("");
 
   const isBusy = isLoading || isSavingMapping;
-  const selectedMapping = savedMappings.find(
-    (item) => item.id === selectedMappingId,
-  );
   const pickerItems = [
     { value: NONE_VALUE, label: "None" },
     ...savedMappings.map((item) => ({
@@ -72,12 +63,6 @@ export function SavedMappingBar() {
     setSaveOpen(nextOpen);
     if (!nextOpen) {
       setName("");
-    }
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (await deleteSelectedMapping()) {
-      setDeleteOpen(false);
     }
   };
 
@@ -131,38 +116,11 @@ export function SavedMappingBar() {
           </PopoverContent>
         </Popover>
 
-        {selectedMapping ? (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={updateSelectedMapping}
-              disabled={isBusy || !canSaveMapping || !selectedMappingChanged}
-            >
-              Update
-            </Button>
-
-            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Delete saved mapping"
-                  disabled={isBusy}
-                >
-                  <Trash2 />
-                </Button>
-              </DialogTrigger>
-              <ConfirmationDialogContent
-                title="Delete mapping?"
-                description={`“${selectedMapping.name}” will be removed. Columns already mapped stay as they are.`}
-                onConfirm={handleDeleteConfirm}
-                onCancel={() => setDeleteOpen(false)}
-                confirmButtonVariant="destructive"
-              />
-            </Dialog>
-          </>
-        ) : null}
+        <Button variant="link" size="sm" asChild>
+          <Link href="/transactions/import-mappings">
+            Manage mappings
+          </Link>
+        </Button>
       </div>
 
       <div

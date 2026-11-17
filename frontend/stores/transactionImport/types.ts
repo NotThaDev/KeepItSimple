@@ -36,7 +36,6 @@ export interface TransactionImportContextState {
   selectedMappingId: number | null;
   mappingNote: MappingNote | null;
   canSaveMapping: boolean;
-  selectedMappingChanged: boolean;
   isSavingMapping: boolean;
 }
 
@@ -53,8 +52,6 @@ export interface TransactionImportContextAction {
   removeDraft: (index: number) => void;
   applySavedMapping: (id: number | null) => void;
   saveMappingAs: (name: string) => Promise<boolean>;
-  updateSelectedMapping: () => Promise<void>;
-  deleteSelectedMapping: () => Promise<boolean>;
 }
 
 export type TransactionImportContext = TransactionImportContextState &

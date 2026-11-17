@@ -1,5 +1,5 @@
 import { del, FetchWrapperResponse, get, post, put } from "../fetchWrapper";
-import type { MappableField } from "./Transaction";
+import { MappableField } from "./Transaction";
 
 export interface ImportMappingColumn {
   header: string;
@@ -14,6 +14,16 @@ export interface ImportMapping {
 }
 
 export type ImportMappingInput = Pick<ImportMapping, "name" | "columns">;
+
+export const MAPPABLE_FIELD_ITEMS = Object.values(MappableField).map(
+  (field) => ({ value: field, label: field }),
+);
+
+// The import-mappings API explains 400/409 as { message }.
+export function mappingErrorMessage(errorData: unknown, fallback: string) {
+  const message = (errorData as { message?: unknown } | undefined)?.message;
+  return typeof message === "string" ? message : fallback;
+}
 
 export async function getImportMappings(): Promise<
   FetchWrapperResponse<ImportMapping[]>
