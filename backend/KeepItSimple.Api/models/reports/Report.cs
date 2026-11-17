@@ -86,7 +86,8 @@ public class Report
         var pockets = await Pocket.GetAllAsync(userId);
         // shortcut: loads every transaction of the user; filter to PreviousStart onward plus a summed tail if reports get slow.
         var transactions = await Transaction.GetAllAsync(userId);
-        var data = ReportWorkbook.Render(ReportCalculator.Calculate(transactions, pockets, range, utcNow));
+        var categories = await Models.Analytics.Analytics.LoadCategoriesAsync(userId);
+        var data = ReportWorkbook.Render(ReportCalculator.Calculate(transactions, pockets, categories, range, utcNow));
         return await SaveAsync(new Report { Period = period, PeriodStart = range.Start, PeriodEnd = range.End, Label = range.Label, CreatedAt = utcNow, FileName = $"KeepItSimple-{range.Label.Replace(' ', '-')}-{utcNow:yyyyMMdd-HHmm}.xlsx", Data = data }, userId);
     }
 }
