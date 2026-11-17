@@ -82,6 +82,12 @@ Docs in [`docs/`](./docs/):
 
 Run it only after the frontend that reads category ids (#91 part 3) is deployed: the older rules page shows a converted condition as a raw id (`category = 2`).
 
+## Excel reports
+
+A report covers the last complete month, quarter, or year against the one before it. `ReportCalculator` computes the numbers (pure) and `ReportWorkbook` renders them with EPPlus.
+
+- **[Reports.md](./docs/Reports.md)** – periods, metric definitions, sheets, and limits
+
 ## Tests
 
 `dotnet test KeepItSimple.sln` from the repo root.

@@ -37,6 +37,7 @@ async function fetch<T>(
   body?: unknown,
   withAuth: boolean = true,
   isRetry: boolean = false,
+  asBlob: boolean = false,
 ): Promise<FetchWrapperResponse<T>> {
   const baseUrl = isBrowser ? "" : process.env.API_BASE_URL;
   const fullUrl = `${baseUrl}${endpoint}`;
@@ -83,7 +84,7 @@ async function fetch<T>(
 
     // Expired or revoked access token: refresh once, then retry the request once.
     if (!isRetry && (await refreshOnce())) {
-      return fetch<T>(method, endpoint, body, withAuth, true);
+      return fetch<T>(method, endpoint, body, withAuth, true, asBlob);
     }
 
     // Plain module code, no useRouter here; a full load also drops any client state of the old session.
@@ -102,6 +103,10 @@ async function fetch<T>(
       errorData: await response.json().catch(() => undefined),
       status: response.status,
     };
+  }
+
+  if (asBlob) {
+    return { data: (await response.blob()) as T, status: response.status };
   }
 
   // Some successful responses (for example DELETE 204) have no body.
@@ -150,6 +155,10 @@ export function put<T>(
   withAuth: boolean = true,
 ) {
   return fetch<T>("PUT", endpoint, body, withAuth);
+}
+
+export function getBlob(endpoint: string) {
+  return fetch<Blob>("GET", endpoint, undefined, true, false, true);
 }
 
 export function del<T>(endpoint: string, withAuth: boolean = true) {
