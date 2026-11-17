@@ -5,7 +5,7 @@ import { type DataTableFeatures } from "@/components/common/dataTable/DataTableF
 import { ImportMapping } from "@/lib/models/ImportMapping";
 import { MappableField } from "@/lib/models/Transaction";
 import { createColumnHelper } from "@tanstack/react-table";
-import { MappingActionsMenu } from "./MappingActionsMenu";
+import { MappingRowActions } from "./MappingRowActions";
 
 interface MappingColumnsProps {
   onChanged: () => void;
@@ -30,21 +30,13 @@ export function getMappingColumns({
         const mapped = row.original.columns.filter(
           (column) => column.targetField !== MappableField.Ignore,
         );
-        const ignoredCount = row.original.columns.length - mapped.length;
         const text = mapped
           .map((column) => `${column.header} → ${column.targetField}`)
           .join(", ");
 
         return (
-          <div>
-            <div className="max-w-md truncate" title={text}>
-              {text}
-            </div>
-            {ignoredCount > 0 ? (
-              <span className="text-xs text-muted-foreground">
-                +{ignoredCount} ignored
-              </span>
-            ) : null}
+          <div className="max-w-md truncate" title={text}>
+            {text}
           </div>
         );
       },
@@ -59,9 +51,7 @@ export function getMappingColumns({
       size: 1,
       header: () => <div className="text-center">Actions</div>,
       cell: ({ row }) => (
-        <div className="flex justify-center">
-          <MappingActionsMenu mapping={row.original} onChanged={onChanged} />
-        </div>
+        <MappingRowActions mapping={row.original} onChanged={onChanged} />
       ),
     }),
   ]);

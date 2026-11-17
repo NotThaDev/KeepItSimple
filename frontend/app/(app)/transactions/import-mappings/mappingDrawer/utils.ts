@@ -13,8 +13,12 @@ export interface MappingValidation {
   invalidRowKeys: string[];
 }
 
-export const MAX_COLUMNS = 200;
 export const MAX_NAME_LENGTH = 100;
+
+// Ignore columns play no part in matching, so the editor only offers mapped fields.
+export const TARGET_FIELDS = Object.values(MappableField).filter(
+  (field) => field !== MappableField.Ignore,
+);
 
 export const normalizeHeader = (header: string) => header.trim().toLowerCase();
 
@@ -32,10 +36,6 @@ export const validateMapping = (
     messages.push("A name is required.");
   } else if (trimmedName.length > MAX_NAME_LENGTH) {
     messages.push(`The name must be ${MAX_NAME_LENGTH} characters or fewer.`);
-  }
-
-  if (rows.length < 1 || rows.length > MAX_COLUMNS) {
-    messages.push(`Use between 1 and ${MAX_COLUMNS} columns.`);
   }
 
   if (rows.some((row) => row.header.trim() === "")) {
@@ -62,9 +62,8 @@ export const validateMapping = (
     duplicated.forEach((row) => invalidRowKeys.add(row.key));
   }
 
-  const mapped = rows.filter((row) => row.targetField !== MappableField.Ignore);
   const countOf = (field: MappableField) =>
-    mapped.filter((row) => row.targetField === field).length;
+    rows.filter((row) => row.targetField === field).length;
 
   if (countOf(MappableField.Amount) === 0) {
     messages.push("Map a column to Amount.");
@@ -72,9 +71,7 @@ export const validateMapping = (
   if (countOf(MappableField.Date) === 0) {
     messages.push("Map a column to Date.");
   }
-  const hasDuplicateField = Object.values(MappableField).some(
-    (field) => field !== MappableField.Ignore && countOf(field) > 1,
-  );
+  const hasDuplicateField = TARGET_FIELDS.some((field) => countOf(field) > 1);
   if (hasDuplicateField) {
     messages.push("Each field can be mapped to only one column.");
   }
@@ -92,11 +89,14 @@ export const validateMapping = (
 
 export const rowsFrom = (mapping?: ImportMapping): MappingRow[] => {
   if (mapping) {
-    return mapping.columns.map((column) => ({
-      key: crypto.randomUUID(),
-      header: column.header,
-      targetField: column.targetField,
-    }));
+    // Mappings saved before Ignore columns were dropped may still hold some.
+    return mapping.columns
+      .filter((column) => column.targetField !== MappableField.Ignore)
+      .map((column) => ({
+        key: crypto.randomUUID(),
+        header: column.header,
+        targetField: column.targetField,
+      }));
   }
 
   return [

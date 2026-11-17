@@ -16,22 +16,26 @@ import {
   createImportMapping,
   ImportMapping,
   ImportMappingInput,
-  MAPPABLE_FIELD_ITEMS,
   mappingErrorMessage,
   updateImportMapping,
 } from "@/lib/models/ImportMapping";
-import { isMappableField, MappableField } from "@/lib/models/Transaction";
+import { isMappableField } from "@/lib/models/Transaction";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  MAX_COLUMNS,
   MAX_NAME_LENGTH,
   MappingRow,
   MappingValidation,
   rowsFrom,
+  TARGET_FIELDS,
   validateMapping,
 } from "./utils";
+
+const FIELD_ITEMS = TARGET_FIELDS.map((field) => ({
+  value: field,
+  label: field,
+}));
 
 interface MappingDrawerContentProps {
   mapping?: ImportMapping;
@@ -75,13 +79,17 @@ export function MappingDrawerContent({
     );
   };
 
+  const unusedField = TARGET_FIELDS.find(
+    (field) => !rows.some((row) => row.targetField === field),
+  );
+
   const addRow = () => {
+    if (!unusedField) {
+      return;
+    }
     const key = crypto.randomUUID();
     focusKeyRef.current = key;
-    changeRows([
-      ...rows,
-      { key, header: "", targetField: MappableField.Ignore },
-    ]);
+    changeRows([...rows, { key, header: "", targetField: unusedField }]);
   };
 
   const removeRow = (key: string) => {
@@ -137,7 +145,8 @@ export function MappingDrawerContent({
       <DrawerHeader>
         <DrawerTitle>{mapping ? "Edit mapping" : "Create mapping"}</DrawerTitle>
         <DrawerDescription>
-          Headers are matched case-insensitively. Amount and Date are required.
+          Add the file columns to import. Headers are matched
+          case-insensitively. Amount and Date are required.
         </DrawerDescription>
       </DrawerHeader>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -185,7 +194,7 @@ export function MappingDrawerContent({
                     className="sm:flex-1"
                   />
                   <Selection
-                    items={MAPPABLE_FIELD_ITEMS}
+                    items={FIELD_ITEMS}
                     value={row.targetField}
                     aria-label={`Field for column ${index + 1}`}
                     className="sm:w-44"
@@ -199,6 +208,7 @@ export function MappingDrawerContent({
                     variant="ghost"
                     size="icon"
                     aria-label={`Remove column ${index + 1}`}
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                     disabled={rows.length === 1}
                     onClick={() => removeRow(row.key)}
                   >
@@ -213,7 +223,7 @@ export function MappingDrawerContent({
             <Button
               variant="outline"
               ref={addButtonRef}
-              disabled={rows.length >= MAX_COLUMNS}
+              disabled={!unusedField}
               onClick={addRow}
             >
               <Plus />

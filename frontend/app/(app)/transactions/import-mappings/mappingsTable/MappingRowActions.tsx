@@ -5,31 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Drawer } from "@/components/ui/drawer";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   deleteImportMapping,
   ImportMapping,
   mappingErrorMessage,
 } from "@/lib/models/ImportMapping";
-import { EllipsisVertical, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { MappingDrawerContent } from "../mappingDrawer/MappingDrawerContent";
 
-interface MappingActionsMenuProps {
+interface MappingRowActionsProps {
   mapping: ImportMapping;
   onChanged: () => void;
 }
 
-export function MappingActionsMenu({
+export function MappingRowActions({
   mapping,
   onChanged,
-}: Readonly<MappingActionsMenuProps>) {
+}: Readonly<MappingRowActionsProps>) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -52,27 +45,25 @@ export function MappingActionsMenu({
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Open actions">
-            <EllipsisVertical />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            <Pencil />
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            onClick={() => setDeleteOpen(true)}
-          >
-            <Trash2 />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex justify-center gap-2 whitespace-nowrap">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Edit ${mapping.name}`}
+          onClick={() => setEditOpen(true)}
+        >
+          <Pencil />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Delete ${mapping.name}`}
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          onClick={() => setDeleteOpen(true)}
+        >
+          <Trash2 />
+        </Button>
+      </div>
 
       <Drawer open={editOpen} onOpenChange={setEditOpen} direction="right">
         {editOpen ? (

@@ -89,7 +89,8 @@ function toMappingInput(
   columns: TransactionImportColumn[],
   mapping: Record<number, MappableField>,
 ): ImportMappingInput {
-  // Blank or repeated headers can't be matched by name, so they aren't saved.
+  // Blank or repeated headers can't be matched by name, and Ignore columns play no
+  // part in matching, so neither is saved.
   const counts = new Map<string, number>();
   for (const column of columns) {
     const key = normalizeHeader(column.name);
@@ -101,11 +102,16 @@ function toMappingInput(
     columns: columns
       .filter((column) => {
         const key = normalizeHeader(column.name);
-        return key !== "" && counts.get(key) === 1;
+        const targetField = mapping[column.index] ?? MappableField.Ignore;
+        return (
+          key !== "" &&
+          counts.get(key) === 1 &&
+          targetField !== MappableField.Ignore
+        );
       })
       .map((column) => ({
         header: column.name,
-        targetField: mapping[column.index] ?? MappableField.Ignore,
+        targetField: mapping[column.index],
       })),
   };
 }
@@ -154,7 +160,21 @@ export function TransactionImportProvider({
 
   const canContinueToPreview =
     Boolean(analyze) && Boolean(pocketId) && isMappingReady(mapping);
-  const canSaveMapping = isMappingReady(mapping);
+  // Saving an unchanged copy of the selected mapping would only add a duplicate.
+  const matchesSelectedMapping = useMemo(() => {
+    const saved = savedMappings.find((item) => item.id === selectedMappingId);
+    if (!analyze || !saved) {
+      return false;
+    }
+
+    const expected = mappingFromSaved(analyze.columns, saved).mapping;
+    return analyze.columns.every(
+      (column) =>
+        (mapping[column.index] ?? MappableField.Ignore) ===
+        (expected[column.index] ?? MappableField.Ignore),
+    );
+  }, [analyze, mapping, savedMappings, selectedMappingId]);
+  const canSaveMapping = isMappingReady(mapping) && !matchesSelectedMapping;
 
   const reset = useCallback(() => {
     setStep(ImportStep.Analyze);
