@@ -21,7 +21,6 @@ public static class Analytics
         IReadOnlyDictionary<int, Category>? categories = null)
     {
         var kinds = categories ?? NoCategories;
-        bool IsExpense(Transaction t) => IsExpenseFor(t);
         bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
 
         var previousMonth = now.AddMonths(-1);
@@ -129,7 +128,6 @@ public static class Analytics
         IReadOnlyDictionary<int, Category>? categories = null)
     {
         var kinds = categories ?? NoCategories;
-        bool IsExpense(Transaction t) => IsExpenseFor(t);
         bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
 
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
@@ -263,7 +261,6 @@ public static class Analytics
         IReadOnlyDictionary<int, Category>? categories = null)
     {
         var kinds = categories ?? NoCategories;
-        bool IsExpense(Transaction t) => IsExpenseFor(t);
         bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
 
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
@@ -364,7 +361,6 @@ public static class Analytics
         IReadOnlyDictionary<int, Category>? categories = null)
     {
         var kinds = categories ?? NoCategories;
-        bool IsExpense(Transaction t) => IsExpenseFor(t);
         bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
 
         var monthlyTransactions = transactions
@@ -484,11 +480,15 @@ public static class Analytics
 
     // System ids keep the enum logic; a custom category's Kind decides income vs expense.
     // Custom categories are in none of the fixed/passive/active splits.
-    private static bool IsExpenseFor(Transaction transaction) =>
+    internal static bool IsExpense(Transaction transaction) =>
         transaction.Amount < 0
         && transaction.Category is not TransactionCategory.Savings
         && transaction.Category is not TransactionCategory.Investments
         && !IsMovement(transaction);
+
+    // shortcut: reports skip custom income categories, pass the user's categories when reports group by id.
+    internal static bool IsIncome(Transaction transaction) =>
+        IsIncomeFor(transaction, new Dictionary<int, Category>());
 
     private static bool IsIncomeFor(Transaction transaction, IReadOnlyDictionary<int, Category> categories) =>
         transaction.Amount > 0
