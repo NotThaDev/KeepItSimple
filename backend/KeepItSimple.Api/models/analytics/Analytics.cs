@@ -21,7 +21,7 @@ public static class Analytics
         IReadOnlyDictionary<int, Category>? categories = null)
     {
         var kinds = categories ?? NoCategories;
-        bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
+        bool IsIncome(Transaction t) => Analytics.IsIncome(t, kinds);
 
         var previousMonth = now.AddMonths(-1);
         var currentMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -128,7 +128,7 @@ public static class Analytics
         IReadOnlyDictionary<int, Category>? categories = null)
     {
         var kinds = categories ?? NoCategories;
-        bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
+        bool IsIncome(Transaction t) => Analytics.IsIncome(t, kinds);
 
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
         var monthlyExpenses = monthlyTransactions.Where(IsExpense).ToList();
@@ -261,7 +261,7 @@ public static class Analytics
         IReadOnlyDictionary<int, Category>? categories = null)
     {
         var kinds = categories ?? NoCategories;
-        bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
+        bool IsIncome(Transaction t) => Analytics.IsIncome(t, kinds);
 
         var monthlyTransactions = transactions.Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month).ToList();
         var monthlyIncome = monthlyTransactions.Where(IsIncome).Sum(t => t.Amount);
@@ -361,7 +361,7 @@ public static class Analytics
         IReadOnlyDictionary<int, Category>? categories = null)
     {
         var kinds = categories ?? NoCategories;
-        bool IsIncome(Transaction t) => IsIncomeFor(t, kinds);
+        bool IsIncome(Transaction t) => Analytics.IsIncome(t, kinds);
 
         var monthlyTransactions = transactions
             .Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month)
@@ -486,11 +486,7 @@ public static class Analytics
         && transaction.Category is not TransactionCategory.Investments
         && !IsMovement(transaction);
 
-    // shortcut: reports skip custom income categories, pass the user's categories when reports group by id.
-    internal static bool IsIncome(Transaction transaction) =>
-        IsIncomeFor(transaction, new Dictionary<int, Category>());
-
-    private static bool IsIncomeFor(Transaction transaction, IReadOnlyDictionary<int, Category> categories) =>
+    internal static bool IsIncome(Transaction transaction, IReadOnlyDictionary<int, Category> categories) =>
         transaction.Amount > 0
         && (IncomeCategories.Contains(transaction.Category) || IsCustomIncome(transaction, categories))
         && !IsMovement(transaction);
@@ -502,7 +498,7 @@ public static class Analytics
 
     private static readonly IReadOnlyDictionary<int, Category> NoCategories = new Dictionary<int, Category>();
 
-    private static async Task<IReadOnlyDictionary<int, Category>> LoadCategoriesAsync(string userId) =>
+    internal static async Task<IReadOnlyDictionary<int, Category>> LoadCategoriesAsync(string userId) =>
         (await Category.GetVisibleAsync(userId)).ToDictionary(c => c.Id);
 
     private static bool IsSavings(Transaction transaction) =>

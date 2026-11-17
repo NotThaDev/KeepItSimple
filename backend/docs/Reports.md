@@ -17,7 +17,7 @@ A user can generate an `.xlsx` report of the last complete month, quarter, or ye
 Rules are the same as Analytics (`Analytics.IsIncome` / `IsExpense`):
 
 - **Expense**: amount below 0, category not Savings, Investments, Transfer, or Withdraw.
-- **Income**: amount above 0, an income category, not Transfer or Withdraw.
+- **Income**: amount above 0, an income category (a custom category of kind Income counts too), not Transfer or Withdraw. Category rows and the transaction list show the category name, custom categories included.
 - **Net**: income minus expenses.
 - **Savings rate**: net / income, 0 when there is no income.
 - **Saved** and **Invested**: money moved in the Savings and Investments categories. A move can be tagged on the sending side (negative), the receiving side (positive) or both, so each figure is the larger of the inflows and the outflows in that category; a move tagged on both sides counts once.
