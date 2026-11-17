@@ -45,7 +45,7 @@ For each bolt, in order:
 - Branch `intent-<issue>/bolt-<k>`. Base: the intent branch for bolt 1, the previous bolt branch after that.
 - Implement and verify as in `issue` steps 5 and 6 (Haiku implement, verify subagent, UI design spec first, desktop and mobile screenshots for UI, Ponytail plus `code-review` before commit).
 - In the same PR update `bolt-<k>.md`: Status `done`, PR link, **Outcome**, **Decisions**. The last bolt also sets the intent status to `done`.
-- Open as a draft, `gh pr create --draft --base <previous branch>`. Title `Bolt <k>/<N>: <what> (#<issue>)`. Description: "Bolt k of N of intent #<issue>, stacked on #…", What, Why (non-obvious design), Screenshots (UI), Tested, Out of scope.
+- Open as a draft, `gh pr create --draft --base <previous branch>`. Title `Bolt <k>/<N>: <what> (#<issue>)`. Description: write it with the `clear-description` skill (it keeps "Things to check" and screenshots up to date), starting with "Bolt k of N of intent #<issue>, stacked on #…". Add "Out of scope" when the bolt leaves related work undone. The intent PR uses the same skill.
 
 If a decision changes the plan, edit `intent.md` / the later `bolt-*.md` in the bolt that causes it and say so in its description.
 

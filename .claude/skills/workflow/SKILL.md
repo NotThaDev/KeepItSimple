@@ -140,3 +140,9 @@ and browser work out of it:
 For any issue or feature, load the `aidlc` skill: an intent PR (markdown only)
 first, then stacked bolt PRs. Bugs and changes under ~30 lines skip it. It
 overrides the global `issue` skill for PR split, branch names and PR titles.
+
+## 8. PR descriptions use the `clear-description` skill
+
+Every PR description (new or edited) follows the `clear-description` skill:
+fixed sections, Mermaid diagrams, a live "Things to check" list, screenshots
+attached with `gh pr edit --attach`.
