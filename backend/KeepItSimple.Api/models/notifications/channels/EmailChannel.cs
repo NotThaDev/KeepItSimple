@@ -1,5 +1,6 @@
 using KeepItSimple.Api.Helpers;
 using KeepItSimple.Api.Settings;
+using MailKit;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
@@ -43,7 +44,8 @@ public class EmailChannel(IOptions<EmailSettings> options) : INotificationChanne
             await client.AuthenticateAsync(settings.Username, settings.Password, cancellationToken);
         }
 
-        await client.SendAsync(message, cancellationToken);
+        // MailKit 5 removed the MimeMessage overload from SmtpClient; the extension method still takes it.
+        await IMailTransportExtensions.SendAsync(client, message, cancellationToken);
         await client.DisconnectAsync(true, cancellationToken);
     }
 
