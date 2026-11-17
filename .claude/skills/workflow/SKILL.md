@@ -134,3 +134,9 @@ and browser work out of it:
   (a single command or page read), never for a full test/browser pass.
 - Browser checks: `read_page`/`find`/`get_page_text` first, `browser_batch`
   for multi-step flows, screenshots at `scale` ≤ 0.5 unless they go into a PR.
+
+## 7. Features follow the intent/bolt workflow
+
+For any issue or feature, load the `aidlc` skill: an intent PR (markdown only)
+first, then stacked bolt PRs. Bugs and changes under ~30 lines skip it. It
+overrides the global `issue` skill for PR split, branch names and PR titles.
