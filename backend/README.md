@@ -37,6 +37,7 @@ backend/
 | Categories | `/api/categories` | System categories (seeded, read-only) plus the user's custom ones; `{id}/usage` counts transactions and rules. Rows carry `id`, `key`, `name`, `kind`, `group`, `icon`, `color`. Transactions and rules reference them by `categoryId` / `targetCategoryId`; the legacy `category` / `targetCategory` enum-name strings are still read and written until the cleanup PR |
 | Category rules | `/api/category-rules` | User-defined categorization (groups = parentheses) |
 | Analytics | `/api/analytics` | Aggregations over transactions |
+| Import mappings | `/api/import-mappings` | Saved column mappings for file import; analyze suggests one ([TransactionImportFlow.md](./docs/TransactionImportFlow.md#saved-column-mappings)) |
 | Auth | `/api/auth` | Register with email confirmation, confirm email, login, refresh, logout, sessions list, password reset by email ([Accounts.md](./docs/Accounts.md)) |
 | Account | `/api/account` | Profile picture of the signed-in user ([Accounts.md](./docs/Accounts.md#profile-picture-apiaccountpicture)) |
 | Notifications | — | Background delivery of user notifications ([Notifications.md](./docs/Notifications.md)) |

@@ -70,7 +70,7 @@ function TransactionImportDialogContent() {
         <div className="flex min-h-0 flex-1">
           <ImportStepper />
 
-          <Separator orientation="vertical" className="mx-6" />
+          <Separator orientation="vertical" className="mx-6 hidden md:block" />
 
           <div className="min-h-0 min-w-0 flex-1 overflow-y-auto py-1 pr-2">
             <StepContent />
