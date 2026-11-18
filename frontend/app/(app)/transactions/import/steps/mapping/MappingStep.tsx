@@ -3,14 +3,11 @@
 import { Selection } from "@/components/common/selector/Selection";
 import { CommonTable } from "@/components/common/table/CommonTable";
 import { Label } from "@/components/ui/label";
+import { MAPPABLE_FIELD_ITEMS } from "@/lib/models/ImportMapping";
 import { isMappableField, MappableField } from "@/lib/models/Transaction";
 import { useTransactionImportContext } from "@/stores/transactionImport";
 import { SampleRowsAccordion } from "./SampleRowsAccordion";
-
-const MAPPING_ITEMS = Object.values(MappableField).map((field) => ({
-  value: field,
-  label: field,
-}));
+import { SavedMappingBar } from "./SavedMappingBar";
 
 export function MappingStep() {
   const { analyze, mapping, setMappingField } = useTransactionImportContext();
@@ -21,6 +18,8 @@ export function MappingStep() {
 
   return (
     <div className="flex flex-col gap-6">
+      <SavedMappingBar />
+
       <div className="flex flex-col gap-3">
         <Label>Column mapping</Label>
         <p className="text-xs text-muted-foreground">
@@ -39,7 +38,7 @@ export function MappingStep() {
               cellClassName: "w-56",
               cell: (column) => (
                 <Selection
-                  items={MAPPING_ITEMS}
+                  items={MAPPABLE_FIELD_ITEMS}
                   value={mapping[column.index] ?? MappableField.Ignore}
                   onChange={(value) => {
                     if (isMappableField(value)) {

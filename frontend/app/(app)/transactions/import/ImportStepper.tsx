@@ -37,7 +37,7 @@ export function ImportStepper() {
       steps={IMPORT_STEPS}
       currentStep={step}
       direction="vertical"
-      className="w-64 shrink-0 self-stretch pr-2"
+      className="hidden w-64 shrink-0 self-stretch pr-2 md:flex"
     />
   );
 }

@@ -164,6 +164,8 @@ stateDiagram-v2
 
 A user can save a column mapping (`Columns`: header → `MappableField`) and reuse it on later files with the same layout.
 
+In the UI, the import dialog's mapping step picks a saved mapping (or applies the suggested one) and can save the current mapping as a new one. Mappings are created, edited and deleted on the **Import mappings** page (`/transactions/import-mappings`).
+
 ### Endpoints
 
 | Method | Path | Notes |

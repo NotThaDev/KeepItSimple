@@ -23,6 +23,7 @@ interface SelectionProps {
   isInvalid?: boolean;
   disabled?: boolean;
   className?: string;
+  id?: string;
   "aria-label"?: string;
 }
 
@@ -35,6 +36,7 @@ export function Selection({
   isInvalid,
   disabled,
   className,
+  id,
   "aria-label": ariaLabel,
 }: Readonly<SelectionProps>) {
   return (
@@ -45,6 +47,7 @@ export function Selection({
       disabled={disabled}
     >
       <SelectTrigger
+        id={id}
         className={cn("w-full", className)}
         aria-invalid={isInvalid}
         aria-label={ariaLabel}
