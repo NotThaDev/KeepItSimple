@@ -28,7 +28,7 @@ export function SavingTopTable() {
         <CommonTable
           tableClassName="table-fixed"
           data={topSavings}
-          getRowKey={(entry, index) => `${entry.category}-${index}`}
+          getRowKey={(entry, index) => `${entry.categoryId}-${index}`}
           columns={[
             {
               id: "rank",
@@ -41,7 +41,7 @@ export function SavingTopTable() {
             {
               id: "category",
               header: "Category",
-              cell: (entry) => <CategoryBadge category={entry.category} />,
+              cell: (entry) => <CategoryBadge categoryId={entry.categoryId} />,
             },
             {
               id: "amount",

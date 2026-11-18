@@ -10,15 +10,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  CategoryColorMap,
-  DEFAULT_CATEGORY_COLORS,
-} from "@/lib/helpers/colors";
-import {
-  formatCategoryLabel,
-  INCOME_ANALYTICS_CATEGORIES,
-  TransactionCategory,
-} from "@/lib/models/Transaction";
+import { useCategories } from "@/stores/categories";
 import { AreaChart as AreaChartIcon } from "lucide-react";
 import { useMemo } from "react";
 import {
@@ -37,8 +29,8 @@ import { MONTH_LABELS, selectedMonthTick } from "../utils";
 const STACK_TOP_RADIUS = 4;
 
 function isTopStackSegment(
-  categories: TransactionCategory[],
-  category: TransactionCategory,
+  categories: string[],
+  category: string,
   payload: Record<string, unknown> | undefined,
 ): boolean {
   const index = categories.indexOf(category);
@@ -58,8 +50,8 @@ function TopRoundedStackBar({
   payload,
   selectedMonth,
 }: BarShapeProps & {
-  categories: TransactionCategory[];
-  category: TransactionCategory;
+  categories: string[];
+  category: string;
   selectedMonth: number;
 }) {
   if (width == null || height == null || height <= 0) {
@@ -91,12 +83,16 @@ function getMaxValue(values: number[]): number {
 
 export function IncomeTrendChart() {
   const { analytics, currency, month: selectedMonth } = useIncomeAnalytics();
+  const { byId } = useCategories();
+  // The API only returns income-type ids, so the series come from the response itself.
   const activeCategories = useMemo(() => {
-    return INCOME_ANALYTICS_CATEGORIES.filter((category) =>
-      analytics.twelveMonthIncomeTrend.some(
-        (entry) => (entry.categories[category] ?? 0) > 0,
-      ),
-    );
+    const ids = new Set<string>();
+    for (const entry of analytics.twelveMonthIncomeTrend) {
+      for (const [id, amount] of Object.entries(entry.categoryIds ?? {})) {
+        if (amount > 0) ids.add(id);
+      }
+    }
+    return [...ids].sort((left, right) => Number(left) - Number(right));
   }, [analytics.twelveMonthIncomeTrend]);
 
   const chartData = useMemo(() => {
@@ -107,7 +103,7 @@ export function IncomeTrendChart() {
       };
 
       for (const category of activeCategories) {
-        point[category] = entry.categories[category] ?? 0;
+        point[category] = entry.categoryIds?.[category] ?? 0;
       }
 
       return point;
@@ -118,14 +114,12 @@ export function IncomeTrendChart() {
     const config: ChartConfig = {};
     activeCategories.forEach((category) => {
       config[category] = {
-        label: formatCategoryLabel(category),
-        color:
-          CategoryColorMap[category]?.background ??
-          DEFAULT_CATEGORY_COLORS.background,
+        label: byId(Number(category)).name,
+        color: byId(Number(category)).color,
       };
     });
     return config;
-  }, [activeCategories]);
+  }, [activeCategories, byId]);
 
   const yAxisMax = getMaxValue(
     chartData.map((entry) =>
@@ -169,19 +163,16 @@ export function IncomeTrendChart() {
                 <ChartTooltipContent
                   className="w-fit min-w-fit"
                   formatter={(value, name) => {
-                    const category = name as TransactionCategory;
-                    const color =
-                      CategoryColorMap[category]?.background ??
-                      DEFAULT_CATEGORY_COLORS.background;
+                    const category = byId(Number(name));
 
                     return (
                       <div className="flex items-center gap-1.5">
                         <span
                           className="h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: color }}
+                          style={{ backgroundColor: category.color }}
                         />
                         <span className="text-muted-foreground mr-1">
-                          {formatCategoryLabel(category)}
+                          {category.name}
                         </span>
                         <span className="font-mono font-medium text-foreground tabular-nums">
                           {formatAmount(Number(value), currency)}

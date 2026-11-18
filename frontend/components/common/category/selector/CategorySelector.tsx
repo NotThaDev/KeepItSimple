@@ -8,37 +8,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  CategoryColorMap,
-  DEFAULT_CATEGORY_COLORS,
-} from "@/lib/helpers/colors";
-import {
-  formatCategoryLabel,
-  TransactionCategory,
-} from "@/lib/models/Transaction";
+import { createCategoryColors } from "@/lib/helpers/colors";
 import { cn } from "@/lib/utils";
-import { MoreHorizontal } from "lucide-react";
+import type { Category } from "@/lib/models/Category";
+import { useCategories, type CategoryGroup } from "@/stores/categories";
+import { getCategoryIcon } from "../iconRegistry";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  categoryFromItemValue,
+  categoryIdFromItemValue,
   filterCategoryGroups,
-  GROUP_ICONS,
   groupIdForCategory,
-  groupsForSelector,
   selectItemValue,
-  type CategoryGroup,
 } from "./utils";
 import { CategoryGroupList } from "./CategoryGroupList";
 import { CategorySearch, CategorySearchResults } from "./CategorySearch";
 import { CategorySelectItem } from "./CategorySelectItem";
 
 interface TransactionCategorySelectorProps {
-  category?: TransactionCategory;
+  categoryId?: number;
   isInvalid?: boolean;
   className?: string;
   isIncome?: boolean;
   showAll?: boolean;
-  onChange: (category: TransactionCategory) => void;
+  onChange: (categoryId: number) => void;
   // Adds a "clear" item and lets `category` be undefined (e.g. "All categories" in filters).
   onClear?: () => void;
   clearLabel?: string;
@@ -47,7 +39,7 @@ interface TransactionCategorySelectorProps {
 const CLEAR_ITEM_VALUE = "__clear__";
 
 export function CategorySelector({
-  category: selectedCategory,
+  categoryId: selectedCategoryId,
   isIncome = false,
   showAll = false,
   isInvalid,
@@ -56,8 +48,9 @@ export function CategorySelector({
   onClear,
   clearLabel = "All categories",
 }: Readonly<TransactionCategorySelectorProps>) {
-  const isCleared = onClear !== undefined && selectedCategory === undefined;
-  const category = selectedCategory ?? TransactionCategory.Other;
+  const { other, byId, groups: groupsFor } = useCategories();
+  const isCleared = onClear !== undefined && selectedCategoryId === undefined;
+  const category = byId(selectedCategoryId ?? other.id);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeGroupId, setActiveGroupId] = useState<string>();
@@ -77,7 +70,8 @@ export function CategorySelector({
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [open]);
-  const groups = groupsForSelector(isIncome, showAll);
+  const tab = showAll ? "all" : isIncome ? "income" : "expense";
+  const groups = useMemo(() => groupsFor(tab), [groupsFor, tab]);
   const isSearching = query.trim().length > 0;
   const filteredGroups = useMemo(
     () => filterCategoryGroups(groups, query),
@@ -85,7 +79,7 @@ export function CategorySelector({
   );
   const initialGroupId = isCleared
     ? groups[0]?.id
-    : groupIdForCategory(groups, category);
+    : groupIdForCategory(groups, category.id);
   const activeGroup =
     groups.find((group) => group.id === activeGroupId) ??
     groups.find((group) => group.id === initialGroupId) ??
@@ -96,15 +90,16 @@ export function CategorySelector({
       ? [activeGroup]
       : [];
   const selectedGroupId =
-    !isSearching && activeGroup?.categories.includes(category)
+    !isSearching && activeGroup?.categories.some((c) => c.id === category.id)
       ? activeGroup.id
-      : groupIdForCategory(groups, category);
+      : groupIdForCategory(groups, category.id);
   const selectedItemValue = isCleared
     ? CLEAR_ITEM_VALUE
-    : selectItemValue(selectedGroupId, category);
+    : selectItemValue(selectedGroupId, category.id);
   const selectionVisible = isCleared || renderedGroups.some(
     (group) =>
-      group.id === selectedGroupId && group.categories.includes(category),
+      group.id === selectedGroupId &&
+      group.categories.some((c) => c.id === category.id),
   );
 
   return (
@@ -113,7 +108,7 @@ export function CategorySelector({
       value={isCleared ? undefined : category}
       clearLabel={clearLabel}
       open={open}
-      onChange={(next) => (next ? onChange(next) : onClear?.())}
+      onChange={(next) => (next ? onChange(next.id) : onClear?.())}
       isInvalid={isInvalid}
       className={className}
       selectedItemValue={selectedItemValue}
@@ -152,7 +147,7 @@ export function CategorySelector({
           ) : null}
           {selectionVisible ? null : (
             <SelectItem value={selectedItemValue} className="!hidden">
-              {formatCategoryLabel(category)}
+              {category.name}
             </SelectItem>
           )}
           {isSearching ? (
@@ -193,10 +188,10 @@ function CategorySelect({
   content,
 }: {
   groups: CategoryGroup[];
-  value?: TransactionCategory;
+  value?: Category;
   clearLabel?: string;
   open?: boolean;
-  onChange: (category?: TransactionCategory) => void;
+  onChange: (category?: Category) => void;
   isInvalid?: boolean;
   placeholder?: string;
   className?: string;
@@ -204,13 +199,12 @@ function CategorySelect({
   onOpenChange?: (open: boolean) => void;
   content?: React.ReactNode;
 }) {
-  const colors = value
-    ? (CategoryColorMap[value] ?? DEFAULT_CATEGORY_COLORS)
-    : undefined;
+  const { byId } = useCategories();
+  const colors = value ? createCategoryColors(value.color) : undefined;
   const itemValue =
     selectedItemValue ??
     (value
-      ? selectItemValue(groupIdForCategory(groups, value), value)
+      ? selectItemValue(groupIdForCategory(groups, value.id), value.id)
       : CLEAR_ITEM_VALUE);
 
   return (
@@ -223,9 +217,9 @@ function CategorySelect({
           onChange(undefined);
           return;
         }
-        const category = categoryFromItemValue(next);
-        if (category) {
-          onChange(category);
+        const id = categoryIdFromItemValue(next);
+        if (id !== undefined) {
+          onChange(byId(id));
         }
       }}
     >
@@ -244,7 +238,7 @@ function CategorySelect({
         }
       >
         <SelectValue placeholder={placeholder ?? "Select a Category"}>
-          {value ? formatCategoryLabel(value) : clearLabel}
+          {value ? value.name : clearLabel}
         </SelectValue>
       </SelectTrigger>
       {content ?? (
@@ -281,7 +275,7 @@ function CategoryGroupPanel({
         }}
       >
         {groups.map((group) => {
-          const Icon = GROUP_ICONS[group.id] ?? MoreHorizontal;
+          const Icon = getCategoryIcon(group.icon);
           const isActive = group.id === activeGroup?.id;
 
           return (
@@ -306,9 +300,9 @@ function CategoryGroupPanel({
       <SelectGroup className="max-h-72 min-w-0 overflow-y-auto overscroll-contain p-0">
         {activeGroup?.categories.map((category) => (
           <CategorySelectItem
-            key={category}
+            key={category.id}
             category={category}
-            itemValue={selectItemValue(activeGroup.id, category)}
+            itemValue={selectItemValue(activeGroup.id, category.id)}
           />
         ))}
       </SelectGroup>

@@ -7,17 +7,16 @@ import {
   OPERATORS_BY_FIELD,
   RuleField,
 } from "@/lib/models/CategoryRule";
-import { TransactionCategory } from "@/lib/models/Transaction";
 
 export function createEmptyGroup(): CategoryRuleGroup {
   return { conditions: [createEmptyCondition()] };
 }
 
-export function createEmptyRule(): CategoryRule {
+export function createEmptyRule(otherCategoryId: number): CategoryRule {
   return {
     name: "",
     enabled: true,
-    targetCategory: TransactionCategory.Other,
+    targetCategoryId: otherCategoryId,
     groupLogic: RuleLogic.Or,
     groups: [createEmptyGroup()],
   };
@@ -29,7 +28,7 @@ export function cloneRule(rule: CategoryRule, name = rule.name): CategoryRule {
     sortOrder: rule.sortOrder,
     name,
     enabled: rule.enabled,
-    targetCategory: rule.targetCategory,
+    targetCategoryId: rule.targetCategoryId,
     groupLogic: rule.groupLogic,
     groups: normalizeRuleGroups(rule.groups),
   };

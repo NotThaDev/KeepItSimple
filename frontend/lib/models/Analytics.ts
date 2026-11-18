@@ -1,9 +1,9 @@
 import { FetchWrapperResponse, get } from "../fetchWrapper";
 import { Pocket } from "./Pocket";
-import { Transaction, TransactionCategory } from "./Transaction";
+import { Transaction } from "./Transaction";
 
 export interface ExpenseByCategory {
-  category: TransactionCategory;
+  categoryId: number;
   total: number;
 }
 
@@ -26,7 +26,7 @@ export interface OverviewAnalytics {
   previousMonthTotalExpenses: number;
   previousMonthTotalIncome: number;
   monthlyExpensesDailyComparison: DailyExpenseComparison[];
-  topExpenseCategory?: TransactionCategory;
+  topExpenseCategoryId?: number;
   monthlyExpensesByCategory: ExpenseByCategory[];
   expensesPerPocket: ExpensePerPocket[];
   currentMonthTotalBalance: number;
@@ -34,7 +34,7 @@ export interface OverviewAnalytics {
 }
 
 export interface TransactionByCategory {
-  category: TransactionCategory;
+  categoryId: number;
   total: number;
 }
 
@@ -45,7 +45,8 @@ export interface TransactionPerPocket {
 
 export interface MonthlyTransactionByCategory {
   month: number;
-  categories: Partial<Record<TransactionCategory, number>>;
+  // category id -> amount
+  categoryIds: Record<string, number>;
 }
 
 export interface IncomeAnalytics {

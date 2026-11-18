@@ -65,7 +65,7 @@ export function RuleCompactView({
               <div className="flex w-full items-center gap-2">
                 <span className="text-lg font-medium">{rule.name}</span>
                 <Divider className="w-[18px] bg-foreground/30" />
-                <CategoryBadge category={rule.targetCategory} />
+                <CategoryBadge categoryId={rule.targetCategoryId} />
                 <DialogClose asChild>
                   <Button variant="ghost" size="icon-sm" className="ml-auto">
                     <XIcon />

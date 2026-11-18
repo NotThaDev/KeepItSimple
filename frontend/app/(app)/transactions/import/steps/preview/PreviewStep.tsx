@@ -72,9 +72,9 @@ export function PreviewStep() {
               cell: ({ item, index }) => (
                 <CategorySelector
                   className="w-full max-w-72"
-                  category={item.category}
+                  categoryId={item.categoryId}
                   isIncome={item.amount > 0}
-                  onChange={(category) => updateDraftCategory(index, category)}
+                  onChange={(categoryId) => updateDraftCategory(index, categoryId)}
                 />
               ),
             },

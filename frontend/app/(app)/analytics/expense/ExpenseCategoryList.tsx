@@ -3,11 +3,7 @@
 import { EmptyWidgetState } from "@/components/common/emptyState/EmptyWidgetState";
 import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import { Button } from "@/components/ui/button";
-import {
-  CategoryColorMap,
-  DEFAULT_CATEGORY_COLORS,
-} from "@/lib/helpers/colors";
-import { formatCategoryLabel } from "@/lib/models/Transaction";
+import { useCategories } from "@/stores/categories";
 import {
   ChevronLeft,
   ChevronRight,
@@ -22,6 +18,7 @@ const ITEMS_PER_PAGE = 4;
 
 export function ExpenseCategoryList() {
   const { analytics, currency } = useExpenseAnalytics();
+  const { byId } = useCategories();
   const sortedCategories = [...analytics.expenseByCategory]
     .map((entry) => ({
       ...entry,
@@ -68,15 +65,14 @@ export function ExpenseCategoryList() {
           <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
             {pagedCategories.map((entry) => {
               const share = total === 0 ? 0 : entry.total / total;
-              const color =
-                CategoryColorMap[entry.category]?.background ??
-                DEFAULT_CATEGORY_COLORS.background;
+              const category = byId(entry.categoryId);
+              const color = category.color;
 
               return (
-                <div key={entry.category} className="flex flex-col gap-1.5">
+                <div key={entry.categoryId} className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate font-semibold">
-                      {formatCategoryLabel(entry.category)}
+                      {category.name}
                     </p>
                     <div className="flex shrink-0 items-center gap-2">
                       <p className="text-sm text-muted-foreground">

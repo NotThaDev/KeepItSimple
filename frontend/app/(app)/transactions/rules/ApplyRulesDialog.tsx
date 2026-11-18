@@ -67,13 +67,13 @@ const previewColumns: CommonTableColumn<CategoryRulePreviewItem>[] = [
     id: "from",
     header: "Current",
     headerClassName: "w-28",
-    cell: (item) => <CategoryBadge category={item.oldCategory} />,
+    cell: (item) => <CategoryBadge categoryId={item.oldCategoryId} />,
   },
   {
     id: "to",
     header: "New",
     headerClassName: "w-28",
-    cell: (item) => <CategoryBadge category={item.newCategory} />,
+    cell: (item) => <CategoryBadge categoryId={item.newCategoryId} />,
   },
   {
     id: "rule",

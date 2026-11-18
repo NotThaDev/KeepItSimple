@@ -1,21 +1,15 @@
 import { SelectItem } from "@/components/ui/select";
-import {
-  CategoryColorMap,
-  DEFAULT_CATEGORY_COLORS,
-} from "@/lib/helpers/colors";
-import {
-  formatCategoryLabel,
-  TransactionCategory,
-} from "@/lib/models/Transaction";
+import { createCategoryColors } from "@/lib/helpers/colors";
+import type { Category } from "@/lib/models/Category";
 
 export function CategorySelectItem({
   category,
   itemValue,
 }: {
-  category: TransactionCategory;
+  category: Category;
   itemValue: string;
 }) {
-  const colors = CategoryColorMap[category] ?? DEFAULT_CATEGORY_COLORS;
+  const colors = createCategoryColors(category.color);
 
   return (
     <SelectItem
@@ -27,7 +21,7 @@ export function CategorySelectItem({
         style={{ backgroundColor: colors.background }}
         aria-hidden
       />
-      <span className="min-w-0 truncate">{formatCategoryLabel(category)}</span>
+      <span className="min-w-0 truncate">{category.name}</span>
     </SelectItem>
   );
 }

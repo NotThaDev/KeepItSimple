@@ -76,7 +76,7 @@ export function getRuleColumns({
       id: "targetCategory",
       header: "Target category",
       cell: ({ row }) => (
-        <CategoryBadge category={row.original.targetCategory} />
+        <CategoryBadge categoryId={row.original.targetCategoryId} />
       ),
     }),
     columnHelper.display({

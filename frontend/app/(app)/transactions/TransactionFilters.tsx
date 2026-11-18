@@ -88,9 +88,9 @@ export function TransactionFilters({
       <CategorySelector
         className="shrink-0 sm:w-[180px]"
         showAll
-        category={filters.category}
-        onChange={(category) => onChange({ category })}
-        onClear={() => onChange({ category: undefined })}
+        categoryId={filters.categoryId}
+        onChange={(categoryId) => onChange({ categoryId })}
+        onClear={() => onChange({ categoryId: undefined })}
       />
       <DateRangePicker
         from={fromDate}

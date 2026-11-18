@@ -4,6 +4,7 @@ import {
   RuleField,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
+import { useCategories } from "@/stores/categories";
 import { LogicDivider } from "./LogicDivider";
 import { conditionLead, conditionValue, connectorLogic } from "./utils";
 
@@ -37,7 +38,8 @@ function ConditionPreview({
   condition: CategoryRuleCondition;
   pockets: Pocket[];
 }>) {
-  const value = conditionValue(condition, pockets);
+  const { categories } = useCategories();
+  const value = conditionValue(condition, pockets, categories);
 
   if (condition.field === RuleField.Description) {
     return (

@@ -60,10 +60,10 @@ export function getTransactionDataColumns({
         return ENGLISH_DATE_FORMATTER.format(date);
       },
     }),
-    columnHelper.accessor("category", {
+    columnHelper.accessor("categoryId", {
       header: "Category",
       cell: ({ getValue }) => {
-        return <CategoryBadge category={getValue()} />;
+        return <CategoryBadge categoryId={getValue()} />;
       },
     }),
     columnHelper.accessor("pocketId", {

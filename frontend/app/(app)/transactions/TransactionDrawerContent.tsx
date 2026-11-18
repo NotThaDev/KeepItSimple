@@ -20,14 +20,12 @@ import { Pocket } from "@/lib/models/Pocket";
 import {
   createTransaction,
   createTransfer,
-  EXPENSE_TRANSACTION_CATEGORIES,
-  INCOME_TRANSACTION_CATEGORIES,
   Transaction,
-  TransactionCategory,
   updateTransaction,
 } from "@/lib/models/Transaction";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useCategories } from "@/stores/categories";
 
 interface TransactionErrors {
   amount: boolean;
@@ -45,7 +43,7 @@ interface TransactionFormData {
   pocketId: number;
   fromPocketId: number;
   toPocketId: number;
-  category?: TransactionCategory;
+  categoryId?: number;
 }
 
 interface TransactionDrawerContentProps {
@@ -122,24 +120,20 @@ export function TransactionDrawerContent({
 
   const isTransfer = transactionType === TransactionType.Transfer;
 
-  const availableCategories = useMemo(
-    () =>
-      transactionType === TransactionType.Income
-        ? INCOME_TRANSACTION_CATEGORIES
-        : EXPENSE_TRANSACTION_CATEGORIES,
-    [transactionType],
-  );
+  const { expenseCategories, incomeCategories } = useCategories();
+  const isIncome = transactionType === TransactionType.Income;
 
-  const selectedCategory = useMemo(() => {
-    if (
-      transactionData.category &&
-      availableCategories.includes(transactionData.category)
-    ) {
-      return transactionData.category;
+  const selectedCategoryId = useMemo(() => {
+    const available = isIncome ? incomeCategories : expenseCategories;
+    if (available.some((c) => c.id === transactionData.categoryId)) {
+      return transactionData.categoryId;
     }
 
-    return availableCategories[0];
-  }, [transactionData.category, availableCategories]);
+    // First pick of each tab: the first expense, or the first income-kind category.
+    return (
+      isIncome ? available.find((c) => c.kind === "Income") : available[0]
+    )?.id;
+  }, [transactionData.categoryId, isIncome, incomeCategories, expenseCategories]);
 
   const pocketsSelectionItems = useMemo(() => {
     return pockets.map((pocket) => ({
@@ -194,7 +188,7 @@ export function TransactionDrawerContent({
       return;
     }
 
-    const categoryValid = selectedCategory !== undefined;
+    const categoryValid = selectedCategoryId !== undefined;
     const pocketIdValid = transactionData.pocketId !== undefined;
 
     setErrors({
@@ -219,7 +213,7 @@ export function TransactionDrawerContent({
 
     const payload: Omit<Transaction, "id"> = {
       amount: amount,
-      category: selectedCategory!,
+      categoryId: selectedCategoryId!,
       date: transactionData.date,
       description: transactionData.description,
       pocketId: transactionData.pocketId,
@@ -246,7 +240,7 @@ export function TransactionDrawerContent({
       `Transaction ${transactionData.id ? "updated" : "created"} successfully`,
     );
     onSave?.();
-  }, [transactionData, transactionType, selectedCategory, isTransfer, onSave]);
+  }, [transactionData, transactionType, selectedCategoryId, isTransfer, onSave]);
 
   const title = transactionData.id ? "Edit Transaction" : "New Transaction";
   return (
@@ -373,14 +367,14 @@ export function TransactionDrawerContent({
               <FieldLabel>Category</FieldLabel>
               <CategorySelector
                 key={transactionType}
-                category={selectedCategory}
-                isIncome={transactionType === TransactionType.Income}
+                categoryId={selectedCategoryId}
+                isIncome={isIncome}
                 isInvalid={errors.category}
-                onChange={(category) => {
-                  setTransactionData((prev) => ({ ...prev, category }));
+                onChange={(categoryId) => {
+                  setTransactionData((prev) => ({ ...prev, categoryId }));
                   setErrors((prev) => ({
                     ...prev,
-                    category: category === undefined,
+                    category: categoryId === undefined,
                   }));
                 }}
               />

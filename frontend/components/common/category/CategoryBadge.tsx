@@ -1,14 +1,14 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
-import {
-  CategoryColorMap,
-  DEFAULT_CATEGORY_COLORS,
-} from "@/lib/helpers/colors";
-import { TransactionCategory } from "@/lib/models/Transaction";
+import { createCategoryColors } from "@/lib/helpers/colors";
+import { useCategories } from "@/stores/categories";
 
 export function CategoryBadge({
-  category,
-}: Readonly<{ category: TransactionCategory }>) {
-  const colors = CategoryColorMap[category] ?? DEFAULT_CATEGORY_COLORS;
+  categoryId,
+}: Readonly<{ categoryId: number }>) {
+  const category = useCategories().byId(categoryId);
+  const colors = createCategoryColors(category.color);
 
   return (
     <Badge
@@ -20,7 +20,7 @@ export function CategoryBadge({
         borderColor: colors.background,
       }}
     >
-      {category}
+      {category.name}
     </Badge>
   );
 }

@@ -2,11 +2,15 @@ import { DashboardCard } from "@/app/(app)/dashboard/cards/DashboardCard";
 import { Activity } from "lucide-react";
 import { useIncomeAnalytics } from "@/stores/analytics";
 import { Progress } from "@/components/ui/progress";
-import { ACTIVE_INCOME_CATEGORIES, PASSIVE_INCOME_CATEGORIES } from "../utils";
+import { ACTIVE_INCOME_KEYS, PASSIVE_INCOME_KEYS } from "../utils";
+import { useCategories } from "@/stores/categories";
 import { formatAmount } from "@/lib/helpers/currencyHelper";
 
 export function ActivePassiveCard() {
   const { analytics, currency } = useIncomeAnalytics();
+  const { byKey } = useCategories();
+  const names = (keys: string[]) =>
+    keys.map((key) => byKey(key)?.name ?? key).join(", ");
 
   const activePercentage =
     (analytics?.monthlyActiveIncome / analytics?.totalMonthlyIncome) * 100;
@@ -25,7 +29,7 @@ export function ActivePassiveCard() {
           </div>
           <Progress value={activePercentage} />
           <p className="text-sm text-muted-foreground">
-            {ACTIVE_INCOME_CATEGORIES.map((category) => category).join(", ")}
+            {names(ACTIVE_INCOME_KEYS)}
           </p>
         </div>
 
@@ -38,7 +42,7 @@ export function ActivePassiveCard() {
           </div>
           <Progress value={passivePercentage} />
           <p className="text-sm text-muted-foreground">
-            {PASSIVE_INCOME_CATEGORIES.map((category) => category).join(", ")}
+            {names(PASSIVE_INCOME_KEYS)}
           </p>
         </div>
       </div>

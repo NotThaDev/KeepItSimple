@@ -65,7 +65,7 @@ export function ExpenseTopTable() {
               header: "Category",
               headerClassName: "w-32",
               cell: (transaction) => (
-                <CategoryBadge category={transaction.category} />
+                <CategoryBadge categoryId={transaction.categoryId} />
               ),
             },
             {

@@ -1,5 +1,4 @@
 import { APP_LOCALE } from "@/lib/locale";
-import { TransactionCategory } from "@/lib/models/Transaction";
 import { createElement, type ReactNode } from "react";
 import type { XAxisTickContentProps } from "recharts";
 
@@ -9,28 +8,9 @@ export function formatPercent(ratio: number): string {
   })}%`;
 }
 
-export const PASSIVE_INCOME_CATEGORIES = [
-  TransactionCategory.Interest,
-  TransactionCategory.Dividends,
-  TransactionCategory.RentalIncome,
-];
-
-export const ACTIVE_INCOME_CATEGORIES = [
-  TransactionCategory.Salary,
-  TransactionCategory.Bonus,
-  TransactionCategory.Freelance,
-  TransactionCategory.Business,
-];
-
-export const FIXED_EXPENSE_CATEGORIES = [
-  TransactionCategory.Lease,
-  TransactionCategory.Rent,
-  TransactionCategory.Mortgage,
-  TransactionCategory.Loan,
-  TransactionCategory.Insurance,
-  TransactionCategory.Phone,
-  TransactionCategory.Subscriptions,
-];
+// System category keys the backend counts as passive / active income (display only).
+export const PASSIVE_INCOME_KEYS = ["Interest", "Dividends", "RentalIncome"];
+export const ACTIVE_INCOME_KEYS = ["Salary", "Bonus", "Freelance", "Business"];
 
 export const MONTH_LABELS = [
   "Jan",

@@ -3,6 +3,8 @@ import { NotificationsDrawer } from "@/components/notifications/NotificationsDra
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { CSSProperties } from "react";
 import { getCurrentUser } from "@/lib/dal";
+import { getCategories } from "@/lib/models/Category";
+import { CategoriesProvider } from "@/stores/categories";
 import { NotificationsProvider } from "@/stores/notifications";
 import { UserIdentityProvider } from "@/stores/userIdentity";
 
@@ -11,9 +13,13 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
+  const [user, categories] = await Promise.all([
+    getCurrentUser(),
+    getCategories(),
+  ]);
   return (
     <UserIdentityProvider user={user}>
+      <CategoriesProvider categories={categories.data ?? []}>
       <NotificationsProvider>
         <SidebarProvider
           defaultOpen={true}
@@ -31,6 +37,7 @@ export default async function AppLayout({
           <NotificationsDrawer />
         </SidebarProvider>
       </NotificationsProvider>
+      </CategoriesProvider>
     </UserIdentityProvider>
   );
 }

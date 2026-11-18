@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useRef } from "react";
-import { type CategoryGroup } from "./utils";
+import type { CategoryGroup } from "@/stores/categories";
 import { CategoryGroupList } from "./CategoryGroupList";
 
 export function CategorySearch({

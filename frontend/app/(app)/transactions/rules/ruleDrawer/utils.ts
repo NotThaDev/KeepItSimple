@@ -1,5 +1,11 @@
 import { isNullOrUndefined } from "@/lib/helpers/util";
-import { CategoryRule, CategoryRuleGroup } from "@/lib/models/CategoryRule";
+import type { Category } from "@/lib/models/Category";
+import {
+  CategoryRule,
+  CategoryRuleGroup,
+  resolveConditionCategory,
+  RuleField,
+} from "@/lib/models/CategoryRule";
 import { cloneRule, duplicateRule, createEmptyRule } from "../utils";
 
 export interface RuleConditionError {
@@ -49,19 +55,40 @@ export function hasConditionError(
   );
 }
 
+// Category conditions saved with an enum name become ids, so saving always writes ids.
+function withCategoryIds(
+  rule: CategoryRule,
+  categories: Category[],
+): CategoryRule {
+  return {
+    ...rule,
+    groups: rule.groups.map((group) => ({
+      conditions: group.conditions.map((condition) => {
+        if (condition.field !== RuleField.Category) return condition;
+        const category = resolveConditionCategory(condition.value, categories);
+        return category
+          ? { ...condition, value: String(category.id) }
+          : condition;
+      }),
+    })),
+  };
+}
+
 export function draftFrom(
+  categories: Category[],
+  otherCategoryId: number,
   rule?: CategoryRule,
   copyFrom?: CategoryRule,
 ): CategoryRule {
   if (rule) {
-    return cloneRule(rule);
+    return withCategoryIds(cloneRule(rule), categories);
   }
 
   if (copyFrom) {
-    return duplicateRule(copyFrom);
+    return withCategoryIds(duplicateRule(copyFrom), categories);
   }
 
-  return createEmptyRule();
+  return createEmptyRule(otherCategoryId);
 }
 
 export function updateGroup(

@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import {
   CategoryRuleCondition,
   OPERATORS_BY_FIELD,
+  resolveConditionCategory,
   RuleField,
 } from "@/lib/models/CategoryRule";
 import { Pocket } from "@/lib/models/Pocket";
-import { TransactionCategory } from "@/lib/models/Transaction";
+import { useCategories } from "@/stores/categories";
 import { Trash2 } from "lucide-react";
 import { FieldSelect } from "./selectors/FieldSelect";
 import { OperatorSelect } from "./selectors/OperatorSelect";
@@ -32,11 +33,13 @@ export function ConditionRow({
   onChange,
   onRemove,
 }: Readonly<ConditionRowProps>) {
+  const { categories, other } = useCategories();
+
   const handleFieldChange = (field: RuleField) => {
     onChange({
       field,
       operator: OPERATORS_BY_FIELD[field][0],
-      value: TransactionCategory.Other,
+      value: String(other.id),
     });
   };
 
@@ -51,8 +54,10 @@ export function ConditionRow({
       {condition.field === RuleField.Category ? (
         <CategorySelector
           showAll
-          category={condition.value as TransactionCategory}
-          onChange={(value) => onChange({ ...condition, value })}
+          categoryId={
+            resolveConditionCategory(condition.value, categories)?.id
+          }
+          onChange={(id) => onChange({ ...condition, value: String(id) })}
           isInvalid={invalidValue}
           className="min-w-0 flex-1"
         />
