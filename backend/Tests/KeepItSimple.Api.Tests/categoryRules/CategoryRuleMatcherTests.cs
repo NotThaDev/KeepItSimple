@@ -260,7 +260,7 @@ public class CategoryRuleMatcherTests
                 Transaction.TransactionCategory.Shopping,
                 RuleLogic.And,
                 [
-                    Group(And(CategoryEquals("Other"))),
+                    Group(And(CategoryEquals(((int)Transaction.TransactionCategory.Other).ToString()))),
                     Group(And(DescriptionContains("Amazon"))),
                 ]),
         };
@@ -308,7 +308,7 @@ public class CategoryRuleMatcherTests
                 Transaction.TransactionCategory.Shopping,
                 RuleLogic.And,
                 [
-                    Group(And(CategoryEquals("Food"))),
+                    Group(And(CategoryEquals(((int)Transaction.TransactionCategory.Food).ToString()))),
                     Group(And(DescriptionContains("Amazon"))),
                 ]),
         };

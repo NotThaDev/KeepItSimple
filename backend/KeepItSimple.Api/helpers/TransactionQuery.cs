@@ -47,9 +47,7 @@ public static class TransactionQuery
             filtered = filtered.Where(transaction => transaction.PocketId == pocketId);
         }
 
-        // categoryId wins over the legacy enum-name filter.
-        var categoryId = query.CategoryId ?? (query.Category is Transaction.TransactionCategory legacy ? (int)legacy : (int?)null);
-        if (categoryId is int id)
+        if (query.CategoryId is int id)
         {
             filtered = filtered.Where(transaction => transaction.CategoryId == id);
         }

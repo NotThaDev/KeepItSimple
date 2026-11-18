@@ -31,14 +31,6 @@ public class CategoryRule
         set => TargetCategoryId = (int)value;
     }
 
-    // Legacy JSON field "targetCategory" (enum name). On write, TargetCategoryId wins when both are sent.
-    [NotMapped, JsonPropertyName("targetCategory")]
-    public string? LegacyTargetCategory
-    {
-        get => Category.LegacyKey(TargetCategoryId);
-        set => TargetCategoryId = Category.LegacyId(value, TargetCategoryId);
-    }
-
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public RuleLogic GroupLogic { get; set; } = RuleLogic.Or;
 
@@ -118,13 +110,13 @@ public class CategoryRule
         });
     }
 
-    // A Category condition holding an id must point at a category the user can see (legacy names always resolve to system ids).
+    // A Category condition holding an id must be an id of a category the user can see.
     private static async Task EnsureConditionCategoriesAsync(KeepItSimpleDbContext dbContext, CategoryRule rule, string userId)
     {
         foreach (var condition in rule.Groups.SelectMany(g => g.Conditions).Where(c => c.Field == RuleField.Category))
         {
-            if (Category.ParseConditionId(condition.Value) is { } id
-                && !await Category.IsVisibleAsync(dbContext, id, userId))
+            if (Category.ParseConditionId(condition.Value) is not { } id
+                || !await Category.IsVisibleAsync(dbContext, id, userId))
             {
                 throw new ArgumentException("A rule condition uses an unknown category.");
             }
@@ -236,34 +228,6 @@ public class CategoryRule
 
             await dbContext.SaveChangesAsync();
             return updated;
-        });
-    }
-
-    // One-time maintenance for every user: Category conditions holding a legacy enum name become ids. Idempotent.
-    public static Task<(int Scanned, int Updated)> BackfillConditionIdsAsync()
-    {
-        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
-        {
-            var rules = await dbContext.CategoryRules.ToListAsync();
-            var updated = 0;
-            foreach (var rule in rules)
-            {
-                var changed = false;
-                foreach (var condition in rule.Groups.SelectMany(g => g.Conditions)
-                    .Where(c => c.Field == RuleField.Category && !int.TryParse(c.Value, out _)))
-                {
-                    if (Category.ParseConditionId(condition.Value) is { } id)
-                    {
-                        condition.Value = id.ToString(CultureInfo.InvariantCulture);
-                        changed = true;
-                    }
-                }
-
-                updated += changed ? 1 : 0;
-            }
-
-            await dbContext.SaveChangesAsync();
-            return (rules.Count, updated);
         });
     }
 

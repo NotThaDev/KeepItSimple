@@ -48,9 +48,9 @@ export function RuleDrawerContent({
   pockets,
   onSave,
 }: Readonly<RuleDrawerContentProps>) {
-  const { categories, other } = useCategories();
+  const { other } = useCategories();
   const [ruleData, setRuleData] = useState<CategoryRule>(() =>
-    draftFrom(categories, other.id, rule, copyFrom),
+    draftFrom(other.id, rule, copyFrom),
   );
   const [validation, setValidation] = useState<RuleValidation | null>(null);
   const [saving, setSaving] = useState(false);

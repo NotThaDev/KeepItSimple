@@ -22,14 +22,6 @@ public class Transaction
         set => CategoryId = (int)value;
     }
 
-    // Legacy JSON field "category" (enum name). On write, CategoryId wins when both are sent.
-    [NotMapped, JsonPropertyName("category")]
-    public string? LegacyCategory
-    {
-        get => Models.Category.LegacyKey(CategoryId);
-        set => CategoryId = Models.Category.LegacyId(value, CategoryId);
-    }
-
     public int PocketId { get; set; }
     [JsonIgnore]
     public Pocket? Pocket { get; set; }

@@ -312,15 +312,7 @@ public static class Analytics
                 var byId = incomeCategoryIds.ToDictionary(
                     id => id,
                     id => yearIncomeTotalsByMonthAndCategory.GetValueOrDefault((month, id), 0));
-                // Legacy map: system keys, with custom categories merged into "Other".
-                var legacy = new Dictionary<string, decimal>();
-                foreach (var (id, total) in byId)
-                {
-                    var key = Category.LegacyKey(id);
-                    legacy[key] = legacy.GetValueOrDefault(key) + total;
-                }
-
-                return new MonthlyTransactionByCategory { Month = month, Categories = legacy, CategoryIds = byId };
+                return new MonthlyTransactionByCategory { Month = month, CategoryIds = byId };
             })
             .ToList();
 
@@ -517,8 +509,6 @@ public static class Analytics
     {
         public int CategoryId { get; set; }
 
-        // Legacy field: the system key, "Other" for custom categories.
-        public string Category => Models.Category.LegacyKey(CategoryId);
         public decimal Total { get; set; }
     }
 
@@ -526,8 +516,6 @@ public static class Analytics
     {
         public int Month { get; set; }
 
-        // Legacy map keyed by system key; custom categories are merged into "Other".
-        public Dictionary<string, decimal> Categories { get; set; } = [];
         public Dictionary<int, decimal> CategoryIds { get; set; } = [];
     }
 

@@ -69,18 +69,15 @@ export const OPERATORS_BY_FIELD: Record<RuleField, RuleOperator[]> = {
   [RuleField.Pocket]: [RuleOperator.Equals, RuleOperator.NotEquals],
 };
 
-// A Category condition value is a category id, or a legacy enum name saved before the id migration.
+// A Category condition value is a category id.
 export function resolveConditionCategory(
   value: string,
   categories: Category[],
 ): Category | undefined {
   const id = Number(value);
-  if (value.trim() !== "" && Number.isInteger(id)) {
-    return categories.find((category) => category.id === id);
-  }
-  return categories.find(
-    (category) => category.key?.toLowerCase() === value.toLowerCase(),
-  );
+  return value.trim() !== "" && Number.isInteger(id)
+    ? categories.find((category) => category.id === id)
+    : undefined;
 }
 
 export function normalizeRuleGroups(

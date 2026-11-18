@@ -25,7 +25,7 @@ public class TransactionQueryTests
     {
         var result = TransactionQuery.Apply(SampleTransactions(), new TransactionListQuery
         {
-            Category = Transaction.TransactionCategory.Food,
+            CategoryId = (int)Transaction.TransactionCategory.Food,
             From = null,
             To = null,
         });
@@ -129,7 +129,7 @@ public class TransactionQueryTests
         var result = TransactionQuery.Apply(SampleTransactions(), new TransactionListQuery
         {
             PocketId = 1,
-            Category = Transaction.TransactionCategory.Food,
+            CategoryId = (int)Transaction.TransactionCategory.Food,
             Search = "lunch",
             From = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc),
             To = new DateTime(2026, 9, 30, 0, 0, 0, DateTimeKind.Utc),
