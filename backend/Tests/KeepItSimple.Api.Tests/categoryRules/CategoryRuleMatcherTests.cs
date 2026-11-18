@@ -16,7 +16,7 @@ public class CategoryRuleMatcherTests
             ]),
         };
 
-        var match = CategoryRuleMatcher.FindMatch("Starbucks", -4.50m, Transaction.TransactionCategory.Other, rules);
+        var match = CategoryRuleMatcher.FindMatch("Starbucks", -4.50m, (int)Transaction.TransactionCategory.Other, rules);
 
         Assert.Null(match);
     }
@@ -34,8 +34,8 @@ public class CategoryRuleMatcherTests
             ]),
         };
 
-        var amazonExpense = CategoryRuleMatcher.FindMatch("Amazon Prime", -12m, Transaction.TransactionCategory.Other, rules);
-        var amazonIncome = CategoryRuleMatcher.FindMatch("Amazon refund", 12m, Transaction.TransactionCategory.Other, rules);
+        var amazonExpense = CategoryRuleMatcher.FindMatch("Amazon Prime", -12m, (int)Transaction.TransactionCategory.Other, rules);
+        var amazonIncome = CategoryRuleMatcher.FindMatch("Amazon refund", 12m, (int)Transaction.TransactionCategory.Other, rules);
 
         Assert.Equal(Transaction.TransactionCategory.Shopping, amazonExpense?.TargetCategory);
         Assert.Null(amazonIncome);
@@ -58,10 +58,10 @@ public class CategoryRuleMatcherTests
                 ]),
         };
 
-        var equalsMatch = CategoryRuleMatcher.FindMatch("Stipendio", 2500m, Transaction.TransactionCategory.Other, rules);
-        var containsMatch = CategoryRuleMatcher.FindMatch("Accredito mensile", 1800m, Transaction.TransactionCategory.Other, rules);
-        var expense = CategoryRuleMatcher.FindMatch("Stipendio", -2500m, Transaction.TransactionCategory.Other, rules);
-        var otherIncome = CategoryRuleMatcher.FindMatch("Freelance", 500m, Transaction.TransactionCategory.Other, rules);
+        var equalsMatch = CategoryRuleMatcher.FindMatch("Stipendio", 2500m, (int)Transaction.TransactionCategory.Other, rules);
+        var containsMatch = CategoryRuleMatcher.FindMatch("Accredito mensile", 1800m, (int)Transaction.TransactionCategory.Other, rules);
+        var expense = CategoryRuleMatcher.FindMatch("Stipendio", -2500m, (int)Transaction.TransactionCategory.Other, rules);
+        var otherIncome = CategoryRuleMatcher.FindMatch("Freelance", 500m, (int)Transaction.TransactionCategory.Other, rules);
 
         Assert.Equal(Transaction.TransactionCategory.Salary, equalsMatch?.TargetCategory);
         Assert.Equal(Transaction.TransactionCategory.Salary, containsMatch?.TargetCategory);
@@ -86,10 +86,10 @@ public class CategoryRuleMatcherTests
             ]),
         };
 
-        Assert.Null(CategoryRuleMatcher.FindMatch("a", 10m, Transaction.TransactionCategory.Other, rules));
-        Assert.NotNull(CategoryRuleMatcher.FindMatch("a", -1m, Transaction.TransactionCategory.Other, rules));
-        Assert.NotNull(CategoryRuleMatcher.FindMatch("b", -1m, Transaction.TransactionCategory.Other, rules));
-        Assert.Null(CategoryRuleMatcher.FindMatch("b", 10m, Transaction.TransactionCategory.Other, rules));
+        Assert.Null(CategoryRuleMatcher.FindMatch("a", 10m, (int)Transaction.TransactionCategory.Other, rules));
+        Assert.NotNull(CategoryRuleMatcher.FindMatch("a", -1m, (int)Transaction.TransactionCategory.Other, rules));
+        Assert.NotNull(CategoryRuleMatcher.FindMatch("b", -1m, (int)Transaction.TransactionCategory.Other, rules));
+        Assert.Null(CategoryRuleMatcher.FindMatch("b", 10m, (int)Transaction.TransactionCategory.Other, rules));
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class CategoryRuleMatcherTests
                 ]),
         };
 
-        var match = CategoryRuleMatcher.FindMatch("Bar Centrale", -2m, Transaction.TransactionCategory.Other, rules);
+        var match = CategoryRuleMatcher.FindMatch("Bar Centrale", -2m, (int)Transaction.TransactionCategory.Other, rules);
 
         Assert.Equal(Transaction.TransactionCategory.Food, match?.TargetCategory);
     }
@@ -126,9 +126,9 @@ public class CategoryRuleMatcherTests
                 ]),
         };
 
-        Assert.NotNull(CategoryRuleMatcher.FindMatch("x", 2m, Transaction.TransactionCategory.Other, rules));
-        Assert.NotNull(CategoryRuleMatcher.FindMatch("pay y", 0m, Transaction.TransactionCategory.Other, rules));
-        Assert.Null(CategoryRuleMatcher.FindMatch("x", 0.5m, Transaction.TransactionCategory.Other, rules));
+        Assert.NotNull(CategoryRuleMatcher.FindMatch("x", 2m, (int)Transaction.TransactionCategory.Other, rules));
+        Assert.NotNull(CategoryRuleMatcher.FindMatch("pay y", 0m, (int)Transaction.TransactionCategory.Other, rules));
+        Assert.Null(CategoryRuleMatcher.FindMatch("x", 0.5m, (int)Transaction.TransactionCategory.Other, rules));
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public class CategoryRuleMatcherTests
         var match = CategoryRuleMatcher.FindMatch(
             "Amazon Prime Video",
             -9.99m,
-            Transaction.TransactionCategory.Other,
+            (int)Transaction.TransactionCategory.Other,
             [prime, amazon]);
 
         Assert.Equal("Prime", match?.Name);
@@ -165,7 +165,7 @@ public class CategoryRuleMatcherTests
         ]);
         disabled.Enabled = false;
 
-        var match = CategoryRuleMatcher.FindMatch("Amazon", -10m, Transaction.TransactionCategory.Other, [disabled]);
+        var match = CategoryRuleMatcher.FindMatch("Amazon", -10m, (int)Transaction.TransactionCategory.Other, [disabled]);
 
         Assert.Null(match);
     }
@@ -181,7 +181,7 @@ public class CategoryRuleMatcherTests
             ]),
         };
 
-        var match = CategoryRuleMatcher.FindMatch("AMAZON MARKETPLACE", -20m, Transaction.TransactionCategory.Other, rules);
+        var match = CategoryRuleMatcher.FindMatch("AMAZON MARKETPLACE", -20m, (int)Transaction.TransactionCategory.Other, rules);
 
         Assert.Equal(Transaction.TransactionCategory.Shopping, match?.TargetCategory);
     }
@@ -197,7 +197,7 @@ public class CategoryRuleMatcherTests
             ]),
         };
 
-        var match = CategoryRuleMatcher.FindMatch("ENI", -40m, Transaction.TransactionCategory.Other, rules);
+        var match = CategoryRuleMatcher.FindMatch("ENI", -40m, (int)Transaction.TransactionCategory.Other, rules);
 
         Assert.Equal(Transaction.TransactionCategory.Car, match?.TargetCategory);
     }
@@ -213,9 +213,9 @@ public class CategoryRuleMatcherTests
             ]),
         };
 
-        Assert.NotNull(CategoryRuleMatcher.FindMatch("PAGAMENTO ENI PV", -50m, Transaction.TransactionCategory.Other, rules));
-        Assert.NotNull(CategoryRuleMatcher.FindMatch("ENI", -40m, Transaction.TransactionCategory.Other, rules));
-        Assert.Null(CategoryRuleMatcher.FindMatch("Enoteca Souvenirs Di Lag", -12m, Transaction.TransactionCategory.Other, rules));
+        Assert.NotNull(CategoryRuleMatcher.FindMatch("PAGAMENTO ENI PV", -50m, (int)Transaction.TransactionCategory.Other, rules));
+        Assert.NotNull(CategoryRuleMatcher.FindMatch("ENI", -40m, (int)Transaction.TransactionCategory.Other, rules));
+        Assert.Null(CategoryRuleMatcher.FindMatch("Enoteca Souvenirs Di Lag", -12m, (int)Transaction.TransactionCategory.Other, rules));
     }
 
     [Fact]
@@ -235,13 +235,13 @@ public class CategoryRuleMatcherTests
         const string description =
             "ADDEBITO SEPA DD PER FATTURA A VOSTRO CARICO INCASSO 00408289391 SDD DA IT050020000000864530159 COMPASS BANCA S.P.A. MANDATO NR. MNDTCO000031398944D04032025H091631 PER 0142826CO00408289391 CO8289391";
 
-        var match = CategoryRuleMatcher.FindMatch(description, -120m, Transaction.TransactionCategory.Food, rules);
+        var match = CategoryRuleMatcher.FindMatch(description, -120m, (int)Transaction.TransactionCategory.Food, rules);
 
         Assert.Equal(Transaction.TransactionCategory.Loan, match?.TargetCategory);
         Assert.Null(CategoryRuleMatcher.FindMatch(
             "COMPASS BANCA S.P.A.X MANDATO",
             -120m,
-            Transaction.TransactionCategory.Other,
+            (int)Transaction.TransactionCategory.Other,
             [
                 Rule("Glued", Transaction.TransactionCategory.Loan, groups:
                 [
@@ -265,8 +265,8 @@ public class CategoryRuleMatcherTests
                 ]),
         };
 
-        var match = CategoryRuleMatcher.FindMatch("Amazon", -15m, Transaction.TransactionCategory.Other, rules);
-        var alreadyShopping = CategoryRuleMatcher.FindMatch("Amazon", -15m, Transaction.TransactionCategory.Shopping, rules);
+        var match = CategoryRuleMatcher.FindMatch("Amazon", -15m, (int)Transaction.TransactionCategory.Other, rules);
+        var alreadyShopping = CategoryRuleMatcher.FindMatch("Amazon", -15m, (int)Transaction.TransactionCategory.Shopping, rules);
 
         Assert.Equal(Transaction.TransactionCategory.Shopping, match?.TargetCategory);
         Assert.Null(alreadyShopping);
@@ -286,12 +286,12 @@ public class CategoryRuleMatcherTests
         var uncategorized = CategoryRuleMatcher.FindMatch(
             "Amazon",
             -15m,
-            Transaction.TransactionCategory.Other,
+            (int)Transaction.TransactionCategory.Other,
             rules);
         var alreadyFood = CategoryRuleMatcher.FindMatch(
             "Amazon",
             -15m,
-            Transaction.TransactionCategory.Food,
+            (int)Transaction.TransactionCategory.Food,
             rules);
 
         Assert.Equal(Transaction.TransactionCategory.Shopping, uncategorized?.TargetCategory);
@@ -316,12 +316,12 @@ public class CategoryRuleMatcherTests
         var foodAmazon = CategoryRuleMatcher.FindMatch(
             "Amazon",
             -15m,
-            Transaction.TransactionCategory.Food,
+            (int)Transaction.TransactionCategory.Food,
             rules);
         var otherAmazon = CategoryRuleMatcher.FindMatch(
             "Amazon",
             -15m,
-            Transaction.TransactionCategory.Other,
+            (int)Transaction.TransactionCategory.Other,
             rules);
 
         Assert.Equal(Transaction.TransactionCategory.Shopping, foodAmazon?.TargetCategory);
@@ -344,13 +344,13 @@ public class CategoryRuleMatcherTests
         var checking = CategoryRuleMatcher.FindMatch(
             "Amazon",
             -15m,
-            Transaction.TransactionCategory.Other,
+            (int)Transaction.TransactionCategory.Other,
             rules,
             pocketId: 3);
         var savings = CategoryRuleMatcher.FindMatch(
             "Amazon",
             -15m,
-            Transaction.TransactionCategory.Other,
+            (int)Transaction.TransactionCategory.Other,
             rules,
             pocketId: 7);
 
@@ -373,14 +373,14 @@ public class CategoryRuleMatcherTests
             CategoryRuleMatcher.FindMatch(
                 "Amazon",
                 -10m,
-                Transaction.TransactionCategory.Other,
+                (int)Transaction.TransactionCategory.Other,
                 rules,
                 pocketId: 1));
         Assert.Null(
             CategoryRuleMatcher.FindMatch(
                 "Amazon",
                 -10m,
-                Transaction.TransactionCategory.Other,
+                (int)Transaction.TransactionCategory.Other,
                 rules,
                 pocketId: 2));
     }
@@ -396,8 +396,8 @@ public class CategoryRuleMatcherTests
             ]),
         };
 
-        Assert.Null(CategoryRuleMatcher.FindMatch(null, -10m, Transaction.TransactionCategory.Other, rules));
-        Assert.Null(CategoryRuleMatcher.FindMatch("  ", -10m, Transaction.TransactionCategory.Other, rules));
+        Assert.Null(CategoryRuleMatcher.FindMatch(null, -10m, (int)Transaction.TransactionCategory.Other, rules));
+        Assert.Null(CategoryRuleMatcher.FindMatch("  ", -10m, (int)Transaction.TransactionCategory.Other, rules));
     }
 
     private static CategoryRule Rule(

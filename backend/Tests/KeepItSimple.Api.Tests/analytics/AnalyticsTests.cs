@@ -27,10 +27,10 @@ public class AnalyticsTests
         Assert.Equal(2000m, overview.MonthlyTotalIncome);
         Assert.Equal(-80m, overview.TotalExpenses);
         Assert.Equal(2000m, overview.TotalIncome);
-        Assert.Equal(TransactionCategory.Food, overview.TopExpenseCategory);
+        Assert.Equal("Food", overview.TopExpenseCategory);
         Assert.DoesNotContain(
             overview.MonthlyExpensesByCategory,
-            entry => entry.Category is TransactionCategory.Transfer);
+            entry => (TransactionCategory)entry.CategoryId is TransactionCategory.Transfer);
         Assert.Equal(0m, overview.ExpensesPerPocket.Single(entry => entry.Pocket.Id == 2).Total);
         Assert.Equal(-80m, overview.ExpensesPerPocket.Single(entry => entry.Pocket.Id == 1).Total);
         Assert.Equal(-80m, overview.MonthlyExpensesDailyComparison.Single(entry => entry.Day == 20).ThisMonth);
@@ -50,7 +50,7 @@ public class AnalyticsTests
         Assert.Equal(-40m, overview.MonthlyTotalExpenses);
         Assert.DoesNotContain(
             overview.MonthlyExpensesByCategory,
-            entry => entry.Category is TransactionCategory.Withdraw);
+            entry => (TransactionCategory)entry.CategoryId is TransactionCategory.Withdraw);
         Assert.Equal(0m, overview.MonthlyTotalIncome);
     }
 
@@ -91,7 +91,7 @@ public class AnalyticsTests
         Assert.Equal(60m, analytics.ExpensePerDay[12]);
         Assert.DoesNotContain(
             analytics.ExpenseByCategory,
-            entry => entry.Category is TransactionCategory.Transfer or TransactionCategory.Withdraw);
+            entry => (TransactionCategory)entry.CategoryId is TransactionCategory.Transfer or TransactionCategory.Withdraw);
         Assert.Equal(460m, analytics.ExpensePerPocket.Single(entry => entry.Pocket.Id == 1).Total);
         Assert.Equal(0m, analytics.ExpensePerPocket.Single(entry => entry.Pocket.Id == 2).Total);
         Assert.DoesNotContain(
@@ -123,10 +123,10 @@ public class AnalyticsTests
         Assert.Equal(1800m, analytics.MonthlyActiveIncome);
         Assert.DoesNotContain(
             analytics.MonthlyIncomeByCategory,
-            entry => entry.Category is TransactionCategory.Transfer);
+            entry => (TransactionCategory)entry.CategoryId is TransactionCategory.Transfer);
         Assert.Equal(1800m, analytics.MonthlyIncomePerPocket.Single(entry => entry.Pocket.Id == 1).Total);
         Assert.Equal(0m, analytics.MonthlyIncomePerPocket.Single(entry => entry.Pocket.Id == 2).Total);
-        Assert.Equal(1800m, analytics.TwelveMonthIncomeTrend.Single(entry => entry.Month == 9).Categories[TransactionCategory.Salary]);
+        Assert.Equal(1800m, analytics.TwelveMonthIncomeTrend.Single(entry => entry.Month == 9).Categories["Salary"]);
         Assert.DoesNotContain(
             analytics.TopMonthlyIncome,
             transaction => transaction.Category is TransactionCategory.Transfer);
@@ -177,14 +177,14 @@ public class AnalyticsTests
         Assert.Equal(1500m, analytics.LeftOver);
         Assert.Equal(400m / 2000m, analytics.SavingsRate);
         Assert.Equal(400m / 1500m, analytics.CaptureRate);
-        Assert.Equal(300m, analytics.SavingsByCategory.Single(entry => entry.Category == TransactionCategory.Savings).Total);
-        Assert.Equal(100m, analytics.SavingsByCategory.Single(entry => entry.Category == TransactionCategory.Investments).Total);
+        Assert.Equal(300m, analytics.SavingsByCategory.Single(entry => entry.CategoryId == (int)TransactionCategory.Savings).Total);
+        Assert.Equal(100m, analytics.SavingsByCategory.Single(entry => entry.CategoryId == (int)TransactionCategory.Investments).Total);
         Assert.Equal(
             [TransactionCategory.Savings, TransactionCategory.Investments],
-            analytics.TopSavings.Select(entry => entry.Category));
+            analytics.TopSavings.Select(entry => (TransactionCategory)entry.CategoryId));
         Assert.DoesNotContain(
             analytics.SavingsByCategory,
-            entry => entry.Category is TransactionCategory.Transfer or TransactionCategory.Withdraw);
+            entry => (TransactionCategory)entry.CategoryId is TransactionCategory.Transfer or TransactionCategory.Withdraw);
     }
 
     [Fact]
@@ -255,8 +255,8 @@ public class AnalyticsTests
         Assert.Equal(1800m, income.TotalMonthlyIncome);
         Assert.Equal(1700m, income.PreviousMonthIncome);
         Assert.Equal(400m, income.MonthlyExpenses);
-        Assert.Equal(1800m, income.TwelveMonthIncomeTrend.Single(entry => entry.Month == 8).Categories[TransactionCategory.Salary]);
-        Assert.Equal(2000m, income.TwelveMonthIncomeTrend.Single(entry => entry.Month == 9).Categories[TransactionCategory.Salary]);
+        Assert.Equal(1800m, income.TwelveMonthIncomeTrend.Single(entry => entry.Month == 8).Categories["Salary"]);
+        Assert.Equal(2000m, income.TwelveMonthIncomeTrend.Single(entry => entry.Month == 9).Categories["Salary"]);
         Assert.Equal(12, income.TwelveMonthIncomeTrend.Count);
 
         Assert.Equal(200m, saving.TotalMonthlySavings);

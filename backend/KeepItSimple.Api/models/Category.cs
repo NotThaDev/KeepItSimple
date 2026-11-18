@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.RegularExpressions;
 using System.Text.Json.Serialization;
@@ -54,6 +55,17 @@ public partial class Category
 
         // An unknown name maps to -1 so the visibility check rejects it with 400.
         return Enum.TryParse<Transaction.TransactionCategory>(key, ignoreCase: true, out var parsed) ? (int)parsed : -1;
+    }
+
+    // A rule condition value is a category id, or a legacy enum name until the backfill ran.
+    public static int? ParseConditionId(string? value)
+    {
+        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id))
+        {
+            return id;
+        }
+
+        return Enum.TryParse<Transaction.TransactionCategory>(value, ignoreCase: true, out var parsed) ? (int)parsed : null;
     }
 
     public static Task<List<Category>> GetVisibleAsync(string userId)

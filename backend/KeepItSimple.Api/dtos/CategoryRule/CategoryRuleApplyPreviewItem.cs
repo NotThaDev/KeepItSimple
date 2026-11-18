@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace KeepItSimple.Api.dtos.CategoryRule;
 
 public class CategoryRuleApplyPreviewItem
@@ -9,11 +7,12 @@ public class CategoryRuleApplyPreviewItem
     public decimal Amount { get; set; }
     public DateTime Date { get; set; }
 
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public global::KeepItSimple.Api.Models.Transaction.TransactionCategory OldCategory { get; set; }
+    public int OldCategoryId { get; set; }
+    public int NewCategoryId { get; set; }
 
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public global::KeepItSimple.Api.Models.Transaction.TransactionCategory NewCategory { get; set; }
+    // Legacy enum names ("Other" for custom ids) until the frontend reads ids.
+    public string OldCategory => Models.Category.LegacyKey(OldCategoryId);
+    public string NewCategory => Models.Category.LegacyKey(NewCategoryId);
 
     public int MatchedRuleId { get; set; }
     public string MatchedRuleName { get; set; } = string.Empty;

@@ -19,6 +19,7 @@ public class AuthorizationCoverageTests
         "AuthController.ResendConfirmation",
         "AuthController.ForgotPassword",
         "AuthController.ResetPassword",
+        "MaintenanceController.BackfillRuleCategories",
     ];
 
     [Fact]

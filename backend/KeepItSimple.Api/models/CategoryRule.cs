@@ -78,6 +78,7 @@ public class CategoryRule
         return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
         {
             await EnsureCategoryAsync(dbContext, rule.TargetCategoryId, userId);
+            await EnsureConditionCategoriesAsync(dbContext, rule, userId);
             var maxOrder = await dbContext.CategoryRules
                 .Where(r => r.UserId == userId)
                 .Select(existing => (int?)existing.SortOrder)
@@ -106,6 +107,7 @@ public class CategoryRule
             }
 
             await EnsureCategoryAsync(dbContext, rule.TargetCategoryId, userId);
+            await EnsureConditionCategoriesAsync(dbContext, rule, userId);
             existing.Name = rule.Name;
             existing.Enabled = rule.Enabled;
             existing.TargetCategoryId = rule.TargetCategoryId;
@@ -114,6 +116,19 @@ public class CategoryRule
             await dbContext.SaveChangesAsync();
             return existing;
         });
+    }
+
+    // A Category condition holding an id must point at a category the user can see (legacy names always resolve to system ids).
+    private static async Task EnsureConditionCategoriesAsync(KeepItSimpleDbContext dbContext, CategoryRule rule, string userId)
+    {
+        foreach (var condition in rule.Groups.SelectMany(g => g.Conditions).Where(c => c.Field == RuleField.Category))
+        {
+            if (Category.ParseConditionId(condition.Value) is { } id
+                && !await Category.IsVisibleAsync(dbContext, id, userId))
+            {
+                throw new ArgumentException("A rule condition uses an unknown category.");
+            }
+        }
     }
 
     private static async Task EnsureCategoryAsync(KeepItSimpleDbContext dbContext, int categoryId, string userId)
@@ -207,20 +222,48 @@ public class CategoryRule
                 var match = CategoryRuleMatcher.FindMatch(
                     transaction.Description,
                     transaction.Amount,
-                    transaction.Category,
+                    transaction.CategoryId,
                     rules,
                     transaction.PocketId);
-                if (match is null || match.TargetCategory == transaction.Category)
+                if (match is null || match.TargetCategoryId == transaction.CategoryId)
                 {
                     continue;
                 }
 
-                transaction.Category = match.TargetCategory;
+                transaction.CategoryId = match.TargetCategoryId;
                 updated++;
             }
 
             await dbContext.SaveChangesAsync();
             return updated;
+        });
+    }
+
+    // One-time maintenance for every user: Category conditions holding a legacy enum name become ids. Idempotent.
+    public static Task<(int Scanned, int Updated)> BackfillConditionIdsAsync()
+    {
+        return KeepItSimpleContext.Context.WithDbContextAsync(async dbContext =>
+        {
+            var rules = await dbContext.CategoryRules.ToListAsync();
+            var updated = 0;
+            foreach (var rule in rules)
+            {
+                var changed = false;
+                foreach (var condition in rule.Groups.SelectMany(g => g.Conditions)
+                    .Where(c => c.Field == RuleField.Category && !int.TryParse(c.Value, out _)))
+                {
+                    if (Category.ParseConditionId(condition.Value) is { } id)
+                    {
+                        condition.Value = id.ToString(CultureInfo.InvariantCulture);
+                        changed = true;
+                    }
+                }
+
+                updated += changed ? 1 : 0;
+            }
+
+            await dbContext.SaveChangesAsync();
+            return (rules.Count, updated);
         });
     }
 
@@ -292,7 +335,7 @@ public class CategoryRule
         }
 
         if (condition.Field == RuleField.Category
-            && !Enum.TryParse<Transaction.TransactionCategory>(condition.Value, ignoreCase: true, out _))
+            && Category.ParseConditionId(condition.Value) is null)
         {
             throw new ArgumentException($"{label} category value is not a known category.");
         }
@@ -320,10 +363,10 @@ public class CategoryRule
             var match = CategoryRuleMatcher.FindMatch(
                 transaction.Description,
                 transaction.Amount,
-                transaction.Category,
+                transaction.CategoryId,
                 rules,
                 transaction.PocketId);
-            if (match is null || match.TargetCategory == transaction.Category)
+            if (match is null || match.TargetCategoryId == transaction.CategoryId)
             {
                 continue;
             }
@@ -334,8 +377,8 @@ public class CategoryRule
                 Description = transaction.Description,
                 Amount = transaction.Amount,
                 Date = transaction.Date,
-                OldCategory = transaction.Category,
-                NewCategory = match.TargetCategory,
+                OldCategoryId = transaction.CategoryId,
+                NewCategoryId = match.TargetCategoryId,
                 MatchedRuleId = match.Id,
                 MatchedRuleName = match.Name,
             });

@@ -16,23 +16,24 @@ public static class ReportCalculator
     public static ReportData Calculate(
         IReadOnlyCollection<Transaction> transactions,
         IReadOnlyCollection<Pocket> pockets,
+        IReadOnlyDictionary<int, Category> categories,
         ReportPeriodRange range,
         DateTime generatedAt)
     {
         var names = pockets.ToDictionary(p => p.Id, p => p.Name);
         var currency = pockets.FirstOrDefault()?.Currency ?? "EUR";
-        var counterparts = MatchTransfers(transactions);
+        var counterparts = MatchTransfers(transactions, categories);
 
-        var total = BuildScope("Total", currency, transactions, pockets.Sum(p => p.Balance), range, names, counterparts);
+        var total = BuildScope("Total", currency, transactions, pockets.Sum(p => p.Balance), range, names, counterparts, categories);
         var perPocket = pockets
             .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
-            .Select(p => BuildScope(p.Name, p.Currency, transactions.Where(t => t.PocketId == p.Id).ToList(), p.Balance, range, names, counterparts))
+            .Select(p => BuildScope(p.Name, p.Currency, transactions.Where(t => t.PocketId == p.Id).ToList(), p.Balance, range, names, counterparts, categories))
             .ToList();
 
         var rows = transactions
             .Where(t => t.Date >= range.Start && t.Date < range.End)
             .OrderBy(t => t.Date)
-            .Select(t => ToRow(t, names))
+            .Select(t => ToRow(t, names, categories))
             .ToList();
 
         return new ReportData(range, generatedAt, currency, total, perPocket, rows);
@@ -45,18 +46,19 @@ public static class ReportCalculator
         decimal balance,
         ReportPeriodRange range,
         Dictionary<int, string> names,
-        Dictionary<Transaction, Transaction> counterparts)
+        Dictionary<Transaction, Transaction> counterparts,
+        IReadOnlyDictionary<int, Category> categories)
     {
         var current = InRange(all, range.Start, range.End);
         var previous = InRange(all, range.PreviousStart, range.PreviousEnd);
-        var currentKpis = BuildKpis(all, current, balance, range.Start, range.End, names);
-        var previousKpis = BuildKpis(all, previous, balance, range.PreviousStart, range.PreviousEnd, names);
+        var currentKpis = BuildKpis(all, current, balance, range.Start, range.End, names, categories);
+        var previousKpis = BuildKpis(all, previous, balance, range.PreviousStart, range.PreviousEnd, names, categories);
 
         var topExpenses = current
             .Where(Analytics.IsExpense)
             .OrderBy(t => t.Amount)
             .Take(10)
-            .Select(t => ToRow(t, names))
+            .Select(t => ToRow(t, names, categories))
             .ToList();
 
         var topDescriptions = current
@@ -72,9 +74,9 @@ public static class ReportCalculator
             currency,
             currentKpis,
             previousKpis,
-            BuildTrend(current, range, currentKpis.OpeningBalance, currency, names, counterparts, [.. all.Select(t => t.PocketId)]),
-            BuildCategories(current.Where(Analytics.IsExpense), previous.Where(Analytics.IsExpense), -1),
-            BuildCategories(current.Where(Analytics.IsIncome), previous.Where(Analytics.IsIncome), 1),
+            BuildTrend(current, range, currentKpis.OpeningBalance, currency, names, counterparts, [.. all.Select(t => t.PocketId)], categories),
+            BuildCategories(current.Where(Analytics.IsExpense), previous.Where(Analytics.IsExpense), -1, categories),
+            BuildCategories(current.Where(t => Analytics.IsIncome(t, categories)), previous.Where(t => Analytics.IsIncome(t, categories)), 1, categories),
             topExpenses,
             topDescriptions);
     }
@@ -88,9 +90,10 @@ public static class ReportCalculator
         decimal balance,
         DateTime start,
         DateTime end,
-        Dictionary<int, string> names)
+        Dictionary<int, string> names,
+        IReadOnlyDictionary<int, Category> categories)
     {
-        var income = inRange.Where(Analytics.IsIncome).Sum(t => t.Amount);
+        var income = inRange.Where(t => Analytics.IsIncome(t, categories)).Sum(t => t.Amount);
         var expenses = -inRange.Where(Analytics.IsExpense).Sum(t => t.Amount);
         var net = income - expenses;
         var saved = Moved(inRange, TransactionCategory.Savings);
@@ -109,7 +112,7 @@ public static class ReportCalculator
             invested,
             expenses / days,
             inRange.Count,
-            largest is null ? null : ToRow(largest, names),
+            largest is null ? null : ToRow(largest, names, categories),
             opening,
             closing);
     }
@@ -121,7 +124,8 @@ public static class ReportCalculator
         string currency,
         Dictionary<int, string> names,
         Dictionary<Transaction, Transaction> counterparts,
-        HashSet<int> scopePockets)
+        HashSet<int> scopePockets,
+        IReadOnlyDictionary<int, Category> categories)
     {
         var daily = range.Period == ReportPeriod.LastMonth;
         var buckets = new List<ReportTrendBucket>();
@@ -132,10 +136,10 @@ public static class ReportCalculator
         {
             var next = daily ? start.AddDays(1) : start.AddMonths(1);
             var items = current.Where(t => t.Date >= start && t.Date < next).ToList();
-            var income = items.Where(Analytics.IsIncome).Sum(t => t.Amount);
+            var income = items.Where(t => Analytics.IsIncome(t, categories)).Sum(t => t.Amount);
             var expenses = -items.Where(Analytics.IsExpense).Sum(t => t.Amount);
-            var moves = items.Where(IsMove).ToList();
-            var notes = TransferNotes(moves, currency, names, counterparts, scopePockets);
+            var moves = items.Where(t => IsMove(t, categories)).ToList();
+            var notes = TransferNotes(moves, currency, names, counterparts, scopePockets, categories);
             cumulativeNet += income - expenses;
             running += items.Sum(t => t.Amount);
             var label = start.ToString(daily ? "dd MMM" : "MMM yyyy", CultureInfo.InvariantCulture);
@@ -146,15 +150,15 @@ public static class ReportCalculator
         return buckets;
     }
 
-    private static bool IsMove(Transaction t) => !Analytics.IsIncome(t) && !Analytics.IsExpense(t);
+    private static bool IsMove(Transaction t, IReadOnlyDictionary<int, Category> categories) => !Analytics.IsIncome(t, categories) && !Analytics.IsExpense(t);
 
     // Transactions carry no link to the other side of a transfer, so pair each move with the closest move
     // of the opposite amount in another pocket within a few days.
     // shortcut: amount + date matching can pair the wrong transactions when equal amounts move the same week; store a transfer id if that matters.
-    private static Dictionary<Transaction, Transaction> MatchTransfers(IReadOnlyCollection<Transaction> transactions)
+    private static Dictionary<Transaction, Transaction> MatchTransfers(IReadOnlyCollection<Transaction> transactions, IReadOnlyDictionary<int, Category> categories)
     {
         var pairs = new Dictionary<Transaction, Transaction>(ReferenceEqualityComparer.Instance);
-        var moves = transactions.Where(IsMove).OrderBy(t => t.Date).ToList();
+        var moves = transactions.Where(t => IsMove(t, categories)).OrderBy(t => t.Date).ToList();
         foreach (var t in moves.Where(t => t.Amount < 0))
         {
             var match = moves
@@ -176,7 +180,8 @@ public static class ReportCalculator
         string currency,
         Dictionary<int, string> names,
         Dictionary<Transaction, Transaction> counterparts,
-        HashSet<int> scopePockets)
+        HashSet<int> scopePockets,
+        IReadOnlyDictionary<int, Category> categories)
     {
         var multiPocket = scopePockets.Count > 1;
         var lines = new List<string>();
@@ -197,7 +202,7 @@ public static class ReportCalculator
             else
             {
                 var description = Describe(t);
-                lines.Add($"{prefix}{amount} {t.Category}: {(description.Length > 40 ? description[..40] + "…" : description)}");
+                lines.Add($"{prefix}{amount} {NameOf(t, categories)}: {(description.Length > 40 ? description[..40] + "…" : description)}");
             }
         }
         return lines.Count <= MaxTransferNotes
@@ -206,10 +211,10 @@ public static class ReportCalculator
     }
 
     // sign flips expenses (negative amounts) to positive.
-    private static List<ReportCategoryRow> BuildCategories(IEnumerable<Transaction> current, IEnumerable<Transaction> previous, int sign)
+    private static List<ReportCategoryRow> BuildCategories(IEnumerable<Transaction> current, IEnumerable<Transaction> previous, int sign, IReadOnlyDictionary<int, Category> categories)
     {
-        var cur = current.GroupBy(t => t.Category).ToDictionary(g => g.Key, g => (Amount: sign * g.Sum(t => t.Amount), Count: g.Count()));
-        var prev = previous.GroupBy(t => t.Category).ToDictionary(g => g.Key, g => sign * g.Sum(t => t.Amount));
+        var cur = current.GroupBy(t => t.CategoryId).ToDictionary(g => g.Key, g => (Amount: sign * g.Sum(t => t.Amount), Count: g.Count()));
+        var prev = previous.GroupBy(t => t.CategoryId).ToDictionary(g => g.Key, g => sign * g.Sum(t => t.Amount));
         var total = cur.Values.Sum(v => v.Amount);
 
         return [.. cur.Keys.Union(prev.Keys)
@@ -218,7 +223,7 @@ public static class ReportCalculator
                 var (amount, count) = cur.GetValueOrDefault(c);
                 var previousAmount = prev.GetValueOrDefault(c);
                 return new ReportCategoryRow(
-                    c.ToString(),
+                    categories.TryGetValue(c, out var category) ? category.Name : ((TransactionCategory)c).ToString(),
                     amount,
                     total == 0 ? 0 : amount / total,
                     count,
@@ -241,14 +246,17 @@ public static class ReportCalculator
     private static bool IsSavings(Transaction t) =>
         t.Category is TransactionCategory.Savings or TransactionCategory.Investments;
 
+    private static string NameOf(Transaction t, IReadOnlyDictionary<int, Category> categories) =>
+        categories.TryGetValue(t.CategoryId, out var c) ? c.Name : t.Category.ToString();
+
     private static string Describe(Transaction t) =>
         string.IsNullOrWhiteSpace(t.Description) ? NoDescription : t.Description.Trim();
 
-    private static ReportTransactionRow ToRow(Transaction t, Dictionary<int, string> names) =>
-        new(t.Date, names.GetValueOrDefault(t.PocketId, string.Empty), t.Description ?? string.Empty, t.Category.ToString(), t.Amount, TypeOf(t));
+    private static ReportTransactionRow ToRow(Transaction t, Dictionary<int, string> names, IReadOnlyDictionary<int, Category> categories) =>
+        new(t.Date, names.GetValueOrDefault(t.PocketId, string.Empty), t.Description ?? string.Empty, NameOf(t, categories), t.Amount, TypeOf(t, categories));
 
-    private static string TypeOf(Transaction t) =>
-        Analytics.IsIncome(t) ? "Income"
+    private static string TypeOf(Transaction t, IReadOnlyDictionary<int, Category> categories) =>
+        Analytics.IsIncome(t, categories) ? "Income"
         : Analytics.IsExpense(t) ? "Expense"
         : t.Category is TransactionCategory.Transfer or TransactionCategory.Withdraw ? "Transfer"
         : IsSavings(t) ? "Savings"

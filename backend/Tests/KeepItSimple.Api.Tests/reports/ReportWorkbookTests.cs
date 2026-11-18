@@ -8,6 +8,8 @@ namespace KeepItSimple.Api.Tests.Reports;
 
 public class ReportWorkbookTests
 {
+    private static readonly IReadOnlyDictionary<int, Category> SystemCats = SystemCategories.All.ToDictionary(c => c.Id);
+
     private static readonly DateTime Now = new(2026, 9, 20, 12, 0, 0, DateTimeKind.Utc);
 
     private static ExcelPackage Load(byte[] bytes)
@@ -17,7 +19,7 @@ public class ReportWorkbookTests
     }
 
     private static ReportData Build(List<Transaction> txs, params Pocket[] pockets) =>
-        ReportCalculator.Calculate(txs, pockets, ReportPeriodRange.Resolve(ReportPeriod.LastMonth, Now), Now);
+        ReportCalculator.Calculate(txs, pockets, SystemCats, ReportPeriodRange.Resolve(ReportPeriod.LastMonth, Now), Now);
 
     private static Transaction Tx(int pocketId, TransactionCategory category, decimal amount, int day) =>
         new() { PocketId = pocketId, Category = category, Amount = amount, Date = new DateTime(2026, 8, day, 9, 0, 0, DateTimeKind.Utc), Description = "x" };
