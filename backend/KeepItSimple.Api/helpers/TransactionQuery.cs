@@ -47,9 +47,11 @@ public static class TransactionQuery
             filtered = filtered.Where(transaction => transaction.PocketId == pocketId);
         }
 
-        if (query.Category is Transaction.TransactionCategory category)
+        // categoryId wins over the legacy enum-name filter.
+        var categoryId = query.CategoryId ?? (query.Category is Transaction.TransactionCategory legacy ? (int)legacy : (int?)null);
+        if (categoryId is int id)
         {
-            filtered = filtered.Where(transaction => transaction.Category == category);
+            filtered = filtered.Where(transaction => transaction.CategoryId == id);
         }
 
         if (query.From is DateTime from)

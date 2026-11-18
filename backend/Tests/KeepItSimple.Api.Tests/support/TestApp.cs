@@ -15,7 +15,12 @@ public static class TestApp
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddDbContext<KeepItSimpleDbContext>(options => options.UseInMemoryDatabase("keepitsimple-tests"));
-        KeepItSimpleContext.InitContext(builder.Build());
+        var app = builder.Build();
+        KeepItSimpleContext.InitContext(app);
+
+        // Creates the schema and the seeded system categories.
+        using var scope = app.Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<KeepItSimpleDbContext>().Database.EnsureCreated();
     }
 
     public static string NewUserId() => $"user-{Guid.NewGuid()}";

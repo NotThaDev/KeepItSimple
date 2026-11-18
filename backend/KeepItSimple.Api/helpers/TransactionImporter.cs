@@ -392,9 +392,23 @@ public static class TransactionImporter
         {
             var pocket = await dbContext.Pockets.FirstOrDefaultAsync(p => p.Id == request.PocketId && p.UserId == userId) ?? throw new KeyNotFoundException($"Pocket {request.PocketId} not found.");
             var saved = new List<Transaction>();
+            var visibleCategoryIds = await dbContext.Categories
+                .Where(c => c.UserId == null || c.UserId == userId)
+                .Select(c => c.Id)
+                .ToHashSetAsync();
 
             foreach (var draft in request.Transactions)
             {
+                if (draft.CategoryId == 0)
+                {
+                    draft.CategoryId = (int)Transaction.TransactionCategory.Other;
+                }
+
+                if (!visibleCategoryIds.Contains(draft.CategoryId))
+                {
+                    throw new ArgumentException("Unknown category.");
+                }
+
                 draft.Id = null;
                 draft.PocketId = pocket.Id;
                 draft.Pocket = pocket;

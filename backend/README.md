@@ -34,6 +34,7 @@ backend/
 |------|--------|--------|
 | Pockets | `/api/pocket` | Accounts with balance / currency |
 | Transactions | `/api/transactions` | CRUD, filter by pocket, and file import |
+| Categories | `/api/categories` | System categories (seeded, read-only) plus the user's custom ones; `{id}/usage` counts transactions and rules. Rows carry `id`, `key`, `name`, `kind`, `group`, `icon`, `color`. Transactions and rules reference them by `categoryId` / `targetCategoryId`; the legacy `category` / `targetCategory` enum-name strings are still read and written until the cleanup PR |
 | Category rules | `/api/category-rules` | User-defined categorization (groups = parentheses) |
 | Analytics | `/api/analytics` | Aggregations over transactions |
 | Import mappings | `/api/import-mappings` | Saved column mappings for file import; analyze suggests one ([TransactionImportFlow.md](./docs/TransactionImportFlow.md#saved-column-mappings)) |
