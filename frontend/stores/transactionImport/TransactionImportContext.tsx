@@ -50,6 +50,11 @@ function normalizeHeader(header: string) {
 }
 
 // A header that appears more than once in the file cannot be matched safely, so it stays Ignore.
+// A saved mapping is keyed by header name ("Importo" → Amount), while the dialog keys
+// the mapping by column index in the current file ({ 2: Amount }). This applies the
+// selected saved mapping to the columns of the file on screen, whatever their order.
+// Headers missing from the file, or repeated in it, stay Ignore; missingHeaders lists
+// the mapped ones so the dialog can say what didn't match.
 function mappingFromSaved(
   columns: TransactionImportColumn[],
   saved: ImportMapping,
@@ -84,6 +89,8 @@ function mappingFromSaved(
   return { mapping, missingHeaders };
 }
 
+// The reverse of mappingFromSaved: turns the dialog's mapping (column index → field)
+// into a saved mapping (header name → field) so it can be reused on later files.
 function toMappingInput(
   name: string,
   columns: TransactionImportColumn[],
