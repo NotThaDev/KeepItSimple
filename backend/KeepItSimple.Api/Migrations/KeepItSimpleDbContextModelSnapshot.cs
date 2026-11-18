@@ -762,6 +762,40 @@ namespace KeepItSimple.Api.Migrations
                     b.ToTable("CategoryRules");
                 });
 
+            modelBuilder.Entity("KeepItSimple.Api.Models.ImportMapping", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Columns")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("ImportMappings");
+                });
+
             modelBuilder.Entity("KeepItSimple.Api.Models.KeepItSimpleUser", b =>
                 {
                     b.Property<string>("Id")
@@ -1251,6 +1285,15 @@ namespace KeepItSimple.Api.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("KeepItSimple.Api.Models.ImportMapping", b =>
+                {
+                    b.HasOne("KeepItSimple.Api.Models.KeepItSimpleUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

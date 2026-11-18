@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  createImportMapping,
+  getImportMappings,
+  ImportMapping,
+  ImportMappingInput,
+  mappingErrorMessage,
+} from "@/lib/models/ImportMapping";
 import { Pocket } from "@/lib/models/Pocket";
 import {
   analyzeTransactionImport,
@@ -7,6 +14,7 @@ import {
   MappableField,
   previewTransactionImport,
   TransactionCategory,
+  TransactionImportColumn,
   TransactionImportPreviewResponse,
 } from "@/lib/models/Transaction";
 import {
@@ -19,7 +27,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { importErrorMessage } from "./utils";
-import { ImportStep } from "./types";
+import { ImportStep, MappingNote } from "./types";
 import type { TransactionImportContext as TransactionImportContextValue } from "./types";
 
 const TransactionImportContext =
@@ -35,6 +43,84 @@ function isMappingReady(mapping: Record<number, MappableField>) {
     assignedFields.includes(MappableField.Date) &&
     uniqueAssignedFields.size === assignedFields.length
   );
+}
+
+function normalizeHeader(header: string) {
+  return header.trim().toLowerCase();
+}
+
+// A header that appears more than once in the file cannot be matched safely, so it stays Ignore.
+// A saved mapping is keyed by header name ("Importo" → Amount), while the dialog keys
+// the mapping by column index in the current file ({ 2: Amount }). This applies the
+// selected saved mapping to the columns of the file on screen, whatever their order.
+// Headers missing from the file, or repeated in it, stay Ignore; missingHeaders lists
+// the mapped ones so the dialog can say what didn't match.
+function mappingFromSaved(
+  columns: TransactionImportColumn[],
+  saved: ImportMapping,
+) {
+  const fileCounts = new Map<string, number>();
+  for (const column of columns) {
+    const key = normalizeHeader(column.name);
+    fileCounts.set(key, (fileCounts.get(key) ?? 0) + 1);
+  }
+
+  const savedByHeader = new Map<string, MappableField>();
+  for (const column of saved.columns) {
+    savedByHeader.set(normalizeHeader(column.header), column.targetField);
+  }
+
+  const mapping: Record<number, MappableField> = {};
+  for (const column of columns) {
+    const key = normalizeHeader(column.name);
+    const targetField =
+      fileCounts.get(key) === 1 ? savedByHeader.get(key) : undefined;
+    mapping[column.index] = targetField ?? MappableField.Ignore;
+  }
+
+  const missingHeaders = saved.columns
+    .filter(
+      (column) =>
+        column.targetField !== MappableField.Ignore &&
+        fileCounts.get(normalizeHeader(column.header)) !== 1,
+    )
+    .map((column) => column.header);
+
+  return { mapping, missingHeaders };
+}
+
+// The reverse of mappingFromSaved: turns the dialog's mapping (column index → field)
+// into a saved mapping (header name → field) so it can be reused on later files.
+function toMappingInput(
+  name: string,
+  columns: TransactionImportColumn[],
+  mapping: Record<number, MappableField>,
+): ImportMappingInput {
+  // Blank or repeated headers can't be matched by name, and Ignore columns play no
+  // part in matching, so neither is saved.
+  const counts = new Map<string, number>();
+  for (const column of columns) {
+    const key = normalizeHeader(column.name);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  return {
+    name,
+    columns: columns
+      .filter((column) => {
+        const key = normalizeHeader(column.name);
+        const targetField = mapping[column.index] ?? MappableField.Ignore;
+        return (
+          key !== "" &&
+          counts.get(key) === 1 &&
+          targetField !== MappableField.Ignore
+        );
+      })
+      .map((column) => ({
+        header: column.name,
+        targetField: mapping[column.index],
+      })),
+  };
 }
 
 interface TransactionImportProviderProps {
@@ -58,6 +144,12 @@ export function TransactionImportProvider({
   const [preview, setPreview] =
     useState<TransactionImportPreviewResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [savedMappings, setSavedMappings] = useState<ImportMapping[]>([]);
+  const [selectedMappingId, setSelectedMappingId] = useState<number | null>(
+    null,
+  );
+  const [mappingNote, setMappingNote] = useState<MappingNote | null>(null);
+  const [isSavingMapping, setIsSavingMapping] = useState(false);
 
   const selectedPocket = useMemo(
     () => pockets.find((pocket) => pocket.id.toString() === pocketId),
@@ -75,6 +167,21 @@ export function TransactionImportProvider({
 
   const canContinueToPreview =
     Boolean(analyze) && Boolean(pocketId) && isMappingReady(mapping);
+  // Saving an unchanged copy of the selected mapping would only add a duplicate.
+  const matchesSelectedMapping = useMemo(() => {
+    const saved = savedMappings.find((item) => item.id === selectedMappingId);
+    if (!analyze || !saved) {
+      return false;
+    }
+
+    const expected = mappingFromSaved(analyze.columns, saved).mapping;
+    return analyze.columns.every(
+      (column) =>
+        (mapping[column.index] ?? MappableField.Ignore) ===
+        (expected[column.index] ?? MappableField.Ignore),
+    );
+  }, [analyze, mapping, savedMappings, selectedMappingId]);
+  const canSaveMapping = isMappingReady(mapping) && !matchesSelectedMapping;
 
   const reset = useCallback(() => {
     setStep(ImportStep.Analyze);
@@ -84,16 +191,30 @@ export function TransactionImportProvider({
     setPocketId(pockets[0]?.id.toString() ?? "");
     setPreview(null);
     setIsLoading(false);
+    setSelectedMappingId(null);
+    setMappingNote(null);
   }, [pockets]);
+
+  const loadSavedMappings = useCallback(async (): Promise<ImportMapping[]> => {
+    const result = await getImportMappings();
+    if (result.status !== 200 || !result.data) {
+      return [];
+    }
+
+    setSavedMappings(result.data);
+    return result.data;
+  }, []);
 
   const openDialog = useCallback(
     (nextOpen: boolean) => {
       setOpen(nextOpen);
-      if (!nextOpen) {
+      if (nextOpen) {
+        void loadSavedMappings();
+      } else {
         reset();
       }
     },
-    [reset],
+    [loadSavedMappings, reset],
   );
 
   const handleFileChange = useCallback((nextFile: File | null) => {
@@ -101,6 +222,8 @@ export function TransactionImportProvider({
     setAnalyze(null);
     setMapping({});
     setPreview(null);
+    setSelectedMappingId(null);
+    setMappingNote(null);
   }, []);
 
   const setMappingField = useCallback(
@@ -109,8 +232,60 @@ export function TransactionImportProvider({
         ...current,
         [columnIndex]: targetField,
       }));
+      setMappingNote(null);
     },
     [],
+  );
+
+  const applySavedMapping = useCallback(
+    (id: number | null) => {
+      if (id === null) {
+        setSelectedMappingId(null);
+        setMappingNote(null);
+        return;
+      }
+
+      const saved = savedMappings.find((item) => item.id === id);
+      if (!analyze || !saved) {
+        return;
+      }
+
+      const applied = mappingFromSaved(analyze.columns, saved);
+      setMapping(applied.mapping);
+      setSelectedMappingId(saved.id);
+      setMappingNote({
+        appliedName: saved.name,
+        missingHeaders: applied.missingHeaders,
+        auto: false,
+      });
+    },
+    [analyze, savedMappings],
+  );
+
+  const saveMappingAs = useCallback(
+    async (name: string) => {
+      if (!analyze || !isMappingReady(mapping)) {
+        return false;
+      }
+
+      setIsSavingMapping(true);
+      const result = await createImportMapping(
+        toMappingInput(name.trim(), analyze.columns, mapping),
+      );
+      setIsSavingMapping(false);
+
+      if (result.status !== 201 || !result.data) {
+        toast.error(mappingErrorMessage(result.errorData, "Could not save the mapping."));
+        return false;
+      }
+
+      toast.success("Mapping saved");
+      await loadSavedMappings();
+      setSelectedMappingId(result.data.id);
+      setMappingNote(null);
+      return true;
+    },
+    [analyze, loadSavedMappings, mapping],
   );
 
   const analyzeFile = useCallback(async () => {
@@ -141,10 +316,34 @@ export function TransactionImportProvider({
       nextMapping[column.index] = MappableField.Ignore;
     }
 
+    let nextSelectedId: number | null = null;
+    let nextNote: MappingNote | null = null;
+    const suggestedId = result.data.suggestedMappingId;
+    if (suggestedId != null) {
+      let candidates = savedMappings;
+      if (!candidates.some((item) => item.id === suggestedId)) {
+        candidates = await loadSavedMappings();
+      }
+
+      const suggested = candidates.find((item) => item.id === suggestedId);
+      if (suggested) {
+        const applied = mappingFromSaved(result.data.columns, suggested);
+        Object.assign(nextMapping, applied.mapping);
+        nextSelectedId = suggested.id;
+        nextNote = {
+          appliedName: suggested.name,
+          missingHeaders: [],
+          auto: true,
+        };
+      }
+    }
+
     setAnalyze(result.data);
     setMapping(nextMapping);
+    setSelectedMappingId(nextSelectedId);
+    setMappingNote(nextNote);
     setStep(ImportStep.Mapping);
-  }, [file, pocketId]);
+  }, [file, loadSavedMappings, pocketId, savedMappings]);
 
   const previewTransactions = useCallback(async () => {
     if (!analyze) {
@@ -268,23 +467,37 @@ export function TransactionImportProvider({
       confirmTransactions,
       updateDraftCategory,
       removeDraft,
+      savedMappings,
+      selectedMappingId,
+      mappingNote,
+      canSaveMapping,
+      isSavingMapping,
+      applySavedMapping,
+      saveMappingAs,
     }),
     [
       analyze,
-      canContinueToPreview,
-      file,
       analyzeFile,
+      applySavedMapping,
+      canContinueToPreview,
+      canSaveMapping,
       confirmTransactions,
+      file,
       handleFileChange,
-      openDialog,
-      previewTransactions,
       isLoading,
+      isSavingMapping,
       mapping,
+      mappingNote,
       open,
+      openDialog,
       pockets,
       preview,
       previewTotal,
+      previewTransactions,
       removeDraft,
+      saveMappingAs,
+      savedMappings,
+      selectedMappingId,
       selectedPocket,
       setMappingField,
       step,
