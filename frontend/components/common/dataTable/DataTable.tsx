@@ -35,6 +35,10 @@ interface DataTableProps<TData extends RowData> {
   onRowSelectionChange?: (selectedRows: TData[]) => void;
 }
 
+// Optional per-column classes (e.g. hide a column on mobile) passed via column meta.
+const columnClassName = (meta: unknown) =>
+  (meta as { className?: string } | undefined)?.className;
+
 export function DataTable<TData extends RowData>({
   columns,
   data,
@@ -124,6 +128,7 @@ export function DataTable<TData extends RowData>({
                   return (
                     <TableHead
                       key={header.id}
+                      className={columnClassName(header.column.columnDef.meta)}
                       style={{ width: header.getSize() }}
                     >
                       {header.isPlaceholder ? null : (
@@ -145,6 +150,7 @@ export function DataTable<TData extends RowData>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
+                      className={columnClassName(cell.column.columnDef.meta)}
                       style={{ width: cell.column.getSize() }}
                     >
                       <table.FlexRender cell={cell} />

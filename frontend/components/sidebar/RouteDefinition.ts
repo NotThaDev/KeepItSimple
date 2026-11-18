@@ -8,6 +8,7 @@ import {
   List,
   ListFilter,
   LucideIcon,
+  Tags,
   Wallet,
 } from "lucide-react";
 
@@ -54,6 +55,12 @@ export const routes: RouteDefinition[] = [
         title: "Category Rules",
         href: "/transactions/rules",
         icon: ListFilter,
+      },
+      {
+        label: "Categories",
+        title: "Categories",
+        href: "/transactions/categories",
+        icon: Tags,
       },
       {
         label: "Import Mappings",
