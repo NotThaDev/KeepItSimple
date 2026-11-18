@@ -1,3 +1,4 @@
+import type { ImportMapping } from "@/lib/models/ImportMapping";
 import type { Pocket } from "@/lib/models/Pocket";
 import type {
   MappableField,
@@ -12,6 +13,12 @@ export enum ImportStep {
   Confirm = "confirm",
 }
 
+export interface MappingNote {
+  appliedName?: string;
+  missingHeaders: string[];
+  auto: boolean;
+}
+
 export interface TransactionImportContextState {
   open: boolean;
   step: ImportStep;
@@ -24,6 +31,11 @@ export interface TransactionImportContextState {
   pockets: Pocket[];
   previewTotal: number;
   canContinueToPreview: boolean;
+  savedMappings: ImportMapping[];
+  selectedMappingId: number | null;
+  mappingNote: MappingNote | null;
+  canSaveMapping: boolean;
+  isSavingMapping: boolean;
 }
 
 export interface TransactionImportContextAction {
@@ -37,6 +49,8 @@ export interface TransactionImportContextAction {
   confirmTransactions: () => Promise<void>;
   updateDraftCategory: (index: number, categoryId: number) => void;
   removeDraft: (index: number) => void;
+  applySavedMapping: (id: number | null) => void;
+  saveMappingAs: (name: string) => Promise<boolean>;
 }
 
 export type TransactionImportContext = TransactionImportContextState &
